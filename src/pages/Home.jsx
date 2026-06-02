@@ -155,6 +155,13 @@ export default function Home() {
             Contact
           </a>
 
+          <a
+            href="/community"
+            className="hover:text-yellow-400 transition"
+          >
+            Community
+          </a>
+
        <button
 
   onClick={() => {

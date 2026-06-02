@@ -26,25 +26,6 @@ function App() {
           element={<Home />}
         />
 
-<Route
-  path="/journal"
-  element={<JournalTrading />}
-/>
-
-<Route
-  path="/community"
-  element={<Community />}
-/>
-
-<Route
-  path="/profile"
-  element={<TraderProfile />}
-/>
-
-<Route
-  path="/admin"
-  element={<Admin />}
-/>
         <Route
           path="/login"
           element={<Login />}
@@ -56,9 +37,29 @@ function App() {
         />
 
         <Route
-  path="/course/:id"
-  element={<CoursePlayer />}
-/>
+          path="/admin"
+          element={<Admin />}
+        />
+
+        <Route
+          path="/journal"
+          element={<JournalTrading />}
+        />
+
+        <Route
+          path="/community"
+          element={<Community />}
+        />
+
+        <Route
+          path="/profile"
+          element={<TraderProfile />}
+        />
+
+        <Route
+          path="/course/:id"
+          element={<CoursePlayer />}
+        />
 
       </Routes>
 
