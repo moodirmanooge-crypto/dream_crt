@@ -12,7 +12,11 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 
+import { FaCheckCircle } from "react-icons/fa";
+
 import { db, auth } from "../firebase/config";
+
+import { useNavigate } from "react-router-dom";
 
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -231,10 +235,8 @@ function CommentsSection({ postId, currentUser }) {
     await addDoc(
       collection(db, "posts", postId, "comments"),
       {
-
         userName:
-          currentUser.displayName ||
-          currentUser.email.split("@")[0],
+          currentUser.displayName || "Trader",
 
         userPhoto:
           currentUser.photoURL || null,
@@ -244,7 +246,6 @@ function CommentsSection({ postId, currentUser }) {
         createdAt: Date.now(),
 
         userId: currentUser.uid,
-
       }
     );
 
@@ -393,6 +394,8 @@ function CommentsSection({ postId, currentUser }) {
 
 function PostCard({ post, currentUser }) {
 
+  const navigate = useNavigate();
+
   const [showComments, setShowComments] =
     useState(false);
 
@@ -496,19 +499,25 @@ function PostCard({ post, currentUser }) {
       )}
 
       <article
-        className="rounded-3xl overflow-hidden"
+        className="rounded-3xl overflow-hidden hover:scale-[1.01]"
         style={{
           background:
             "linear-gradient(145deg,#141414 0%,#0f0f0f 100%)",
 
           border:
             "1px solid rgba(245,197,24,0.18)",
+            transition: "0.3s",
         }}
       >
 
         <div className="flex items-center justify-between px-5 py-4">
 
-          <div className="flex items-center gap-3">
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() =>
+              navigate(`/trader/${localPost.uid}`)
+            }
+          >
 
             {localPost.profileImage ? (
 
@@ -541,13 +550,35 @@ function PostCard({ post, currentUser }) {
             <div>
 
               <h1 className="font-black text-white text-lg">
-                {localPost.userName}
+                <div className="flex items-center gap-2">
+
+                  <span>
+                    {localPost.userName}
+                  </span>
+
+                  <FaCheckCircle
+                    className="text-blue-500"
+                    size={14}
+                  />
+
+                </div>
               </h1>
 
-              <p className="text-xs text-yellow-400">
-                Professional Trader
-              </p>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="text-[11px] text-gray-500 mt-1">
 
+                  {new Date(localPost.createdAt).toLocaleDateString()}
+
+                </p>
+                <p className="text-xs text-yellow-400">
+                  Professional Trader
+                </p>
+
+                <p className="text-xs text-gray-500">
+                  {(localPost.followers || []).length} Followers
+                </p>
+
+              </div>
             </div>
 
           </div>
@@ -606,7 +637,8 @@ function PostCard({ post, currentUser }) {
                 alt=""
                 className="w-full rounded-2xl object-cover"
                 style={{
-                  maxHeight: "420px",
+                  height: "420px",
+                  objectFit: "cover",
                 }}
               />
 
@@ -680,6 +712,10 @@ function PostCard({ post, currentUser }) {
 
             <FaComment />
 
+            <span>
+              {localPost.commentCount || 0}
+            </span>
+
           </button>
 
           <button
@@ -690,6 +726,10 @@ function PostCard({ post, currentUser }) {
           >
 
             <FaShare />
+
+            <span>
+              {localPost.shareCount || 0}
+            </span>
 
           </button>
 
@@ -752,9 +792,7 @@ export default function Community() {
     );
 
     const unsub = onSnapshot(
-
       q,
-
       (snap) => {
 
         const data = snap.docs.map((d) => {

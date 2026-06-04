@@ -1,16 +1,17 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import ForexChart from "../components/ForexChart";
+import { useEffect, useState, useRef} from "react";
 import {
   addDoc,
   collection,
-  getDocs,
   query,
   where,
   doc,
   updateDoc,
   getDoc,
   setDoc,
+  onSnapshot,
 } from "firebase/firestore";
-import { db, auth } from "../firebase/config";
+import { db, auth, storage } from "../firebase/config";
 import {
   FaChartLine,
   FaHistory,
@@ -35,7 +36,7 @@ import {
   FaArrowDown,
 } from "react-icons/fa";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../firebase/config";
+import { onAuthStateChanged } from "firebase/auth";
 
 const CURRENCY_PAIRS = [
   "EURUSD","GBPUSD","USDJPY","USDCHF","AUDUSD","USDCAD","NZDUSD",
@@ -45,7 +46,7 @@ const CURRENCY_PAIRS = [
 
 // ─── NEW TRADE MODAL ──────────────────────────────────────────────────────────
 function NewTradeModal({ onClose, onSave, profileData }) {
-  const [step, setStep] = useState(1); // 1: trade details, 2: psychology
+  const [step, setStep] = useState(1);
   const [tradeData, setTradeData] = useState({
     pair: "XAUUSD",
     direction: "BUY",
@@ -65,7 +66,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
   const [uploading, setUploading] = useState(false);
   const imgRef = useRef(null);
 
-  // Live RRR calculation
   const calcRRR = () => {
     const entry = parseFloat(tradeData.entryPrice);
     const sl = parseFloat(tradeData.stopLoss);
@@ -129,7 +129,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
           boxShadow: "0 0 80px rgba(234,179,8,0.08)",
         }}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-8 pt-8 pb-6 border-b border-yellow-500/20">
           <div>
             <h2 className="text-3xl font-black text-yellow-400">New Trade Entry</h2>
@@ -145,7 +144,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
         <div className="p-8 overflow-y-auto max-h-[70vh]">
           {step === 1 && (
             <div className="space-y-5">
-              {/* Pair + Direction */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-slate-400 text-sm mb-2 block font-bold">Currency Pair</label>
@@ -182,7 +180,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                 </div>
               </div>
 
-              {/* Entry / SL / TP */}
               <div className="grid grid-cols-3 gap-4">
                 {[
                   { key: "entryPrice", label: "Entry Price", placeholder: "1.0850" },
@@ -203,7 +200,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                 ))}
               </div>
 
-              {/* RRR live badge */}
               {rrr && (
                 <div className="flex items-center gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl px-5 py-3">
                   <FaTrophy className="text-yellow-400" />
@@ -216,7 +212,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                 </div>
               )}
 
-              {/* Lot + Status */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-slate-400 text-sm mb-2 block font-bold">Lot Size</label>
@@ -244,7 +239,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                 </div>
               </div>
 
-              {/* Pips + P&L (only if closed) */}
               {tradeData.status !== "Open" && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -329,7 +323,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                 />
               </div>
 
-              {/* Chart screenshot upload */}
               <div>
                 <label className="text-slate-400 text-sm mb-2 block font-bold">
                   Chart Setup Sawir (Optional)
@@ -361,7 +354,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-8 pb-8 pt-4 border-t border-yellow-500/10 flex justify-between items-center">
           <button
             onClick={() => step === 1 ? onClose() : setStep(1)}
@@ -400,14 +392,15 @@ export default function JournalTrading() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showNewTradeModal, setShowNewTradeModal] = useState(false);
 
-  // Profile
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
   const [profileData, setProfileData] = useState(null);
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [nameError, setNameError] = useState("");
   const photoInputRef = useRef(null);
 
-  // Community post
   const [postCaption, setPostCaption] = useState("");
   const [postFile, setPostFile] = useState(null);
   const [postFilePreview, setPostFilePreview] = useState(null);
@@ -416,36 +409,146 @@ export default function JournalTrading() {
   const photoRef = useRef(null);
   const videoRef = useRef(null);
 
+  const [balance, setBalance] = useState(0);
+  const [maxDrawdown] = useState(2000);
+  const [accountBlown, setAccountBlown] = useState(false);
+
+  const unsubscribeRef = useRef(null);
+
   useEffect(() => {
-    fetchTrades();
-    fetchProfile();
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+
+      if (!user || !user.uid) {
+        setCurrentUser(null);
+        setProfileData(null);
+        setTrades([]);
+        setBalance(0);
+        setAuthLoading(false);
+
+        if (unsubscribeRef.current) {
+          unsubscribeRef.current();
+          unsubscribeRef.current = null;
+        }
+
+        return;
+      }
+
+      setCurrentUser(user);
+      setAuthLoading(false);
+
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+
+      try {
+
+        const q = query(
+          collection(db, "trades"),
+          where("userId", "==", user.uid)
+        );
+
+        const unsubTrades = onSnapshot(q, (snap) => {
+
+          const fetched = snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          }));
+
+          setTrades(fetched);
+
+          const totalPnL = fetched.reduce(
+            (acc, t) => acc + Number(t.profit_loss || 0),
+            0
+          );
+
+          setBalance(10000 + totalPnL);
+
+          const totalLoss = Math.abs(Math.min(0, totalPnL));
+
+          setAccountBlown(totalLoss >= 2000);
+
+        });
+
+        unsubscribeRef.current = unsubTrades;
+
+        const docRef = doc(db, "profiles", user.uid);
+
+        const snap = await getDoc(docRef);
+
+        if (snap.exists()) {
+
+          setProfileData(snap.data());
+
+        } else {
+
+          const defaultData = {
+            displayName: user.email?.split("@")[0] || "Trader",
+            photoURL: "",
+            nameChangedAt: null,
+            strategy: "Not Set",
+            createdAt: Date.now(),
+          };
+
+          await setDoc(docRef, defaultData);
+
+          setProfileData(defaultData);
+        }
+
+      } catch (err) {
+
+        console.log(err);
+
+      }
+
+    });
+
+    return () => {
+
+      unsubscribeAuth();
+
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+
+    };
+
   }, []);
 
-  // ─── PROFILE ───────────────────────────────────────────────
-  const fetchProfile = async () => {
-    const user = auth.currentUser;
-    if (!user) return;
+  const fetchProfile = async (user) => {
+
+    if (!user || !user.uid) return;
+
     const docRef = doc(db, "profiles", user.uid);
+
     const snap = await getDoc(docRef);
+
     if (snap.exists()) {
+
       setProfileData(snap.data());
+
     } else {
+
       const defaultData = {
-        displayName: user.email.split("@")[0],
+        displayName: user.email?.split("@")[0] || "Trader",
         photoURL: "",
         nameChangedAt: null,
         strategy: "Not Set",
         createdAt: Date.now(),
       };
+
       await setDoc(docRef, defaultData);
+
       setProfileData(defaultData);
+
     }
+
   };
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const user = auth.currentUser;
+    const user = currentUser;
+    if (!user) return;
     try {
       const storageRef = ref(storage, `profiles/${user.uid}/avatar_${Date.now()}`);
       await uploadBytes(storageRef, file);
@@ -473,7 +576,8 @@ export default function JournalTrading() {
       setNameError(`Waxaad sugaysaa ${daysUntilNameChange()} maalmood oo kale`);
       return;
     }
-    const user = auth.currentUser;
+    const user = currentUser;
+    if (!user) return;
     await updateDoc(doc(db, "profiles", user.uid), {
       displayName: newName.trim(),
       nameChangedAt: Date.now(),
@@ -484,16 +588,23 @@ export default function JournalTrading() {
   };
 
   // ─── TRADES ────────────────────────────────────────────────
-  const fetchTrades = async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-    const q = query(collection(db, "trades"), where("userId", "==", user.uid));
-    const snap = await getDocs(q);
-    setTrades(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-  };
-
   const handleSaveTrade = async (tradeDoc) => {
-    const user = auth.currentUser;
+    const user = currentUser;
+    if (!user) { alert("Please Login"); return; }
+
+    if (accountBlown) {
+      alert("🔴 Akoonka waa kaa gubtay sxb! Ma awoodo inaad trade cusub furtid.");
+      return;
+    }
+
+    const newPnL = Number(tradeDoc.profit_loss || 0);
+    const projectedLoss = Math.abs(Math.min(0, (balance - 10000) + newPnL));
+    if (tradeDoc.status !== "Open" && projectedLoss >= maxDrawdown) {
+      alert(`⚠️ Haddaad trade-kan xiddo, akoonkaagu wuu gubanyahay!\nLoss: $${projectedLoss.toFixed(2)} / Limit: $${maxDrawdown}`);
+      setAccountBlown(true);
+      return;
+    }
+
     const saved = await addDoc(collection(db, "trades"), tradeDoc);
     await addDoc(collection(db, "adminNotifications"), {
       type: "new_trade",
@@ -506,7 +617,6 @@ export default function JournalTrading() {
       createdAt: Date.now(),
       read: false,
     });
-    fetchTrades();
   };
 
   // ─── DASHBOARD STATS ───────────────────────────────────────
@@ -516,13 +626,12 @@ export default function JournalTrading() {
   const winRate = closedTrades.length ? Math.round((wins / closedTrades.length) * 100) : 0;
   const monthlyProfit = trades.reduce((acc, t) => acc + Number(t.profit_loss || 0), 0);
 
-  // Average RRR from saved trades
   const tradesWithRRR = trades.filter((t) => t.rrr && !isNaN(parseFloat(t.rrr)));
   const avgRRR = tradesWithRRR.length
     ? (tradesWithRRR.reduce((a, b) => a + parseFloat(b.rrr), 0) / tradesWithRRR.length).toFixed(2)
     : "–";
 
-  const traderName = profileData?.displayName || auth.currentUser?.email?.split("@")[0] || "Trader";
+  const traderName = profileData?.displayName || currentUser?.email?.split("@")[0] || "Trader";
   const avatarURL = profileData?.photoURL || `https://ui-avatars.com/api/?name=${traderName}&background=EAB308&color=000`;
 
   // ─── COMMUNITY ─────────────────────────────────────────────
@@ -541,7 +650,7 @@ export default function JournalTrading() {
 
   const createCommunityPost = async () => {
     try {
-      const user = auth.currentUser;
+      const user = currentUser;
       if (!user) { alert("Please Login"); return; }
       if (!postCaption && !postFile) { alert("Write something or upload media"); return; }
       setUploading(true);
@@ -566,11 +675,37 @@ export default function JournalTrading() {
     }
   };
 
+  // ─── AUTH LOADING SCREEN ──────────────────────────────────
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div
+            className="w-16 h-16 rounded-full border-4 border-yellow-500 border-t-transparent animate-spin mx-auto mb-4"
+          />
+          <p className="text-yellow-400 font-black text-xl">DREAM CRT</p>
+          <p className="text-slate-500 text-sm mt-1">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── NOT LOGGED IN ────────────────────────────────────────
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-yellow-400 font-black text-2xl mb-4">Please Login First</p>
+          <p className="text-slate-500">Journal Trading waxay u baahan tahay in aad login garayso</p>
+        </div>
+      </div>
+    );
+  }
+
   // ─── RENDER ────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-black text-white flex overflow-hidden">
 
-      {/* Modal */}
       {showNewTradeModal && (
         <NewTradeModal
           onClose={() => setShowNewTradeModal(false)}
@@ -660,6 +795,20 @@ export default function JournalTrading() {
           </div>
         </div>
 
+        {/* ── BLOWN BANNER ── */}
+        {accountBlown && (
+          <div className="mx-10 mt-6 p-5 rounded-2xl border border-red-500 bg-red-500/10 flex items-center gap-4">
+            <span className="text-4xl">🔴</span>
+            <div>
+              <p className="text-red-400 font-black text-xl">Akoonka waa kaa gubtay sxb!</p>
+              <p className="text-slate-400 text-sm mt-1">
+                Waxaad gaartay ugu badan ee aad lumin karto (${maxDrawdown}).
+                Fadlan la xiriir admin ama dib u bilow.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* ── DASHBOARD TAB ── */}
         {(activeTab === "dashboard" || activeTab === "journal") && (
           <>
@@ -680,18 +829,28 @@ export default function JournalTrading() {
                   color: "text-cyan-400",
                   icon: <FaChartLine />,
                 },
+                {
+                  label: "Live Balance",
+                  value: `$${balance.toFixed(2)}`,
+                  color: balance >= 2 ? "text-green-400" : "text-red-400",
+                  icon: <FaChartLine />,
+                },
                 { label: "Followers", value: "0", color: "text-pink-500" },
-                { label: "Total Likes", value: "0", color: "text-red-500" },
                 { label: "Open Trades", value: trades.filter((t) => t.status === "Open").length, color: "text-blue-400" },
                 { label: "Closed Trades", value: closedTrades.length, color: "text-slate-300" },
               ].map((s) => (
                 <div key={s.label} className="bg-zinc-900 p-8 rounded-3xl">
                   <p className="text-slate-400 text-lg">{s.label}</p>
-                  <p className={`text-5xl font-black mt-4 ${s.color}`}>{s.value}</p>
+                  <p className={`text-2xl font-black mt-4 break-words ${s.color}`}>{s.value}</p>
                 </div>
               ))}
             </div>
-
+{/* FOREX CHART */}
+<div className="px-10 pb-4">
+  <div className="rounded-3xl overflow-hidden border border-yellow-500/20">
+    <ForexChart />
+  </div>
+</div>
             {/* NEW TRADE BUTTON */}
             <div className="px-10 pb-2">
               <button
@@ -754,14 +913,12 @@ export default function JournalTrading() {
                               )}
                             </div>
                           </div>
-                          {/* Psychology notes preview */}
                           {trade.notes_psychology && (
                             <div className="mt-4 bg-zinc-900 rounded-xl p-3 border-l-2 border-yellow-500/40">
                               <p className="text-yellow-500/60 text-xs font-bold mb-1">🧠 PSYCHOLOGY NOTE</p>
                               <p className="text-slate-400 text-sm">{trade.notes_psychology}</p>
                             </div>
                           )}
-                          {/* Setup image preview */}
                           {trade.setupImageURL && (
                             <div className="mt-3">
                               <img src={trade.setupImageURL} alt="setup" className="h-32 rounded-xl object-cover" />
@@ -784,7 +941,6 @@ export default function JournalTrading() {
               <h1 className="text-4xl font-black text-yellow-400 mb-2">Psychology Journal</h1>
               <p className="text-slate-500 mb-8">Nafsaddaada iyo dareemtaada ka waran</p>
 
-              {/* Emotion breakdown */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
                 {["Calm 😌","Confident 💪","FOMO 😰","Greedy 🤑","Revenge 😡","Tired 😴"].map((emo) => {
                   const count = trades.filter((t) => t.emotion === emo).length;
@@ -799,7 +955,6 @@ export default function JournalTrading() {
                 })}
               </div>
 
-              {/* Recent psychology notes */}
               <h2 className="text-2xl font-black text-yellow-400 mb-5">Recent Notes</h2>
               {trades.filter((t) => t.notes_psychology).length === 0 ? (
                 <p className="text-slate-500 text-center py-10">Weli notes lama qorin</p>

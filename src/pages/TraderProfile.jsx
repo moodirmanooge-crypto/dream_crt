@@ -1,222 +1,311 @@
-import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from "react";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+} from "firebase/firestore";
 
-import { Link } from "react-router-dom";
+import { db, auth } from "../firebase/config";
 
 import {
-  FaChartLine,
-  FaBook,
-  FaBrain,
-  FaHistory,
+  useParams,
+} from "react-router-dom";
+
+import {
+  FaHeart,
+  FaUserFriends,
+  FaCheckCircle,
 } from "react-icons/fa";
 
 export default function TraderProfile() {
 
-  const { currentUser, userData } = useAuth();
+  const { uid } = useParams();
+
+  const [posts, setPosts] = useState([]);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+
+    const currentUid =
+      uid || auth.currentUser?.uid;
+
+    if (!currentUid) return;
+
+    const q = query(
+      collection(db, "posts"),
+      where("uid", "==", String(currentUid))
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+
+      const data = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+
+      setPosts(data);
+
+      if (data.length > 0) {
+        setProfile(data[0]);
+      }
+
+    });
+
+    return () => unsub();
+
+  }, [uid]);
+
+  const totalLikes = posts.reduce(
+    (acc, post) =>
+      acc + (post.likes?.length || 0),
+    0
+  );
+
+  const totalFollowers =
+    profile?.followers?.length || 0;
 
   return (
 
-    <div className="min-h-screen bg-black text-white flex">
+    <div
+      className="min-h-screen px-4 py-8"
+      style={{
+        background: "#020617",
+        maxWidth: 700,
+        margin: "0 auto",
+      }}
+    >
 
-      {/* SIDEBAR */}
+      <div
+        className="rounded-3xl p-6 mb-8"
+        style={{
+          background:
+            "linear-gradient(145deg,#111827,#0f172a)",
+          border:
+            "1px solid rgba(245,197,24,0.2)",
+        }}
+      >
 
-      <div className="w-[280px] bg-zinc-950 border-r border-yellow-500/20 min-h-screen p-8">
+        <div className="flex items-center gap-4">
 
-        <h1 className="text-5xl font-black text-yellow-400 leading-tight">
+          {profile?.profileImage ? (
 
-          DREAM
-          <br />
-          CRT
+            <img
+              src={profile.profileImage}
+              alt=""
+              className="w-24 h-24 rounded-full object-cover"
+              style={{
+                border:
+                  "3px solid #F5C518",
+              }}
+            />
 
-        </h1>
+          ) : (
 
-        <div className="space-y-5 mt-20">
+            <div
+              className="w-24 h-24 rounded-full flex items-center justify-center text-4xl font-black"
+              style={{
+                background: "#F5C518",
+                color: "#000",
+              }}
+            >
 
-          <Link
-            to="/profile"
-            className="flex items-center gap-4 bg-yellow-500 text-black px-6 py-5 rounded-2xl font-black"
+              {profile?.userName?.[0] || "T"}
+
+            </div>
+
+          )}
+
+          <div>
+
+            <div className="flex items-center gap-2">
+
+              <h1 className="text-3xl font-black text-white">
+
+                {profile?.userName || "Trader"}
+
+              </h1>
+
+              <FaCheckCircle
+                className="text-blue-500"
+              />
+
+            </div>
+
+            <p className="text-yellow-400 mt-1">
+
+              Professional Trader
+
+            </p>
+
+          </div>
+
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mt-8">
+
+          <div
+            className="rounded-2xl p-4 text-center"
+            style={{
+              background:
+                "rgba(255,255,255,0.03)",
+            }}
           >
 
-            <FaChartLine />
+            <h1 className="text-2xl font-black text-yellow-400">
 
-            Dashboard
+              {posts.length}
 
-          </Link>
+            </h1>
 
-          <Link
-            to="/journal"
-            className="flex items-center gap-4 bg-zinc-900 px-6 py-5 rounded-2xl font-bold hover:bg-yellow-500 hover:text-black transition"
+            <p className="text-gray-400 text-sm">
+
+              Posts
+
+            </p>
+
+          </div>
+
+          <div
+            className="rounded-2xl p-4 text-center"
+            style={{
+              background:
+                "rgba(255,255,255,0.03)",
+            }}
           >
 
-            <FaBook />
+            <h1 className="text-2xl font-black text-red-500 flex items-center justify-center gap-2">
 
-            Journal
+              <FaHeart />
 
-          </Link>
+              {totalLikes}
 
-          <button
-            className="flex items-center gap-4 bg-zinc-900 px-6 py-5 rounded-2xl font-bold hover:bg-yellow-500 hover:text-black transition w-full"
+            </h1>
+
+            <p className="text-gray-400 text-sm">
+
+              Likes
+
+            </p>
+
+          </div>
+
+          <div
+            className="rounded-2xl p-4 text-center"
+            style={{
+              background:
+                "rgba(255,255,255,0.03)",
+            }}
           >
 
-            <FaHistory />
+            <h1 className="text-2xl font-black text-cyan-400 flex items-center justify-center gap-2">
 
-            Backtesting
+              <FaUserFriends />
 
-          </button>
+              {totalFollowers}
 
-          <button
-            className="flex items-center gap-4 bg-zinc-900 px-6 py-5 rounded-2xl font-bold hover:bg-yellow-500 hover:text-black transition w-full"
-          >
+            </h1>
 
-            <FaBrain />
+            <p className="text-gray-400 text-sm">
 
-            Psychology
+              Followers
 
-          </button>
+            </p>
+
+          </div>
 
         </div>
 
       </div>
 
-      {/* CONTENT */}
+      <div className="space-y-6">
 
-      <div className="flex-1 p-12">
+        {posts.length === 0 ? (
 
-        <div className="bg-zinc-900 border border-yellow-500/20 rounded-3xl p-10">
+          <div
+            className="rounded-3xl p-10 text-center"
+            style={{
+              background:
+                "linear-gradient(145deg,#141414,#0f0f0f)",
+              border:
+                "1px solid rgba(245,197,24,0.18)",
+            }}
+          >
 
-          <div className="flex items-center gap-8">
+            <h1 className="text-2xl font-black text-yellow-400 mb-2">
 
-            <div className="w-40 h-40 rounded-full bg-yellow-500"></div>
+              No Posts Yet
 
-            <div>
+            </h1>
 
-              <h1 className="text-6xl font-black text-yellow-400">
+            <p className="text-gray-500">
 
-                {userData?.name || "Trader"}
+              Trader-kan wali wax post ma uusan sameyn
 
-              </h1>
-
-              <p className="text-slate-400 text-2xl mt-4">
-
-                {currentUser?.email}
-
-              </p>
-
-              <p className="text-xl mt-6">
-
-                Strategy:
-                <span className="text-yellow-400 ml-3">
-
-                  {userData?.strategy || "Not Set"}
-
-                </span>
-
-              </p>
-
-            </div>
+            </p>
 
           </div>
 
-          {/* STATS */}
+        ) : (
 
-          <div className="grid md:grid-cols-4 gap-8 mt-16">
+          posts.map((post) => (
 
-            <div className="bg-black p-8 rounded-3xl border border-yellow-500/20">
-
-              <h1 className="text-slate-400 text-xl">
-
-                Total Trades
-
-              </h1>
-
-              <h1 className="text-6xl font-black text-yellow-400 mt-6">
-
-                {userData?.totalTrades || 0}
-
-              </h1>
-
-            </div>
-
-            <div className="bg-black p-8 rounded-3xl border border-yellow-500/20">
-
-              <h1 className="text-slate-400 text-xl">
-
-                Win Rate
-
-              </h1>
-
-              <h1 className="text-6xl font-black text-green-400 mt-6">
-
-                {userData?.winRate || 0}%
-
-              </h1>
-
-            </div>
-
-            <div className="bg-black p-8 rounded-3xl border border-yellow-500/20">
-
-              <h1 className="text-slate-400 text-xl">
-
-                Followers
-
-              </h1>
-
-              <h1 className="text-6xl font-black text-cyan-400 mt-6">
-
-                {userData?.followers || 0}
-
-              </h1>
-
-            </div>
-
-            <div className="bg-black p-8 rounded-3xl border border-yellow-500/20">
-
-              <h1 className="text-slate-400 text-xl">
-
-                Following
-
-              </h1>
-
-              <h1 className="text-6xl font-black text-pink-400 mt-6">
-
-                {userData?.following || 0}
-
-              </h1>
-
-            </div>
-
-          </div>
-
-          {/* QUICK ACTIONS */}
-
-          <div className="grid md:grid-cols-3 gap-8 mt-20">
-
-            <Link
-              to="/journal"
-              className="bg-yellow-500 text-black p-8 rounded-3xl text-center font-black text-2xl hover:bg-yellow-400 transition"
+            <div
+              key={post.id}
+              className="rounded-3xl overflow-hidden"
+              style={{
+                background:
+                  "linear-gradient(145deg,#141414,#0f0f0f)",
+                border:
+                  "1px solid rgba(245,197,24,0.18)",
+              }}
             >
 
-              Open Journal
+              {post.mediaURL &&
+                post.mediaType ===
+                  "image" && (
 
-            </Link>
+                  <img
+                    src={post.mediaURL}
+                    alt=""
+                    className="w-full object-cover"
+                    style={{
+                      maxHeight: "400px",
+                    }}
+                  />
 
-            <button className="bg-zinc-800 p-8 rounded-3xl text-2xl font-black hover:bg-yellow-500 hover:text-black transition">
+                )}
 
-              Backtesting
+              {post.mediaURL &&
+                post.mediaType ===
+                  "video" && (
 
-            </button>
+                  <video
+                    src={post.mediaURL}
+                    controls
+                    className="w-full"
+                    style={{
+                      maxHeight: "400px",
+                    }}
+                  />
 
-            <Link
-              to="/community"
-              className="bg-zinc-800 p-8 rounded-3xl text-2xl font-black hover:bg-yellow-500 hover:text-black transition text-center"
-            >
+                )}
 
-              Community
+              <div className="p-5">
 
-            </Link>
+                <p className="text-white">
 
-          </div>
+                  {post.caption}
 
-        </div>
+                </p>
+
+              </div>
+
+            </div>
+
+          ))
+
+        )}
 
       </div>
 

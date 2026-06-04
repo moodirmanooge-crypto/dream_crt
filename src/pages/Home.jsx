@@ -16,15 +16,6 @@ import {
   onAuthStateChanged
 } from "firebase/auth";
 
-import {
-  FaCode,
-  FaMobileAlt,
-  FaChartLine,
-  FaPaintBrush,
-  FaBullhorn,
-  FaShieldAlt
-} from "react-icons/fa";
-
 export default function Home() {
 
   const [courses, setCourses] = useState([]);
@@ -143,13 +134,12 @@ export default function Home() {
             Courses
           </a>
 
-          <a href="#categories" className="hover:text-yellow-400 transition">
-            Categories
-          </a>
-
-          <a href="#about" className="hover:text-yellow-400 transition">
-            About
-          </a>
+          <a
+  href="/about"
+  className="hover:text-yellow-400 transition"
+>
+  About
+</a>
 
           <a href="#contact" className="hover:text-yellow-400 transition">
             Contact
@@ -162,29 +152,29 @@ export default function Home() {
             Community
           </a>
 
-       <button
+          <button
 
-  onClick={() => {
+            onClick={() => {
 
-    if (!user) {
+              if (!user) {
 
-      window.location.href = "/login";
+                window.location.href = "/login";
 
-    } else {
+              } else {
 
-      window.location.href = "/profile";
+                window.location.href = "/profile";
 
-    }
+              }
 
-  }}
+            }}
 
-  className="hover:text-yellow-400 transition"
+            className="hover:text-yellow-400 transition"
 
->
+          >
 
-  Journal Trading
+            Journal Trading
 
-</button>
+          </button>
 
         </div>
 
@@ -285,73 +275,6 @@ export default function Home() {
 
             </button>
 
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* CATEGORIES */}
-
-      <section
-        id="categories"
-        className="px-10 py-24"
-      >
-
-        <h1 className="text-6xl font-black text-center mb-20">
-
-          Popular
-
-          <span className="text-yellow-400">
-
-            {" "}Categories
-
-          </span>
-
-        </h1>
-
-        <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-8">
-
-          <div className="bg-zinc-900 p-10 rounded-3xl text-center border border-yellow-500/20">
-            <FaCode className="text-6xl text-yellow-400 mx-auto mb-6" />
-            <h1 className="text-2xl font-bold">
-              Web Development
-            </h1>
-          </div>
-
-          <div className="bg-zinc-900 p-10 rounded-3xl text-center border border-yellow-500/20">
-            <FaMobileAlt className="text-6xl text-yellow-400 mx-auto mb-6" />
-            <h1 className="text-2xl font-bold">
-              Mobile Apps
-            </h1>
-          </div>
-
-          <div className="bg-zinc-900 p-10 rounded-3xl text-center border border-yellow-500/20">
-            <FaChartLine className="text-6xl text-yellow-400 mx-auto mb-6" />
-            <h1 className="text-2xl font-bold">
-              Data Science
-            </h1>
-          </div>
-
-          <div className="bg-zinc-900 p-10 rounded-3xl text-center border border-yellow-500/20">
-            <FaPaintBrush className="text-6xl text-yellow-400 mx-auto mb-6" />
-            <h1 className="text-2xl font-bold">
-              UI/UX Design
-            </h1>
-          </div>
-
-          <div className="bg-zinc-900 p-10 rounded-3xl text-center border border-yellow-500/20">
-            <FaBullhorn className="text-6xl text-yellow-400 mx-auto mb-6" />
-            <h1 className="text-2xl font-bold">
-              Marketing
-            </h1>
-          </div>
-
-          <div className="bg-zinc-900 p-10 rounded-3xl text-center border border-yellow-500/20">
-            <FaShieldAlt className="text-6xl text-yellow-400 mx-auto mb-6" />
-            <h1 className="text-2xl font-bold">
-              Cyber Security
-            </h1>
           </div>
 
         </div>
