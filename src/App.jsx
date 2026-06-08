@@ -14,6 +14,7 @@ import Community from "./pages/Community";
 import TraderProfile from "./pages/TraderProfile";
 import Payment from "./pages/Payment";
 import About from "./pages/About";
+import TradingTemplate from "./pages/TradingTemplate";
 
 function App() {
 
@@ -92,7 +93,10 @@ function App() {
           path="/trader/:uid"
           element={<TraderProfile />}
         />
-
+<Route
+  path="/template"
+  element={<TradingTemplate />}
+/>
         {/* COURSE PLAYER */}
 
         <Route
