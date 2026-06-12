@@ -4,112 +4,43 @@ import {
   Route
 } from "react-router-dom";
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Admin from "./pages/Admin";
-import CoursePlayer from "./pages/CoursePlayer";
-import JournalTrading from "./pages/JournalTrading";
-import Community from "./pages/Community";
-import TraderProfile from "./pages/TraderProfile";
-import Payment from "./pages/Payment";
-import About from "./pages/About";
-import TradingTemplate from "./pages/TradingTemplate";
+import Home from "./pages/Home.jsx";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
+import Admin from "./pages/Admin.jsx";
+import CoursePlayer from "./pages/CoursePlayer.jsx";
+import JournalTrading from "./pages/JournalTrading.jsx";
+import Community from "./pages/Community.jsx";
+import TraderProfile from "./pages/TraderProfile.jsx";
+import Payment from "./pages/Payment.jsx";
+import About from "./pages/About.jsx";
+import TradingTemplate from "./pages/TradingTemplate.jsx";
+import MyCourses from "./pages/MyCourses.jsx";
+import Contact from "./pages/Contact.jsx"; // ✅ Contact page
 
 function App() {
-
   return (
-
     <BrowserRouter>
-
       <Routes>
 
-        {/* HOME */}
-
-        <Route
-          path="/"
-          element={<Home />}
-        />
-
-        {/* ABOUT */}
-
-        <Route
-          path="/about"
-          element={<About />}
-        />
-
-        {/* LOGIN */}
-
-        <Route
-          path="/login"
-          element={<Login />}
-        />
-
-        {/* REGISTER */}
-
-        <Route
-          path="/register"
-          element={<Register />}
-        />
-
-        {/* ADMIN */}
-
-        <Route
-          path="/admin"
-          element={<Admin />}
-        />
-
-        {/* JOURNAL */}
-
-        <Route
-          path="/journal"
-          element={<JournalTrading />}
-        />
-
-        {/* COMMUNITY */}
-
-        <Route
-          path="/community"
-          element={<Community />}
-        />
-
-        {/* PROFILE */}
-
-        <Route
-          path="/profile"
-          element={<JournalTrading />}
-        />
-
-        {/* PAYMENT */}
-
-        <Route
-          path="/payment"
-          element={<Payment />}
-        />
-
-        {/* TRADER PROFILE */}
-
-        <Route
-          path="/trader/:uid"
-          element={<TraderProfile />}
-        />
-<Route
-  path="/template"
-  element={<TradingTemplate />}
-/>
-        {/* COURSE PLAYER */}
-
-        <Route
-          path="/course/:id"
-          element={<CoursePlayer />}
-        />
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} /> {/* ✅ Contact route */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/journal" element={<JournalTrading />} />
+        <Route path="/community" element={<Community />} />
+        <Route path="/profile" element={<JournalTrading />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/trader/:uid" element={<TraderProfile />} />
+        <Route path="/template" element={<TradingTemplate />} />
+        <Route path="/course/:id" element={<CoursePlayer />} />
+        <Route path="/mycourses" element={<MyCourses />} />
 
       </Routes>
-
     </BrowserRouter>
-
   );
-
 }
 
 export default App;
