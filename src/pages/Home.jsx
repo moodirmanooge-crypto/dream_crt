@@ -85,7 +85,7 @@ export default function Home() {
   const services = [
     {
       icon: "📖",
-      title: "Basic Forex Course",
+      title: "Basic Forex Course Percentage% 25",
       subtitle: "Bilowga Ganacsiga",
       items: [
         "Waxa aad Heleysaa:",
@@ -102,7 +102,7 @@ export default function Home() {
     },
     {
       icon: "🎯",
-      title: "CRT Course",
+      title: "CRT Course 59$",
       subtitle: "Barashada Xeeladda CRT (Mudo Kooban)",
       items: [
         "Waxa aad Heleysaa:",
@@ -118,7 +118,7 @@ export default function Home() {
     },
     {
       icon: "👥",
-      title: "Premium Mentorship",
+      title: "Premium Mentorship 100$",
       subtitle: "Hagidda Shakhsiyadeed & Maareynta",
       items: [
         "Waxa ku dhex jira",
