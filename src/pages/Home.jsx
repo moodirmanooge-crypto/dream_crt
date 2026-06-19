@@ -85,7 +85,7 @@ export default function Home() {
   const services = [
     {
       icon: "📖",
-      title: "Basic Forex Course Percentage% 25",
+      title: "Basic Forex Course 25$",
       subtitle: "Bilowga Ganacsiga",
       items: [
         "Waxa aad Heleysaa:",
