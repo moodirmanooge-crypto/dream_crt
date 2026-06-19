@@ -101,7 +101,7 @@ export default function Home() {
       colorBorder: "rgba(245,197,24,0.25)",
     },
     {
-      icon: "🎯",
+      icon: "",
       title: "CRT Course 60$",
       subtitle: "Barashada Xeeladda CRT (Mudo Kooban)",
       items: [
