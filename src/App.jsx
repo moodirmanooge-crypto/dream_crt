@@ -15,8 +15,8 @@ import TraderProfile from "./pages/TraderProfile.jsx";
 import Payment from "./pages/Payment.jsx";
 import About from "./pages/About.jsx";
 import TradingTemplate from "./pages/TradingTemplate.jsx";
-import MyCourses from "./pages/MyCourses.jsx";
-import Contact from "./pages/Contact.jsx"; // ✅ Contact page
+import MyCourses from "./pages/mycourses.jsx";
+import Contact from "./pages/contact.jsx";
 
 function App() {
   return (
