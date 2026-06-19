@@ -102,7 +102,7 @@ export default function Home() {
     },
     {
       icon: "🎯",
-      title: "CRT Course 59$",
+      title: "CRT Course 60$",
       subtitle: "Barashada Xeeladda CRT (Mudo Kooban)",
       items: [
         "Waxa aad Heleysaa:",
