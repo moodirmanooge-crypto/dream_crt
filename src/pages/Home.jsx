@@ -206,16 +206,16 @@ export default function Home() {
             onMouseEnter={(e) => { e.target.style.color = "#f5c518"; }}
             onMouseLeave={(e) => { e.target.style.color = "#d1d5db"; }}
           >
-            Journal Trading
+            Trading  Journal 
           </button>
           <a
-            href="/mycourses"
+            href="/courses"
             className="transition"
             style={{ color: "#d1d5db" }}
             onMouseEnter={(e) => { e.target.style.color = "#f5c518"; }}
             onMouseLeave={(e) => { e.target.style.color = "#d1d5db"; }}
           >
-            My Courses
+             Courses
           </a>
         </div>
 
@@ -290,7 +290,7 @@ export default function Home() {
             { label: "Services", href: "#services" },
             { label: "About", href: "/about" },
             { label: "Contact", href: "/contact" },
-            { label: "My Courses", href: "/mycourses" },
+            { label: " Courses", href: "/courses" },
           ].map((link) => (
             <a key={link.label} href={link.href} onClick={() => setMenuOpen(false)}
               className="text-base font-semibold py-2"
@@ -301,7 +301,7 @@ export default function Home() {
           <button onClick={handleJournalNav}
             className="text-base font-semibold py-2 text-left"
             style={{ color: "#d1d5db", background: "none", border: "none", cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-            Journal Trading
+            Trading Journal 
           </button>
           <div className="flex flex-col gap-3 pt-2">
             {user ? (
@@ -622,7 +622,7 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas 
             </button>
             <h2 className="text-2xl md:text-4xl font-black text-center mb-8 md:mb-10"
               style={{ color: "#f5c518" }}>
-              Journal Trading
+              Trading Journal 
             </h2>
             <div className="space-y-4 md:space-y-5">
               <input type="text" placeholder="Enter Your Full Name" value={fullName}
