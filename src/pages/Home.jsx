@@ -106,10 +106,10 @@ export default function Home() {
       title: "CRT Course",
       subtitle: "Barashada Xeeladda CRT (Mudo Kooban)",
       items: [
-        "Waxa aad Heleysaa:",
-        "💻 Zoom Live: Casharro toos ah oo aad mentor-ka weydiin karto su'aalahaaga.",
-        "📚 Buug PDF ah: Shaxanno iyo xeerar cad oo aad mar kasta tixraaci karto.",
-        "🎯 Sixid & Hagid Joogto ah: Ma jiri doonto inaad keligaa wareerto; khaladaadkaaga waa lagaa saxayaa.",
+        "💻 Zoom Live — casharro toos ah",
+        "📚 Buug PDF ah — shaxanno & xeerar",
+        "🎯 Sixid & Hagid Joogto ah",
+        "✅ Khaladaadkaaga waa lagaa saxayaa",
       ],
       benefit: "Uma baahnid bilooyin badan oo jahwareer ah — mudo kooban gudaheed waxaad ku baranaysaa CRT Strategy.",
       color: "#a78bfa",
@@ -117,16 +117,17 @@ export default function Home() {
       colorBorder: "rgba(167,139,250,0.25)",
     },
     {
-
-      title: "👥Premium Mentorship",
+      icon: "👥",
+      tag: "Hormood",
+      title: "Premium Mentorship",
       subtitle: "Hagidda Shakhsiyadeed & Maareynta",
       items: [
         "🎥 Live Zoom joogto ah",
         "📚 Buug PDF ah",
         "🤝 Caawin gaar ah",
-        "📊 Maareynta Account Challenge-ka",
+        "📊 Maareynta Account Challenge",
       ],
-      benefit: "Faa'iidada: Safarkaaga oo dhan oo aan ku barbar taaganahay iyo caawin toos ah si aad u gudubto akoonnada waaweyn",
+      benefit: "Safarkaaga oo dhan oo aan ku barbar taaganahay iyo caawin toos ah si aad u gudubto akoonnada waaweyn.",
       color: "#22c55e",
       colorDim: "rgba(34,197,94,0.12)",
       colorBorder: "rgba(34,197,94,0.25)",
@@ -137,10 +138,12 @@ export default function Home() {
       title: "Copy Trading Services",
       subtitle: "Maalgashi Toos Ah",
       items: [
-        "💳 Qaabka 1-aad: Is-qorid bille ah oo ah $50/Bishii.",
-        "💰 Qaabka 2-aad: 25% oo laga gooyo oo keliya lacagta faa'iidada ah ee laguu sameeyo (Profit Share).",
+        "💳 Qaab 1: Is-qorid bille ah — $50/Bishii",
+        "💰 Qaab 2: 25% Profit Share keliya",
+        "🔄 Toos u raac xirfaddayda",
+        "⏰ Waqti kuma baahnid",
       ],
-      benefit: "Faa'iidada: Samee lacag adigoo raacaya xirfaddayda, xitaa haddii aadan haysan waqti aad adigu ku falanqeyso suuqa",
+      benefit: "Samee lacag adigoo raacaya xirfaddayda, xitaa haddii aadan haysan waqti aad adigu ku falanqeyso suuqa.",
       color: "#f97316",
       colorDim: "rgba(249,115,22,0.12)",
       colorBorder: "rgba(249,115,22,0.25)",
@@ -422,9 +425,9 @@ export default function Home() {
 
               {/* Top row */}
               <div className="flex items-start gap-5">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden"
                   style={{ background: "rgba(0,0,0,0.3)", border: `1px solid ${svc.colorBorder}` }}>
-                  {svc.icon}
+                  <img src="/image.png" alt="DREAM CRT" style={{ width: "48px", height: "48px", objectFit: "contain" }} />
                 </div>
                 <div className="flex-1">
                   <div className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-2"
