@@ -424,9 +424,9 @@ export default function Home() {
       <section className="px-5 md:px-20 pb-16 md:pb-20 pt-10 md:pt-0">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
           {[
-            { icon: "📖", title: "Forex Basics", desc: "Learn the fundamentals of Forex Trading from beginner to advanced level." },
+            { icon: "📖", title: "Forex Basics 25$", desc: "Learn the fundamentals of Forex Trading from beginner to advanced level." },
             { icon: "📡", title: "Live Signals", desc: "Access premium trading signals and daily market analysis updates." },
-            { icon: "👥", title: "Mentorship", desc: "Join a professional trading community with expert mentorship support." },
+            { icon: "👥", title: "Mentorship 59", desc: "Join a professional trading community with expert mentorship support." },
           ].map((item, i) => (
             <div
               key={i}
