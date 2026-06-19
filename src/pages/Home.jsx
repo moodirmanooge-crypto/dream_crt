@@ -413,7 +413,8 @@ export default function Home() {
             Waxaan<span style={{ color: "#f5c518" }}> Ku Gacan </span>Siineynaa
           </h2>
           <p className="text-base md:text-lg mx-auto" style={{ color: "#64748b", maxWidth: "520px" }}>
-            Dooro barnaamijka kugu habboon — laga bilaabo bilowga ilaa heerka xirfadlaha ah.
+            Waxaan ahay mentorkii ugu horreeyay ee bulshada Soomaaliyeed u soo bandhiga  CRT Strategy. Waxaan SI  guul leh u tababaray 500+ arday oo aan siiyay free course , waxaan ogaaday in Is-baridda (Self-study) ay  leedahay jahwareer iyo safar aad u dheer.
+Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas dheer. Uma baahnid inaad keligaa wareerto; waxaad heleysaa hagid toos ah, system diyaarsan , iyo caawin joogto ah
           </p>
         </div>
 
