@@ -470,7 +470,7 @@ export default function Home() {
           ✦ Nagu saabsan
         </div>
         <h2 className="text-3xl md:text-5xl font-black mb-6">About <span style={{ color: "#f5c518" }}>DREAM CRT</span></h2>
-        <p className="text-base md:text-xl max-w-4xl mx-auto leading-loose" style={{ color: "#64748b" }}>
+        <p className="text-base md:text-xl max-w-4xl mx-auto leading-loose" style={{ color: "#f7f8fa" }}>
           Waxaan ahay mentorkii ugu horreeyay ee bulshada Soomaaliyeed u soo bandhiga CRT Strategy. Waxaan SI guul leh u tababaray 500+ arday oo aan siiyay free course , waxaan ogaaday in Is-baridda (Self-study) ay leedahay jahwareer iyo safar aad u dheer. Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas dheer. Uma baahnid inaad keligaa wareerto; waxaad heleysaa hagid toos ah, system diyaarsan , iyo caawin joogto ah
         </p>
       </section>
