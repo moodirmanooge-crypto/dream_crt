@@ -243,7 +243,7 @@ export default function Home() {
             { label: "Services", href: "#services" },
             { label: "About", href: "/about" },
             { label: "Contact", href: "/contact" },
-            { label: "Courses", href: "/courses" },
+            
           ].map((link) => (
             <a key={link.label} href={link.href} onClick={() => setMenuOpen(false)}
               className="text-base font-semibold py-2"
@@ -405,7 +405,7 @@ export default function Home() {
         <div className="text-center mb-12 md:mb-20">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-5"
             style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.2)", color: "#f5c518" }}>
-            ✦ Cashararrada
+            ✦ Courses
           </div>
           <h2 className="text-3xl md:text-5xl font-black">
             Latest<span style={{ color: "#f5c518" }}> Courses</span>
