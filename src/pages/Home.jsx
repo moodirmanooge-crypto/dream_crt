@@ -120,7 +120,7 @@ export default function Home() {
     },
     {
       title: "CRT Course 60$",
-      subtitle: "Barashada Xeeladda CRT (Mudo Kooban)",
+      subtitle: "Barashada CRT (Mudo Kooban)",
       items: [
         "Waxa aad Heleysaa:",
         "💻 Zoom Live ah — casharro toos ah",
