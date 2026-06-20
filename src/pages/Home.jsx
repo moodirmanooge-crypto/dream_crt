@@ -327,62 +327,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─────────── SERVICES ─────────── */}
-      <section id="services" className="px-5 md:px-20 py-20 md:py-28">
-        <div className="text-center mb-14 md:mb-20">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-5"
-            style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.2)", color: "#f5c518" }}>
-            ✦ Adeegyadayada
-          </div>
-          <h2 className="text-3xl md:text-5xl font-black mb-4">
-            Waxaan<span style={{ color: "#f5c518" }}> Ku Gacan </span>Siineynaa
-          </h2>
-          <p className="text-base md:text-lg mx-auto" style={{ color: "#fcfcfc", maxWidth: "520px" }}>
-            Waxaan ahay mentorkii ugu horreeyay ee bulshada Soomaaliyeed u soo bandhiga CRT Strategy. Waxaan SI guul leh u tababaray 500+ arday oo aan siiyay free course , waxaan ogaaday in Is-baridda (Self-study) ay leedahay jahwareer iyo safar aad u dheer.
-            Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas dheer. Uma baahnid inaad keligaa wareerto; waxaad heleysaa hagid toos ah, system diyaarsan , iyo caawin joogto ah
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-          {services.map((svc, i) => (
-            <div key={i} className="rounded-3xl p-7 md:p-9 flex flex-col gap-6 transition-all duration-300"
-              style={{ background: svc.colorDim, border: `1px solid ${svc.colorBorder}`, position: "relative", overflow: "hidden" }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = `0 20px 50px ${svc.colorDim}`; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
-              <div className="flex items-start gap-5">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden"
-                  style={{ background: "rgba(0,0,0,0.3)", border: `1px solid ${svc.colorBorder}` }}>
-                  <img src="/image.png" alt="DREAM CRT" style={{ width: "48px", height: "48px", objectFit: "contain" }} />
-                </div>
-                <div className="flex-1">
-                  <div className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-2"
-                    style={{ background: "rgba(0,0,0,0.3)", color: svc.color }}>
-                    {svc.tag}
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-black" style={{ color: "#ffffff" }}>{svc.title}</h3>
-                  <p className="text-sm mt-1" style={{ color: svc.color, fontWeight: 600 }}>{svc.subtitle}</p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-3">
-                {svc.items.map((item, j) => (
-                  <div key={j} className="flex items-center gap-3 text-sm" style={{ color: "#e2e8f0" }}>
-                    <span style={{ flexShrink: 0 }}>{item}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="rounded-2xl p-4" style={{ background: "rgba(0,0,0,0.25)", border: `1px solid ${svc.colorBorder}` }}>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: svc.color }}>✦ Faa'iidada</p>
-                <p className="text-sm leading-relaxed" style={{ color: "#94a3b8" }}>{svc.benefit}</p>
-              </div>
-              <button
-                onClick={() => openPayModal(svc.payId, svc.title, svc.payPrice)}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm w-fit"
-                style={{ background: svc.color, color: "#000000", border: "none", cursor: "pointer" }}>
-                Iibso/BUY →
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
+{/* ─────────── SERVICES ─────────── */}
+      <section id="services" />
 
       {/* ─────────── TRUST BAR ─────────── */}
       <div className="mx-5 md:mx-20 mb-16 md:mb-20 px-5 md:px-8 py-4 md:py-5 rounded-2xl flex flex-wrap justify-around gap-4 md:gap-6 items-center"

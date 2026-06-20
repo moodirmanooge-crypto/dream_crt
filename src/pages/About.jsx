@@ -105,7 +105,7 @@ export default function About() {
 
           <p className="text-slate-400 text-2xl leading-relaxed mt-10 max-w-4xl mx-auto">
 
-            DREAM CRT is a premium forex education platform focused on helping traders master the financial markets through modern trading systems, AI-powered analysis, and professional risk management.
+        Waxaan ahay mentorkii ugu horreeyay ee bulshada Soomaaliyeed u soo bandhiga CRT Strategy. Waxaan SI guul leh u tababaray 500+ arday oo aan siiyay free course , waxaan ogaaday in Is-baridda (Self-study) ay leedahay jahwareer iyo safar aad u dheer. Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas dheer. Uma baahnid inaad keligaa wareerto; waxaad heleysaa hagid toos ah, system diyaarsan , iyo caawin joogto ah
 
           </p>
 
