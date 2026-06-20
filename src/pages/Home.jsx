@@ -466,7 +466,7 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas 
               <a href="#courses"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm w-fit"
                 style={{ background: svc.color, color: "#000000" }}>
-                Bilow Hadda →
+                Iibso/BUY →
               </a>
             </div>
           ))}
