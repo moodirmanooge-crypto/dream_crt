@@ -578,9 +578,9 @@ export default function Home() {
                   </div>
                   <div className="rounded-2xl p-4 mb-6"
                     style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.25)" }}>
-                    <p className="font-black text-sm mb-2" style={{ color: "#f5c518" }}>📋 TILMAAN LACAG BIXINTA:</p>
+                    <p className="font-black text-sm mb-2" style={{ color: "#f5c518" }}>📋  QAABKA LACAG BIXINTA:</p>
                     <p className="text-gray-300 text-sm leading-relaxed">
-                      KUDIR LACAGTA COURSE KA NUMARKAAN{" "}
+                      KUDIR LACAGTA COURSE KA NUMBARKAAN{" "}
                       <span className="font-black" style={{ color: "#f5c518" }}>252613887399</span>{" "}
                       KASOO QAAD SCREENSHORT KADIBNA KU SOODIR WhatsApp NUMBARKEENA.
                       252613887399
