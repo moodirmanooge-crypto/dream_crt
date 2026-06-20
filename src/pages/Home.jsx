@@ -3,6 +3,9 @@ import {
   collection,
   getDocs,
   addDoc,
+  doc,
+  setDoc,
+  getDoc,
 } from "firebase/firestore";
 import { db, auth } from "../firebase/config.js";
 import { signOut, onAuthStateChanged } from "firebase/auth";
@@ -17,11 +20,24 @@ export default function Home() {
   const [type, setType] = useState("Trading Lessons");
   const [message, setMessage] = useState("");
 
+  // ── Basic Forex Payment Modal state ──────────────────────────────────────
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [payPhone, setPayPhone] = useState("");
+  const [payEmail, setPayEmail] = useState("");
+  const [payCourseName, setPayCourseName] = useState("");
+  const [payCourseId, setPayCourseId] = useState("");
+  const [payCoursePrice, setPayCoursePrice] = useState("");
+  const [paying, setPaying] = useState(false);
+  const [payDone, setPayDone] = useState(false);
+
   useEffect(() => {
     fetchCourses();
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser) setEmail(currentUser.email || "");
+      if (currentUser) {
+        setEmail(currentUser.email || "");
+        setPayEmail(currentUser.email || "");
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -81,6 +97,41 @@ export default function Home() {
     }
   };
 
+  // ── Open Basic Forex payment modal ────────────────────────────────────────
+  const openBasicForexPayment = (courseId, courseName, coursePrice) => {
+    setPayCourseId(courseId);
+    setPayCourseName(courseName);
+    setPayCoursePrice(coursePrice);
+    setPayDone(false);
+    setPayPhone("");
+    if (user) setPayEmail(user.email || "");
+    setShowPayModal(true);
+  };
+
+  const handleBasicForexPay = async () => {
+    if (!payPhone || !payEmail) {
+      alert("Fadlan buuxi dhammaan meelaha");
+      return;
+    }
+    setPaying(true);
+    try {
+      const accessKey = `${payEmail}_${payCourseId}`;
+      await setDoc(doc(db, "courseAccess", accessKey), {
+        email: payEmail,
+        phone: payPhone,
+        courseId: payCourseId,
+        courseName: payCourseName,
+        paid: true,
+        approved: false,
+        createdAt: Date.now(),
+      });
+      setPayDone(true);
+    } catch (err) {
+      alert(err.message);
+    }
+    setPaying(false);
+  };
+
   // ── Services data ──────────────────────────────────────────────────────────
   const services = [
     {
@@ -99,6 +150,7 @@ export default function Home() {
       color: "#f5c518",
       colorDim: "rgba(245,197,24,0.12)",
       colorBorder: "rgba(245,197,24,0.25)",
+      isBasicForex: true,
     },
     {
       icon: "",
@@ -115,6 +167,7 @@ export default function Home() {
       color: "#a78bfa",
       colorDim: "rgba(167,139,250,0.12)",
       colorBorder: "rgba(167,139,250,0.25)",
+      isBasicForex: false,
     },
     {
       icon: "👥",
@@ -131,6 +184,7 @@ export default function Home() {
       color: "#22c55e",
       colorDim: "rgba(34,197,94,0.12)",
       colorBorder: "rgba(34,197,94,0.25)",
+      isBasicForex: false,
     },
     {
       icon: "📈",
@@ -148,6 +202,7 @@ export default function Home() {
       color: "#f97316",
       colorDim: "rgba(249,115,22,0.12)",
       colorBorder: "rgba(249,115,22,0.25)",
+      isBasicForex: false,
     },
   ];
 
@@ -462,12 +517,29 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas 
                 </p>
               </div>
 
-              {/* CTA */}
-              <a href="#courses"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm w-fit"
-                style={{ background: svc.color, color: "#000000" }}>
-                Iibso/BUY →
-              </a>
+              {/* CTA — Basic Forex opens payment modal, others go to #courses */}
+              {svc.isBasicForex ? (
+                <button
+                  onClick={() => {
+                    // Find the first course from Firestore to use its id, or use a fixed id
+                    const firstCourse = courses[0];
+                    openBasicForexPayment(
+                      firstCourse?.id || "basic-forex",
+                      "Basic Forex Course",
+                      "25"
+                    );
+                  }}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm w-fit"
+                  style={{ background: svc.color, color: "#000000", border: "none", cursor: "pointer" }}>
+                  Iibso/BUY →
+                </button>
+              ) : (
+                <a href="#courses"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm w-fit"
+                  style={{ background: svc.color, color: "#000000" }}>
+                  Iibso/BUY →
+                </a>
+              )}
             </div>
           ))}
         </div>
@@ -508,7 +580,7 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas 
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
-            {courses.map((course) => (
+            {courses.slice(0, 1).map((course) => (
               <div key={course.id} className="rounded-3xl overflow-hidden transition-all duration-300"
                 style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(245,197,24,0.2)" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 20px 40px rgba(245,197,24,0.1)"; }}
@@ -554,7 +626,13 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas 
                       {Number(course.price) === 0 ? "FREE" : `$${course.price}`}
                     </span>
                     <button
-                      onClick={() => { window.location.href = `/course/${course.id}`; }}
+                      onClick={() => {
+                        if (Number(course.price) === 0) {
+                          window.location.href = `/course/${course.id}`;
+                        } else {
+                          openBasicForexPayment(course.id, course.title, course.price);
+                        }
+                      }}
                       className="px-5 md:px-6 py-2.5 md:py-3 rounded-xl font-black text-sm transition-all"
                       style={{ background: "#f5c518", color: "#000000" }}>
                       {Number(course.price) === 0 ? "Access Free" : "Buy Course"}
@@ -649,6 +727,151 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas 
                 style={{ background: "#f5c518", color: "#000000" }}>
                 Submit Request
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────── BASIC FOREX PAYMENT MODAL ─────────── */}
+      {showPayModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 px-4"
+          style={{ background: "rgba(0,0,0,0.88)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowPayModal(false); setPayDone(false); } }}>
+          <div className="w-full max-w-md rounded-3xl relative max-h-[90vh] overflow-y-auto"
+            style={{ background: "#080808", border: "1px solid rgba(245,197,24,0.25)" }}>
+
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-7 pt-7 pb-5"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#f5c518" }}>
+                  💳 Lacag Bixin
+                </p>
+                <h2 className="text-white text-xl font-black">{payCourseName}</h2>
+              </div>
+              <button onClick={() => { setShowPayModal(false); setPayDone(false); }}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold"
+                style={{ background: "rgba(255,255,255,0.05)", color: "#94a3b8", border: "none", cursor: "pointer" }}>
+                ✕
+              </button>
+            </div>
+
+            <div className="px-7 py-6">
+              {!payDone ? (
+                <>
+                  {/* Price */}
+                  <div className="mb-6">
+                    <p className="text-gray-600 text-xs mb-1">Course Price</p>
+                    <p className="text-white text-4xl font-black">
+                      ${payCoursePrice}
+                      <span className="text-gray-600 text-base font-normal ml-1">/ hal mar</span>
+                    </p>
+                  </div>
+
+                  {/* Payment instruction */}
+                  <div className="rounded-2xl p-4 mb-6"
+                    style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.25)" }}>
+                    <p className="font-black text-sm mb-2" style={{ color: "#f5c518" }}>📋 TILMAAN LACAG BIXINTA:</p>
+                    <p className="text-gray-300 text-sm leading-relaxed">
+                      KUDIR LACAGTA COURSE KA NUMARKAAN{" "}
+                      <span className="font-black" style={{ color: "#f5c518" }}>252612515121</span>{" "}
+                      KASOO QAAD SCREENSHORT KADIBNA KU SOODIR WhatsApp NUMBARKEENA.
+                      HADII LAGUU SOOJAWAABI WAAYO FADLAN FARIIN KALE SOOQOR.
+                    </p>
+                  </div>
+
+                  {/* Email */}
+                  <div className="mb-4">
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2 block">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={payEmail}
+                      onChange={(e) => setPayEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      className="w-full px-4 py-3.5 rounded-xl outline-none text-white text-sm"
+                      style={{ background: "#000", border: "1px solid rgba(255,255,255,0.08)" }}
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div className="mb-6">
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2 block">
+                      EVC Number
+                    </label>
+                    <input
+                      type="text"
+                      value={payPhone}
+                      onChange={(e) => setPayPhone(e.target.value)}
+                      placeholder="61xxxxxxx"
+                      className="w-full px-4 py-3.5 rounded-xl outline-none text-white text-sm"
+                      style={{ background: "#000", border: "1px solid rgba(255,255,255,0.08)" }}
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleBasicForexPay}
+                    disabled={paying}
+                    className="w-full py-4 rounded-2xl font-black text-black text-base disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{ background: "#f5c518", border: "none", cursor: "pointer" }}>
+                    {paying ? "Processing..." : "✅ Confirm Order"}
+                  </button>
+
+                  <p className="text-center text-xs mt-4" style={{ color: "#64748b" }}>
+                    🛡️ Secure • EVC Plus • Dream Crt
+                  </p>
+                </>
+              ) : (
+                /* ── Success state ── */
+                <div className="text-center py-4">
+                  <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5"
+                    style={{ background: "rgba(245,197,24,0.08)", border: "2px solid #f5c518" }}>
+                    <span className="text-4xl">⏳</span>
+                  </div>
+                  <h3 className="text-white text-2xl font-black mb-2">
+                    Order <span style={{ color: "#f5c518" }}>Received!</span>
+                  </h3>
+                  <p className="text-gray-400 text-sm mb-5">
+                    Order-kaagu waa la helay. Admin-ku wuu fiirin doonaa oo course-ka wuu kuu furi doonaa.
+                  </p>
+
+                  {/* Receipt */}
+                  <div className="rounded-2xl p-5 text-left mb-5"
+                    style={{ background: "#111111", border: "1px solid rgba(245,197,24,0.2)" }}>
+                    {[
+                      { label: "Course", value: payCourseName },
+                      { label: "Email", value: payEmail },
+                      { label: "Number", value: payPhone },
+                      { label: "Amount", value: `$${payCoursePrice}` },
+                      { label: "Status", value: "⏳ Pending Approval", gold: true },
+                    ].map((row, i) => (
+                      <div key={i} className="flex justify-between text-sm py-2"
+                        style={{ borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                        <span style={{ color: "#64748b" }}>{row.label}</span>
+                        <span className="font-semibold truncate max-w-[180px]"
+                          style={{ color: row.gold ? "#f5c518" : "#ffffff" }}>{row.value}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-2xl p-4 text-sm text-left"
+                    style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.2)" }}>
+                    <p className="font-bold mb-1" style={{ color: "#f5c518" }}>⚠️ Xasuusin:</p>
+                    <p className="text-gray-400 text-xs leading-relaxed">
+                      Marka la approve gareeyo, course-ka isla markiiba wuu kuu furmayaa.
+                      Fadlan dib u soo gal account-kaaga si aad u aragto.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => { setShowPayModal(false); setPayDone(false); }}
+                    className="mt-5 w-full py-3 rounded-xl font-bold text-sm"
+                    style={{ background: "rgba(245,197,24,0.1)", border: "1px solid rgba(245,197,24,0.3)", color: "#f5c518", cursor: "pointer" }}>
+                    Xir / Close
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
