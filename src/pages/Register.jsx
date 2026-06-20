@@ -30,7 +30,7 @@ export default function Register() {
 
     try {
       setLoading(true);
-      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      const userCred = await createUserWithEmailAndPassword(auth, email.trim(), password);
       await updateProfile(userCred.user, { displayName: name });
       alert("Account Created Successfully");
       navigate("/");
@@ -91,7 +91,10 @@ export default function Register() {
             type="email"
             placeholder="Enter your email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value.trim())}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck="false"
             className="w-full bg-black border border-yellow-500 rounded-2xl p-5 text-white outline-none focus:border-yellow-300 transition placeholder-slate-600"
           />
         </div>
