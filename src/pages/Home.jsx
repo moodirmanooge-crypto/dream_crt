@@ -215,7 +215,7 @@ export default function Home() {
             onMouseEnter={(e) => { e.target.style.color = "#f5c518"; }}
             onMouseLeave={(e) => { e.target.style.color = "#d1d5db"; }}
           >
-             Courses
+             
           </a>
         </div>
 
@@ -596,10 +596,10 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas 
           Su'aalo ma qabtaa? Nala soo xiriir!
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <a href="mailto:support@dreamcrt.com"
+          <a href="mailto:dreamcrt89@gmail.com"
             className="flex items-center gap-3 px-6 py-3 rounded-xl font-bold text-sm"
             style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.3)", color: "#f5c518" }}>
-            📧 support@dreamcrt.com
+            📧 dreamcrt89@gmail.com
           </a>
           <a href="https://wa.me/252612515121" target="_blank" rel="noreferrer"
             className="flex items-center gap-3 px-6 py-3 rounded-xl font-bold text-sm"

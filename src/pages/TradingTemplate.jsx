@@ -440,7 +440,7 @@ export default function TradingTemplate() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 {[
-                  { icon: FaEnvelope, text: "support@dreamcrt.com", accent: "#60a5fa" },
+                  { icon: FaEnvelope, text: "dreamcrt89@gmail.com", accent: "#60a5fa" },
                   { icon: FaGlobe, text: "www.dreamcrt.com", accent: "#34d399" },
                   { icon: FaTwitter, text: "@dreamcrt", accent: "#38bdf8" },
                 ].map(({ icon: Icon, text, accent }, i) => (
