@@ -26,8 +26,8 @@ const CURRENCY_PAIRS = [
   "GBPJPY","EURJPY","EURGBP","XAUUSD","XAGUSD","US30","NAS100","SPX500","BTCUSD","ETHUSD",
 ];
 // ── RED / BLACK THEME ───────────────────────────────────────────────────────
-const RED    = "#e53e3e";
-const RED2   = "#fc5c5c";
+const RED    = "#eedf0e";
+const RED2   = "#e3e704";
 const RED_DIM= "rgba(229,62,62,0.15)";
 const MAIN_BG= "#0d0d0d";
 const SIDE_BG= "#111111";
