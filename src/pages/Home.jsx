@@ -325,23 +325,8 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      
 
-{/* ─────────── SERVICES ─────────── */}
-      <section id="services" className="px-5 md:px-20 py-20 md:py-28">
-        <div className="text-center mb-14 md:mb-20">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-5"
-            style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.2)", color: "#f5c518" }}>
-            ✦ Adeegyadayada
-          </div>
-          <h2 className="text-3xl md:text-5xl font-black mb-4">
-            Waxaan<span style={{ color: "#f5c518" }}> Ku Gacan </span>Siineynaa
-          </h2>
-          <p className="text-base md:text-lg mx-auto" style={{ color: "#fcfcfc", maxWidth: "520px" }}>
-            Waxaan ahay mentorkii ugu horreeyay ee bulshada Soomaaliyeed u soo bandhiga CRT Strategy. Waxaan SI guul leh u tababaray 500+ arday oo aan siiyay free course , waxaan ogaaday in Is-baridda (Self-study) ay leedahay jahwareer iyo safar aad u dheer.
-            Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas dheer. Uma baahnid inaad keligaa wareerto; waxaad heleysaa hagid toos ah, system diyaarsan , iyo caawin joogto ah
-          </p>
-        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {services.map((svc, i) => (
             <div key={i} className="rounded-3xl p-7 md:p-9 flex flex-col gap-6 transition-all duration-300"
@@ -486,9 +471,7 @@ export default function Home() {
         </div>
         <h2 className="text-3xl md:text-5xl font-black mb-6">About <span style={{ color: "#f5c518" }}>DREAM CRT</span></h2>
         <p className="text-base md:text-xl max-w-4xl mx-auto leading-loose" style={{ color: "#64748b" }}>
-          DREAM CRT waa platform-ka barashada xirfadda aduunka oo dhan lagu aqoonsan yahay,
-          halkaas oo ardaydu ku bartaan xeeladaha ganacsiga Forex iyadoo la isticmaalayo
-          casharro video ah, PDF, iyo live sessions.
+          Waxaan ahay mentorkii ugu horreeyay ee bulshada Soomaaliyeed u soo bandhiga CRT Strategy. Waxaan SI guul leh u tababaray 500+ arday oo aan siiyay free course , waxaan ogaaday in Is-baridda (Self-study) ay leedahay jahwareer iyo safar aad u dheer. Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas dheer. Uma baahnid inaad keligaa wareerto; waxaad heleysaa hagid toos ah, system diyaarsan , iyo caawin joogto ah
         </p>
       </section>
 
