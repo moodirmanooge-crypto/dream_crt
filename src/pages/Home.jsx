@@ -306,10 +306,10 @@ export default function Home() {
         <div className="relative z-10 mx-5 md:mx-16 mb-8 md:mb-10" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "24px" }}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
             {[
-              { icon: "👥", value: "10K+", label: "Students" },
+              { icon: "👥", value: "1K+", label: "Students" },
               { icon: "📚", value: "50+", label: "Premium Courses" },
               { icon: "📊", value: "95%", label: "Success Rate" },
-              { icon: "🏆", value: "5+", label: "Years Experience" },
+              { icon: "🏆", value: "2+", label: "Years Experience" },
             ].map((stat, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3 md:px-6 md:py-4 rounded-xl"
                 style={{ background: "rgba(245,197,24,0.05)", border: "1px solid rgba(245,197,24,0.15)" }}>
@@ -581,9 +581,9 @@ export default function Home() {
                     <p className="font-black text-sm mb-2" style={{ color: "#f5c518" }}>📋 TILMAAN LACAG BIXINTA:</p>
                     <p className="text-gray-300 text-sm leading-relaxed">
                       KUDIR LACAGTA COURSE KA NUMARKAAN{" "}
-                      <span className="font-black" style={{ color: "#f5c518" }}>252612515121</span>{" "}
+                      <span className="font-black" style={{ color: "#f5c518" }}>252613887399</span>{" "}
                       KASOO QAAD SCREENSHORT KADIBNA KU SOODIR WhatsApp NUMBARKEENA.
-                      HADII LAGUU SOOJAWAABI WAAYO FADLAN FARIIN KALE SOOQOR.
+                      252613887399
                     </p>
                   </div>
                   <div className="mb-4">

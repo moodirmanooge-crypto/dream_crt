@@ -254,7 +254,7 @@ export default function CoursePlayer() {
                   KUDIR LACAGTA COURSE KA NUMARKAAN{" "}
                   <span className="font-black" style={{ color: "#f5c518" }}>252612515121</span>{" "}
                   KASOO QAAD SCREENSHORT KADIBNA KU SOODIR WhatsApp  NUMBARKEENA.
-                  HADII LAGUU SOOJAWAABI WAAYO FADLAN FARIIN KALE SOOQOR.
+                  252613887399
                 </p>
               </div>
 
