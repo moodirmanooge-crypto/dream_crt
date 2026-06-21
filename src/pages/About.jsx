@@ -105,7 +105,8 @@ export default function About() {
 
           <p className="text-slate-400 text-2xl leading-relaxed mt-10 max-w-4xl mx-auto">
 
-        Waxaan ahay mentorkii ugu horreeyay ee bulshada Soomaaliyeed u soo bandhiga CRT Strategy. Waxaan SI guul leh u tababaray 500+ arday oo aan siiyay free course , waxaan ogaaday in Is-baridda (Self-study) ay leedahay jahwareer iyo safar aad u dheer. Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu soo gaabinayaan safarkaas dheer. Uma baahnid inaad keligaa wareerto; waxaad heleysaa hagid toos ah, system diyaarsan , iyo caawin joogto ah
+        Dream CRT ACADEMY  WAA ACADEMY _dii ugu horreeyey ee bulshada Soomaaliyeed u soo bandhiga  CRT Strategy. Ka dib markii aan si guul leh u tababaray 500+ arday oo aan siiyey koorsooyin bilaash ah, waxaan ogaaday caqabadda ugu weyn ee haysata dadka Forex-ka:  ka barta YouTube (Self-study) waxay leedahay jahwareer iyo safar aad u dheer.
+Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas dheer. Uma baahnid inaad keligaa ku dhex wareerto suuqan baaxadda leh; halkan waxaad ka heleysaa hagis toos ah, nidaam  saxan oo diyaarsan, iyo caawin joogto ah oo kugu hagta guusha.
 
           </p>
 
