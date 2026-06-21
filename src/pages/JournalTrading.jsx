@@ -1,4 +1,3 @@
-import ForexChart from "../components/ForexChart";
 import { useEffect, useState, useRef } from "react";
 import {
   addDoc, collection, query, where, doc, updateDoc, getDoc, setDoc,
@@ -424,7 +423,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
           </div>
           <button onClick={onClose} style={{ color: TEXT2, background: "none", border: "none", cursor: "pointer", fontSize: 15 }}><FaTimes /></button>
         </div>
-        {/* Step indicators */}
         <div style={{ display: "flex", gap: 0, padding: "0 26px", borderBottom: BORDER }}>
           {["Trade Details", "Psychology"].map((s, i) => (
             <button key={s} onClick={() => i < step && setStep(i + 1)} style={{ flex: 1, padding: "11px 0", background: "none", border: "none", borderBottom: step === i + 1 ? `2px solid ${GOLD}` : "2px solid transparent", color: step === i + 1 ? GOLD : TEXT3, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s" }}>{i + 1}. {s}</button>
@@ -666,7 +664,6 @@ export default function JournalTrading() {
     { id: "settings", label: "Settings", icon: "⚙️" },
   ];
 
-  // ── Trade score calc ───────────────────────────────────────────────
   const tradeScore = Math.min(100, Math.round(
     (winRate * 0.4) +
     (parseFloat(profitFactor) > 0 ? Math.min(40, parseFloat(profitFactor) * 10) : 0) +
@@ -691,7 +688,6 @@ export default function JournalTrading() {
 
       {/* ── SIDEBAR ── */}
       <div style={{ width: sidebarOpen ? 220 : 64, background: SIDE_BG, borderRight: `1px solid rgba(255,255,255,0.05)`, padding: sidebarOpen ? "18px 10px" : "18px 8px", display: "flex", flexDirection: "column", flexShrink: 0, transition: "width .25s ease" }}>
-        {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, paddingLeft: sidebarOpen ? 4 : 2, marginBottom: 24, overflow: "hidden" }}>
           <div style={{ width: 34, height: 34, borderRadius: 9, background: GOLD, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <FaChartLine style={{ color: "#000", fontSize: 15 }} />
@@ -702,7 +698,6 @@ export default function JournalTrading() {
           </div>}
         </div>
 
-        {/* Nav */}
         <div style={{ display: "flex", flexDirection: "column", gap: 1, flex: 1 }}>
           {navItems.map(item => (
             <button key={item.id} onClick={() => setActiveTab(item.id)}
@@ -715,7 +710,6 @@ export default function JournalTrading() {
           ))}
         </div>
 
-        {/* Pro badge */}
         {sidebarOpen && (
           <div style={{ background: GOLD_DIM2, border: BORDER_G, borderRadius: 11, padding: "12px 11px", marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -732,7 +726,6 @@ export default function JournalTrading() {
           </div>
         )}
 
-        {/* Collapse toggle */}
         <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: "100%", padding: "8px 0", borderRadius: 8, background: "none", border: BORDER, color: TEXT3, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all .2s" }}
           onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(245,197,24,0.3)"}
           onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"}>
@@ -794,7 +787,6 @@ export default function JournalTrading() {
         {activeTab === "dashboard" && (
           <div style={{ padding: "20px 26px", animation: "fadeIn .3s ease" }}>
 
-            {/* 5 stat cards like Journex */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 18 }}>
               <StatCard label="Net P&L" value={`${monthlyProfit >= 0 ? "+" : ""}$${monthlyProfit.toFixed(2)}`} color={monthlyProfit >= 0 ? GREEN : RED_NEG} change={`${Math.abs(monthlyProfit).toFixed(0)}`} changeUp={monthlyProfit >= 0} sparkData={eqData.slice(-8)} />
               <StatCard label="Profit Factor" value={profitFactor} color={parseFloat(profitFactor) >= 1.5 ? GREEN : GOLD} sparkData={eqData.slice(-8).map((d, i) => ({ v: i + 1 }))} />
@@ -803,13 +795,10 @@ export default function JournalTrading() {
               <StatCard label="Max Drawdown" value={`-$${maxDD}`} color={RED_NEG} />
             </div>
 
-            {/* Trade Score + Equity Curve */}
             <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 14, marginBottom: 18 }}>
-              {/* Trade Score */}
               <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "20px 22px" }}>
                 <p style={{ color: TEXT2, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 14px" }}>Trade Score</p>
                 <p style={{ color: TEXT2, fontSize: 10, margin: "0 0 14px" }}>Weighted composite of your edge</p>
-                {/* Circular score */}
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
                   <svg width="120" height="120" viewBox="0 0 120 120">
                     <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
@@ -839,7 +828,6 @@ export default function JournalTrading() {
                 ))}
               </div>
 
-              {/* Equity Curve */}
               <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "20px 22px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
                   <div>
@@ -917,8 +905,6 @@ export default function JournalTrading() {
               )}
             </div>
 
-            {/* Forex Chart */}
-            <div style={{ borderRadius: 14, overflow: "hidden", border: BORDER }}><ForexChart /></div>
           </div>
         )}
 
@@ -930,7 +916,6 @@ export default function JournalTrading() {
                 <h1 style={{ color: TEXT1, fontWeight: 900, fontSize: 18, margin: 0 }}>Trade History</h1>
                 <button onClick={() => setShowNewTradeModal(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, fontWeight: 700, color: "#000", cursor: "pointer", border: "none", background: GOLD, fontSize: 12 }}><FaPlus size={10} /> New Trade</button>
               </div>
-              {/* Filters */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 14, padding: "11px 13px", background: CARD2, borderRadius: 10, border: BORDER }}>
                 {[
                   <select value={filterPair} onChange={e => setFilterPair(e.target.value)} style={iS}><option value="All">All Pairs</option>{CURRENCY_PAIRS.map(p => <option key={p} value={p}>{p}</option>)}</select>,
@@ -1227,7 +1212,6 @@ export default function JournalTrading() {
         {/* ── COMMUNITY ── */}
         {activeTab === "community" && (
           <div style={{ padding: "20px 26px", display: "flex", gap: 18, animation: "fadeIn .3s ease" }}>
-            {/* Create post */}
             <div style={{ width: 300, flexShrink: 0 }}>
               <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "16px", marginBottom: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 12 }}>
@@ -1252,7 +1236,6 @@ export default function JournalTrading() {
                 <input ref={photoRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onFileChange} />
                 <input ref={videoRef} type="file" accept="video/*" style={{ display: "none" }} onChange={onFileChange} />
               </div>
-              {/* Community stats */}
               <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "14px 16px" }}>
                 <p style={{ color: TEXT2, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>Community</p>
                 {[{ l: "Total Posts", v: communityPosts.length }, { l: "Total Traders", v: new Set(communityPosts.map(p => p.uid)).size }, { l: "Your Posts", v: communityPosts.filter(p => p.uid === currentUser?.uid).length }].map(s => (
@@ -1263,7 +1246,6 @@ export default function JournalTrading() {
                 ))}
               </div>
             </div>
-            {/* Feed */}
             <div style={{ flex: 1, minWidth: 0 }}>
               {communityPosts.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "50px 0" }}>
