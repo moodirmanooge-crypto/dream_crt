@@ -103,7 +103,7 @@ export default function About() {
 
           </h1>
 
-          <p className="text-slate-400 text-2xl leading-relaxed mt-10 max-w-4xl mx-auto">
+          <p className="text-white text-2xl leading-relaxed mt-10 max-w-4xl mx-auto">
 
         Dream CRT ACADEMY  WAA ACADEMY _dii ugu horreeyey ee bulshada Soomaaliyeed u soo bandhiga  CRT Strategy. Ka dib markii aan si guul leh u tababaray 500+ arday oo aan siiyey koorsooyin bilaash ah, waxaan ogaaday caqabadda ugu weyn ee haysata dadka Forex-ka:  ka barta YouTube (Self-study) waxay leedahay jahwareer iyo safar aad u dheer.
 Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas dheer. Uma baahnid inaad keligaa ku dhex wareerto suuqan baaxadda leh; halkan waxaad ka heleysaa hagis toos ah, nidaam  saxan oo diyaarsan, iyo caawin joogto ah oo kugu hagta guusha.
@@ -136,13 +136,13 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
 
             </h1>
 
-            <p className="text-slate-400 text-xl leading-loose mt-8">
+            <p className="text-white text-xl leading-loose mt-8">
 
               At DREAM CRT, our mission is to help traders become consistently profitable by combining education, psychology, discipline, and advanced trading technology.
 
             </p>
 
-            <p className="text-slate-400 text-xl leading-loose mt-6">
+            <p className="text-white text-xl leading-loose mt-6">
 
               We teach professional forex trading concepts including market structure, liquidity, smart money concepts, risk-to-reward systems, and institutional trading strategies used by elite traders worldwide.
 
@@ -220,7 +220,7 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
 
                   </h1>
 
-                  <p className="text-slate-400 mt-2">
+                  <p className="text-white mt-2">
 
                     AI Forex Trading Platform
 
@@ -251,7 +251,7 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
 
                     </h1>
 
-                    <p className="text-slate-400 mt-4 text-lg">
+                    <p className="text-white mt-4 text-lg">
 
                       {item.title}
 
@@ -291,7 +291,7 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
 
             </h1>
 
-            <p className="text-slate-400 text-2xl mt-8 max-w-4xl mx-auto">
+            <p className="text-white text-2xl mt-8 max-w-4xl mx-auto">
 
               Everything you need to grow as a modern forex trader in one professional ecosystem.
 
@@ -320,7 +320,7 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
 
                 </h1>
 
-                <p className="text-slate-400 text-lg leading-relaxed">
+                <p className="text-white text-lg leading-relaxed">
 
                   {item.desc}
 
@@ -364,7 +364,7 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
 
             </h1>
 
-            <p className="text-slate-400 text-2xl mt-10 max-w-4xl mx-auto leading-relaxed">
+            <p className="text-white text-2xl mt-10 max-w-4xl mx-auto leading-relaxed">
 
               Start your trading journey with DREAM CRT and gain access to professional trading education, premium tools, AI systems, and a powerful trading community.
 
