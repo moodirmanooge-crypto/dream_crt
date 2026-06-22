@@ -356,7 +356,7 @@ export default function Home() {
         </div>
         <div className="relative z-10 flex flex-1 items-center justify-center px-5 md:px-16 text-center py-16">
           <div className="max-w-4xl w-full">
-            <h1 className="font-black leading-tight mb-6 uppercase" style={{ fontSize: "clamp(2rem, 7vw, 5.5rem)", letterSpacing: "-0.01em" }}>
+            <h1 className="font-black leading-tight mb-6 uppercase" style={{ fontSize: "clamp(2rem, 7vw, 5.5rem)", letterSpacing: "-0.001em" }}>
               <span style={{ color: "#ffffff", display: "block" }}>Learn Premium Skills</span>
               <span style={{ color: "#f5c518", display: "block" }}>From DREAM CRT</span>
             </h1>

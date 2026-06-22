@@ -10,6 +10,7 @@ import {
   onSnapshot,
   query,
   orderBy,
+  getDoc,
 } from "firebase/firestore";
 
 import {
@@ -199,7 +200,6 @@ const Icon = {
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   ),
-  // ── Added for UploadContentPage ───────────────────────────────────────────
   Plus: () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ width: 16, height: 16 }}>
       <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -210,9 +210,29 @@ const Icon = {
       <polyline points="18 15 12 9 6 15" />
     </svg>
   ),
+  // Login-specific
+  EyeOff: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 18, height: 18 }}>
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  ),
+  EyeOn: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 18, height: 18 }}>
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
+  ShieldCheck: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 28, height: 28 }}>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <polyline points="9 12 11 14 15 10" />
+    </svg>
+  ),
 };
 
-// ── Colour tokens — red / black ───────────────────────────────────────────────
+// ── Colour tokens ─────────────────────────────────────────────────────────────
 const C = {
   bg: "#0a0a0a",
   bgDeep: "#050505",
@@ -236,12 +256,10 @@ const C = {
   errorDim: "rgba(255,71,87,0.15)",
   amber: "#f59e0b",
   amberDim: "rgba(245,158,11,0.15)",
-  // ── Added for playlist ──────────────────────────────────────────────────────
   blue: "#3b82f6",
   blueDim: "rgba(59,130,246,0.15)",
 };
 
-// ── Shared card style ─────────────────────────────────────────────────────────
 const CARD = {
   background: C.surfaceCard,
   border: `1px solid ${C.border}`,
@@ -250,7 +268,6 @@ const CARD = {
   boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
 };
 
-// ── Global styles ─────────────────────────────────────────────────────────────
 const GlobalStyle = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -272,6 +289,9 @@ const GlobalStyle = () => (
     .pulse { animation: pulse 1.2s ease-in-out infinite; }
     .lesson-row:hover { background: ${C.surfaceHover} !important; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .login-card { animation: fadeIn .4s ease; }
+    .login-input:focus { border-color: ${C.red} !important; box-shadow: 0 0 0 3px ${C.redDim} !important; }
   `}</style>
 );
 
@@ -298,6 +318,161 @@ const NAV = [
   { id: "settings", label: "Settings", Icon: Icon.Settings },
 ];
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// LOGIN GATE
+// ═══════════════════════════════════════════════════════════════════════════════
+function AdminLogin({ onLogin }) {
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async () => {
+    if (!password.trim()) { setError("Passwordka geli"); return; }
+    setLoading(true);
+    setError("");
+    try {
+      const snap = await getDoc(doc(db, "adminSettings", "main"));
+      if (!snap.exists()) { setError("Admin settings lama helin — Firestore hubi"); setLoading(false); return; }
+      const storedPw = snap.data().password;
+      if (password === storedPw) {
+        // Save session so page refresh doesn't log out
+        sessionStorage.setItem("admin_auth", "1");
+        onLogin();
+      } else {
+        setError("Passwordku khalad ah — mar kale isku day");
+      }
+    } catch (err) {
+      setError("Khalad: " + (err.message || "Firestore connection failed"));
+    }
+    setLoading(false);
+  };
+
+  const handleKey = (e) => { if (e.key === "Enter") handleLogin(); };
+
+  return (
+    <div style={{
+      minHeight: "100vh", background: C.bgDeep, display: "flex", alignItems: "center",
+      justifyContent: "center", fontFamily: "'Inter', system-ui, sans-serif",
+      backgroundImage: `radial-gradient(ellipse at 60% 20%, ${C.redDim} 0%, transparent 60%)`,
+    }}>
+      <div className="login-card" style={{
+        width: "100%", maxWidth: 420, padding: "0 20px",
+      }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: 18, background: C.red, margin: "0 auto 16px",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: `0 8px 32px ${C.redGlow}`,
+          }}>
+            <span style={{ color: "#fff", fontWeight: 900, fontSize: 30, lineHeight: 1 }}>H</span>
+          </div>
+          <div style={{ color: C.text, fontWeight: 900, fontSize: 22, letterSpacing: ".5px" }}>DREAM CRT</div>
+          <div style={{ color: C.red, fontWeight: 700, fontSize: 14, letterSpacing: 2, marginTop: 2 }}>TRADING ACADEMY</div>
+          <div style={{ color: C.textSub, fontSize: 12, marginTop: 8 }}>Admin Dashboard • Secure Access</div>
+        </div>
+
+        {/* Card */}
+        <div style={{
+          background: C.surfaceCard, border: `1px solid ${C.border}`,
+          borderRadius: 20, padding: 32,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+        }}>
+          {/* Shield icon */}
+          <div style={{
+            width: 52, height: 52, borderRadius: 14, background: C.redDim,
+            border: `1px solid ${C.borderRed}`, display: "flex", alignItems: "center",
+            justifyContent: "center", color: C.red, marginBottom: 20,
+          }}>
+            <Icon.ShieldCheck />
+          </div>
+
+          <div style={{ color: C.text, fontWeight: 800, fontSize: 20, marginBottom: 4 }}>Admin Login</div>
+          <div style={{ color: C.textMuted, fontSize: 13, marginBottom: 24 }}>
+            Passwordka geli si aad u gasho dashboard-ka
+          </div>
+
+          {/* Password field */}
+          <label style={{
+            display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700,
+            textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 8,
+          }}>Password</label>
+          <div style={{ position: "relative", marginBottom: 16 }}>
+            <input
+              className="login-input"
+              type={showPw ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={handleKey}
+              placeholder="••••••••"
+              autoFocus
+              style={{
+                width: "100%", padding: "13px 46px 13px 16px",
+                background: C.bgDeep, border: `1px solid ${C.border}`,
+                borderRadius: 12, color: C.text, fontSize: 15,
+                outline: "none", fontFamily: "inherit",
+                transition: "border-color .2s, box-shadow .2s",
+                letterSpacing: showPw ? "normal" : "3px",
+              }}
+            />
+            <button
+              onClick={() => setShowPw(!showPw)}
+              style={{
+                position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", color: C.textMuted, cursor: "pointer",
+                padding: 2, display: "flex", alignItems: "center",
+              }}
+            >
+              {showPw ? <Icon.EyeOff /> : <Icon.EyeOn />}
+            </button>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div style={{
+              marginBottom: 16, padding: "10px 14px", borderRadius: 10,
+              background: C.errorDim, border: `1px solid ${C.errorRed}40`,
+              color: C.errorRed, fontSize: 13, display: "flex", alignItems: "center", gap: 8,
+            }}>
+              <span>⚠️</span> {error}
+            </div>
+          )}
+
+          {/* Login button */}
+          <button
+            onClick={handleLogin}
+            disabled={loading}
+            style={{
+              width: "100%", padding: "14px 0",
+              background: loading ? C.surface : C.red,
+              color: loading ? C.textMuted : "#000",
+              border: "none", borderRadius: 12,
+              fontWeight: 800, fontSize: 15, cursor: loading ? "not-allowed" : "pointer",
+              transition: "all .2s",
+              boxShadow: loading ? "none" : `0 4px 20px ${C.redGlow}`,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              fontFamily: "inherit",
+            }}
+          >
+            {loading ? (
+              <>
+                <div style={{ width: 18, height: 18, border: "2px solid #444", borderTopColor: C.red, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                Xaqiijinaya…
+              </>
+            ) : (
+              <>🔓 Dashboard Fur</>
+            )}
+          </button>
+        </div>
+
+        <div style={{ textAlign: "center", color: C.textSub, fontSize: 11, marginTop: 20 }}>
+          DREAM CRT Trading Academy © 2026
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Firestore reading helpers
@@ -635,7 +810,6 @@ function CoursesPage() {
   );
 }
 
-
 // ── Red Button ────────────────────────────────────────────────────────────────
 const RedBtn = ({ children, onClick, disabled, style = {} }) => (
   <button onClick={onClick} disabled={disabled} className="red-btn"
@@ -762,12 +936,11 @@ function PlaceholderPage({ label }) {
   );
 }
 
-
 // ═══════════════════════════════════════════════════════════════════════════════
-// UPLOAD CONTENT PAGE — Category selector + Playlist/Single builder
+// UPLOAD CONTENT PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 function UploadContentPage() {
-  const [category, setCategory] = useState(""); // "single_video"|"single_pdf"|"playlist"
+  const [category, setCategory] = useState("");
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -775,7 +948,6 @@ function UploadContentPage() {
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [singleFile, setSingleFile] = useState(null);
-  // Playlist lessons: { id, title, file, fileType, order }
   const [lessons, setLessons] = useState([]);
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonFile, setLessonFile] = useState(null);
@@ -868,7 +1040,6 @@ function UploadContentPage() {
 
   const iS = { width: "100%", padding: "11px 14px", borderRadius: 10, background: C.bgDeep, border: `1px solid ${C.border}`, color: C.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" };
 
-  // ── STEP 1: Category chooser ──────────────────────────────────────────────
   if (step === 1) {
     return (
       <div style={{ maxWidth: 800, margin: "0 auto" }}>
@@ -899,7 +1070,6 @@ function UploadContentPage() {
     );
   }
 
-  // ── STEP 2: Upload form ───────────────────────────────────────────────────
   const catInfo = {
     single_video: { icon: "🎬", label: "Single Video Lesson", color: C.amber },
     single_pdf:   { icon: "📄", label: "Single PDF Lesson",   color: C.errorRed },
@@ -908,7 +1078,6 @@ function UploadContentPage() {
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
-      {/* Breadcrumb */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
         <button onClick={() => { setStep(1); setMsg(""); }} style={{ background: "none", border: "none", color: C.textMuted, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>← Back</button>
         <div style={{ width: 1, height: 16, background: C.border }} />
@@ -917,7 +1086,6 @@ function UploadContentPage() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: category === "playlist" ? "1fr" : "1fr 1fr", gap: 22 }}>
-        {/* Course details card */}
         <div style={{ ...CARD }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
             <div style={{ width: 3, height: 18, background: catInfo.color, borderRadius: 2 }} />
@@ -939,7 +1107,6 @@ function UploadContentPage() {
             <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" style={iS}
               onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
           </div>
-          {/* Thumbnail */}
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Thumbnail (optional)</label>
             <div onClick={() => thumbRef.current?.click()}
@@ -953,7 +1120,6 @@ function UploadContentPage() {
             <input ref={thumbRef} type="file" accept="image/*" style={{ display: "none" }}
               onChange={e => { const f = e.target.files[0]; if (f) { setThumbnail(f); setThumbnailPreview(URL.createObjectURL(f)); } }} />
           </div>
-          {/* Single file zone (non-playlist) */}
           {category !== "playlist" && (
             <div>
               <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>
@@ -986,7 +1152,6 @@ function UploadContentPage() {
           )}
         </div>
 
-        {/* ── PLAYLIST LESSONS BUILDER ── */}
         {category === "playlist" && (
           <div style={{ ...CARD }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 20 }}>
@@ -1003,7 +1168,6 @@ function UploadContentPage() {
               </button>
             </div>
 
-            {/* Add lesson form */}
             {addingLesson && (
               <div style={{ background: C.bgDeep, border: `1px solid ${C.blue}40`, borderRadius: 14, padding: 20, marginBottom: 16 }}>
                 <p style={{ color: C.blue, fontWeight: 700, fontSize: 13, marginBottom: 14 }}>✚ New Lesson</p>
@@ -1012,7 +1176,6 @@ function UploadContentPage() {
                   <input value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} placeholder="e.g. Introduction to Forex"
                     style={iS} onFocus={e => (e.target.style.borderColor = C.blue)} onBlur={e => (e.target.style.borderColor = C.border)} />
                 </div>
-                {/* File type toggle */}
                 <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                   {["video", "pdf"].map(t => (
                     <button key={t} onClick={() => { setLessonFileType(t); setLessonFile(null); }}
@@ -1021,7 +1184,6 @@ function UploadContentPage() {
                     </button>
                   ))}
                 </div>
-                {/* File picker */}
                 <div onClick={() => lessonFileRef.current?.click()}
                   style={{ border: `2px dashed ${lessonFile ? C.green : C.border}`, borderRadius: 10, padding: 14, cursor: "pointer", textAlign: "center", background: C.surface, marginBottom: 14, transition: "all .2s" }}
                   onMouseEnter={e => (e.currentTarget.style.borderColor = C.blue)}
@@ -1045,7 +1207,6 @@ function UploadContentPage() {
               </div>
             )}
 
-            {/* Lessons list */}
             {lessons.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px 0", color: C.textSub }}>
                 <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
@@ -1086,7 +1247,6 @@ function UploadContentPage() {
         )}
       </div>
 
-      {/* Upload progress + button */}
       <div style={{ ...CARD, marginTop: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: C.redFaint, border: `1px solid ${C.borderRed}`, fontSize: 12, color: C.textMuted }}>
           <span style={{ color: C.redLight }}><Icon.Lock /></span>
@@ -1131,6 +1291,9 @@ function UploadContentPage() {
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function Admin() {
+  // ── Auth state — check sessionStorage first so refresh doesn't log out ──
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem("admin_auth") === "1");
+
   const [activePage, setActivePage] = useState("dashboard");
   const [uploadTab, setUploadTab] = useState("pdf");
   const [title, setTitle] = useState("");
@@ -1143,6 +1306,21 @@ export default function Admin() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadMsg, setUploadMsg] = useState("");
   const [uploads, setUploads] = useState(MOCK_UPLOADS);
+
+  // ── If not authed, show login page ──
+  if (!authed) {
+    return (
+      <>
+        <GlobalStyle />
+        <AdminLogin onLogin={() => setAuthed(true)} />
+      </>
+    );
+  }
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("admin_auth");
+    setAuthed(false);
+  };
 
   const uploadFileWithProgress = (storageRef, file, onProgress) =>
     new Promise((resolve, reject) => {
@@ -1184,7 +1362,6 @@ export default function Admin() {
     boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
   };
 
-  // ── Upload Zone (dashboard widget only) ──
   const UploadZone = ({ tab, pdfFile, videoFile, setPdfFile, setVideoFile, inputId }) => {
     const file = tab === "pdf" ? pdfFile : videoFile;
     const setter = tab === "pdf" ? setPdfFile : setVideoFile;
@@ -1220,7 +1397,6 @@ export default function Admin() {
     </div>
   );
 
-  // ═══════════════════════ RENDER ═══════════════════════════════════════════
   return (
     <>
       <GlobalStyle />
@@ -1260,8 +1436,8 @@ export default function Admin() {
               <span style={{ color: C.redLight }}><Icon.Crown /></span>
               <span style={{ fontSize: 12, color: C.redLight, fontWeight: 600 }}>Premium Instructor</span>
             </div>
-            <button style={{ width: "100%", marginTop: 10, display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8, border: "none", background: "transparent", color: C.textMuted, cursor: "pointer", fontSize: 14, transition: "color .15s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = C.text)}
+            <button onClick={handleLogout} style={{ width: "100%", marginTop: 10, display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8, border: "none", background: "transparent", color: C.textMuted, cursor: "pointer", fontSize: 14, transition: "color .15s" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = C.errorRed)}
               onMouseLeave={(e) => (e.currentTarget.style.color = C.textMuted)}>
               <Icon.Logout /> Logout
             </button>
@@ -1374,13 +1550,9 @@ export default function Admin() {
               </div>
             )}
 
-            {/* ════ UPLOAD CONTENT — 3-step category + playlist builder ════ */}
             {activePage === "upload" && <UploadContentPage />}
-
-            {/* ════ ALL UPLOADS ════ */}
             {activePage === "uploads" && <UploadsTable uploads={uploads} onDelete={handleDelete} full />}
 
-            {/* ════ INCOME ════ */}
             {activePage === "income" && (
               <div>
                 <div style={{ display: "flex", gap: 14, marginBottom: 24, flexWrap: "wrap" }}>
@@ -1400,25 +1572,12 @@ export default function Admin() {
               </div>
             )}
 
-            {/* ════ COURSES ════ */}
             {activePage === "courses" && <CoursesPage />}
-
-            {/* ════ TRADERS ════ */}
             {activePage === "traders" && <PlaceholderPage label="traders" />}
-
-            {/* ════ ALL DATA ════ */}
             {activePage === "data" && <DataExplorer />}
-
-            {/* ════ PSYCHOLOGY ════ */}
             {activePage === "psychology" && <CollectionPanel name="psychology" />}
-
-            {/* ════ ENROLLMENTS ════ */}
             {activePage === "enrollments" && <EnrollmentsPage />}
-
-            {/* ════ PLACEHOLDERS ════ */}
-            {["students", "messages", "settings"].includes(activePage) && (
-              <PlaceholderPage label={activePage} />
-            )}
+            {["students", "messages", "settings"].includes(activePage) && <PlaceholderPage label={activePage} />}
           </div>
         </main>
       </div>
