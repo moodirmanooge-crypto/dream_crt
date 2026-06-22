@@ -29,6 +29,14 @@ export default function Home() {
   const [paying, setPaying] = useState(false);
   const [payDone, setPayDone] = useState(false);
 
+  // ── Admin Portal state ────────────────────────────────────────────────────
+  const [showAdminPortal, setShowAdminPortal] = useState(false);
+  const [adminPin, setAdminPin] = useState("");
+  const [adminError, setAdminError] = useState("");
+  const [adminShaking, setAdminShaking] = useState(false);
+
+  const ADMIN_PASSWORD = "dreamcrt2024admin";
+
   useEffect(() => {
     fetchCourses();
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -74,6 +82,26 @@ export default function Home() {
   const handleJournalNav = () => {
     setMenuOpen(false);
     window.location.href = user ? "/journal" : "/login";
+  };
+
+  // ── Admin portal handlers ─────────────────────────────────────────────────
+  const openAdminPortal = () => {
+    setAdminPin("");
+    setAdminError("");
+    setShowAdminPortal(true);
+  };
+
+  const handleAdminLogin = () => {
+    if (adminPin === ADMIN_PASSWORD) {
+      setShowAdminPortal(false);
+      setAdminPin("");
+      window.location.href = "/admin";
+    } else {
+      setAdminError("Passwordka waa khalad. Isku day mar kale.");
+      setAdminShaking(true);
+      setAdminPin("");
+      setTimeout(() => setAdminShaking(false), 600);
+    }
   };
 
   // ── Open payment modal for any service ───────────────────────────────────
@@ -169,12 +197,56 @@ export default function Home() {
   return (
     <div className="text-white min-h-screen overflow-x-hidden" style={{ background: "#0d0d0d" }}>
 
+      {/* ── Admin Portal shake animation ── */}
+      <style>{`
+        @keyframes shake {
+          0%,100%{transform:translateX(0)}
+          20%{transform:translateX(-8px)}
+          40%{transform:translateX(8px)}
+          60%{transform:translateX(-6px)}
+          80%{transform:translateX(6px)}
+        }
+        .shake { animation: shake 0.5s ease; }
+        .dot-btn:hover { background: rgba(245,197,24,0.18) !important; }
+        .dot-btn:hover span { background: #f5c518 !important; }
+      `}</style>
+
       {/* ─────────── NAVBAR ─────────── */}
       <nav className="flex items-center justify-between px-5 md:px-10 py-4 sticky top-0 z-50"
         style={{ background: "rgba(13,13,13,0.97)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+
+        {/* Logo + 3-dot admin button */}
         <div className="flex items-center gap-2">
+          {/* ── 3-dot admin portal button ── */}
+          <button
+            className="dot-btn"
+            onClick={openAdminPortal}
+            title="Admin Portal"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "4px",
+              width: "32px",
+              height: "32px",
+              borderRadius: "8px",
+              border: "1px solid rgba(245,197,24,0.2)",
+              background: "rgba(245,197,24,0.05)",
+              cursor: "pointer",
+              padding: "0",
+              marginRight: "4px",
+              transition: "background 0.2s",
+            }}
+          >
+            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "rgba(245,197,24,0.5)", display: "block", transition: "background 0.2s" }} />
+            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "rgba(245,197,24,0.5)", display: "block", transition: "background 0.2s" }} />
+            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "rgba(245,197,24,0.5)", display: "block", transition: "background 0.2s" }} />
+          </button>
+
           <span className="font-black text-xl md:text-2xl tracking-tight" style={{ color: "#f5c518" }}>DREAM CRT</span>
         </div>
+
         <div className="hidden md:flex gap-6 lg:gap-8 text-sm font-semibold">
           {[
             { label: "Home", href: "#home", active: true },
@@ -197,10 +269,8 @@ export default function Home() {
             onMouseLeave={(e) => { e.target.style.color = "#d1d5db"; }}>
             Trading Journal
           </button>
-          <a href="/courses" className="transition" style={{ color: "#d1d5db" }}
-            onMouseEnter={(e) => { e.target.style.color = "#f5c518"; }}
-            onMouseLeave={(e) => { e.target.style.color = "#d1d5db"; }}> </a>
         </div>
+
         <div className="flex items-center gap-3">
           <div className="hidden md:flex gap-3 items-center">
             {user ? (
@@ -326,7 +396,6 @@ export default function Home() {
             ))}
           </div>
         </div>
-      
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {services.map((svc, i) => (
@@ -635,6 +704,168 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
           </div>
         </div>
       )}
+
+      {/* ─────────── ADMIN PORTAL MODAL ─────────── */}
+      {showAdminPortal && (
+        <div
+          className="fixed inset-0 flex items-center justify-center z-[100] px-4"
+          style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(8px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowAdminPortal(false); setAdminPin(""); setAdminError(""); } }}
+        >
+          <div
+            className={adminShaking ? "shake" : ""}
+            style={{
+              width: "100%",
+              maxWidth: "380px",
+              background: "#080808",
+              border: "1px solid rgba(245,197,24,0.3)",
+              borderRadius: "24px",
+              overflow: "hidden",
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              background: "linear-gradient(135deg, #1a1000 0%, #0d0d0d 100%)",
+              padding: "28px 28px 20px",
+              borderBottom: "1px solid rgba(245,197,24,0.1)",
+              textAlign: "center",
+            }}>
+              {/* Shield icon */}
+              <div style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "16px",
+                background: "rgba(245,197,24,0.1)",
+                border: "1px solid rgba(245,197,24,0.3)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 14px",
+                fontSize: "26px",
+              }}>
+                🛡️
+              </div>
+              <h2 style={{ color: "#ffffff", fontWeight: 900, fontSize: "18px", marginBottom: "4px" }}>
+                Admin Portal
+              </h2>
+              <p style={{ color: "#64748b", fontSize: "12px", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase" }}>
+                DREAM CRT · Secure Access
+              </p>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: "24px 28px 28px" }}>
+              <label style={{
+                display: "block",
+                color: "#94a3b8",
+                fontSize: "11px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.8px",
+                marginBottom: "8px",
+              }}>
+                Admin Password
+              </label>
+              <input
+                type="password"
+                value={adminPin}
+                onChange={(e) => { setAdminPin(e.target.value); setAdminError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleAdminLogin(); }}
+                placeholder="••••••••••••"
+                autoFocus
+                style={{
+                  width: "100%",
+                  padding: "14px 16px",
+                  borderRadius: "12px",
+                  background: "#000000",
+                  border: `1px solid ${adminError ? "rgba(255,71,87,0.5)" : "rgba(245,197,24,0.2)"}`,
+                  color: "#ffffff",
+                  fontSize: "16px",
+                  outline: "none",
+                  letterSpacing: "4px",
+                  fontFamily: "monospace",
+                  boxSizing: "border-box",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => { if (!adminError) e.target.style.borderColor = "rgba(245,197,24,0.5)"; }}
+                onBlur={(e) => { if (!adminError) e.target.style.borderColor = "rgba(245,197,24,0.2)"; }}
+              />
+
+              {/* Error message */}
+              {adminError && (
+                <div style={{
+                  marginTop: "10px",
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  background: "rgba(255,71,87,0.08)",
+                  border: "1px solid rgba(255,71,87,0.3)",
+                  color: "#ff4757",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}>
+                  ⚠️ {adminError}
+                </div>
+              )}
+
+              {/* Login button */}
+              <button
+                onClick={handleAdminLogin}
+                style={{
+                  width: "100%",
+                  marginTop: "16px",
+                  padding: "14px 0",
+                  borderRadius: "12px",
+                  background: "#f5c518",
+                  color: "#000000",
+                  fontWeight: 900,
+                  fontSize: "15px",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  transition: "opacity 0.2s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+              >
+                🔐 Enter Admin Dashboard
+              </button>
+
+              {/* Cancel */}
+              <button
+                onClick={() => { setShowAdminPortal(false); setAdminPin(""); setAdminError(""); }}
+                style={{
+                  width: "100%",
+                  marginTop: "10px",
+                  padding: "12px 0",
+                  borderRadius: "12px",
+                  background: "transparent",
+                  color: "#64748b",
+                  fontWeight: 600,
+                  fontSize: "13px",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  cursor: "pointer",
+                  transition: "color 0.2s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#94a3b8")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#64748b")}
+              >
+                Xir / Cancel
+              </button>
+
+              <p style={{ textAlign: "center", color: "#2d3748", fontSize: "11px", marginTop: "16px" }}>
+                🔒 Secured · Authorized Access Only
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
