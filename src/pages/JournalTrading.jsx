@@ -58,7 +58,7 @@ function Spark({ data, color, height = 40 }) {
   );
 }
 
-// ── STAT CARD (Journex style) ──────────────────────────────────────────
+// ── STAT CARD ──────────────────────────────────────────────────────────
 function StatCard({ label, value, color, change, changeUp, sparkData, prefix = "" }) {
   return (
     <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 6, position: "relative", overflow: "hidden" }}>
@@ -626,7 +626,6 @@ export default function JournalTrading() {
 
   const iS = { background: CARD2, color: TEXT1, padding: "9px 11px", borderRadius: 9, outline: "none", border: BORDER, fontSize: 12, width: "100%", boxSizing: "border-box" };
 
-  // ── Loading / Auth guards ──────────────────────────────────────────
   if (authLoading) return (
     <div style={{ minHeight: "100vh", background: MAIN_BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ textAlign: "center" }}>
@@ -786,7 +785,6 @@ export default function JournalTrading() {
         {/* ── DASHBOARD ── */}
         {activeTab === "dashboard" && (
           <div style={{ padding: "20px 26px", animation: "fadeIn .3s ease" }}>
-
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 18 }}>
               <StatCard label="Net P&L" value={`${monthlyProfit >= 0 ? "+" : ""}$${monthlyProfit.toFixed(2)}`} color={monthlyProfit >= 0 ? GREEN : RED_NEG} change={`${Math.abs(monthlyProfit).toFixed(0)}`} changeUp={monthlyProfit >= 0} sparkData={eqData.slice(-8)} />
               <StatCard label="Profit Factor" value={profitFactor} color={parseFloat(profitFactor) >= 1.5 ? GREEN : GOLD} sparkData={eqData.slice(-8).map((d, i) => ({ v: i + 1 }))} />
@@ -904,7 +902,6 @@ export default function JournalTrading() {
                 </div>
               )}
             </div>
-
           </div>
         )}
 
@@ -914,45 +911,112 @@ export default function JournalTrading() {
             <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "20px 22px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
                 <h1 style={{ color: TEXT1, fontWeight: 900, fontSize: 18, margin: 0 }}>Trade History</h1>
-                <button onClick={() => setShowNewTradeModal(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, fontWeight: 700, color: "#000", cursor: "pointer", border: "none", background: GOLD, fontSize: 12 }}><FaPlus size={10} /> New Trade</button>
+                <button onClick={() => setShowNewTradeModal(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, fontWeight: 700, color: "#000", cursor: "pointer", border: "none", background: GOLD, fontSize: 12 }}>
+                  <FaPlus size={10} /> New Trade
+                </button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 14, padding: "11px 13px", background: CARD2, borderRadius: 10, border: BORDER }}>
                 {[
-                  <select value={filterPair} onChange={e => setFilterPair(e.target.value)} style={iS}><option value="All">All Pairs</option>{CURRENCY_PAIRS.map(p => <option key={p} value={p}>{p}</option>)}</select>,
-                  <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={iS}><option value="All">All Status</option><option value="Open">Open</option><option value="Win">Win</option><option value="Loss">Loss</option><option value="Breakeven">Breakeven</option></select>,
-                  <select value={filterSession} onChange={e => setFilterSession(e.target.value)} style={iS}><option value="All">All Sessions</option><option value="Asian">Asian</option><option value="London">London</option><option value="New York">New York</option><option value="Overlap">Overlap</option></select>,
-                  <input type="text" placeholder="Filter strategy..." value={filterStrategy} onChange={e => setFilterStrategy(e.target.value)} style={iS} />
+                  <select key="pair" value={filterPair} onChange={e => setFilterPair(e.target.value)} style={iS}><option value="All">All Pairs</option>{CURRENCY_PAIRS.map(p => <option key={p} value={p}>{p}</option>)}</select>,
+                  <select key="status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={iS}><option value="All">All Status</option><option value="Open">Open</option><option value="Win">Win</option><option value="Loss">Loss</option><option value="Breakeven">Breakeven</option></select>,
+                  <select key="session" value={filterSession} onChange={e => setFilterSession(e.target.value)} style={iS}><option value="All">All Sessions</option><option value="Asian">Asian</option><option value="London">London</option><option value="New York">New York</option><option value="Overlap">Overlap</option></select>,
+                  <input key="strategy" type="text" placeholder="Filter strategy..." value={filterStrategy} onChange={e => setFilterStrategy(e.target.value)} style={iS} />,
                 ].map((el, i) => <div key={i}>{el}</div>)}
               </div>
               <p style={{ color: TEXT3, fontSize: 11, marginBottom: 10 }}>{filteredTrades.length} trades found</p>
-              {filteredTrades.length === 0 ? <p style={{ color: TEXT3, textAlign: "center", padding: "40px 0", fontSize: 13 }}>No Trades Found</p> : (
+              {filteredTrades.length === 0 ? (
+                <p style={{ color: TEXT3, textAlign: "center", padding: "40px 0", fontSize: 13 }}>No Trades Found</p>
+              ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {[...filteredTrades].sort((a, b) => b.createdAt - a.createdAt).map(t => {
                     const sc = t.status === "Win" ? GREEN : t.status === "Loss" ? RED_NEG : t.status === "Open" ? BLUE : TEXT3;
                     const pl = Number(t.profit_loss || 0);
                     return (
-                      <div key={t.id} style={{ background: CARD2, border: BORDER, borderRadius: 11, padding: "14px 16px", transition: "border-color .2s" }}
+                      <div
+                        key={t.id}
+                        style={{ background: CARD2, border: BORDER, borderRadius: 11, padding: "14px 16px", transition: "border-color .2s" }}
                         onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(245,197,24,0.2)"}
-                        onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"}>
+                        onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"}
+                      >
+                        {/* ROW 1: Direction icon + pair info LEFT | Status + PnL + RRR + Delete RIGHT */}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: 9, background: t.direction === "BUY" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>{t.direction === "BUY" ? <FaArrowUp style={{ color: GREEN, fontSize: 13 }} /> : <FaArrowDown style={{ color: RED_NEG, fontSize: 13 }} />}</div>
+                            <div style={{ width: 36, height: 36, borderRadius: 9, background: t.direction === "BUY" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              {t.direction === "BUY" ? <FaArrowUp style={{ color: GREEN, fontSize: 13 }} /> : <FaArrowDown style={{ color: RED_NEG, fontSize: 13 }} />}
+                            </div>
                             <div>
                               <p style={{ color: TEXT1, fontWeight: 900, fontSize: 13, margin: 0 }}>{t.pair}</p>
-                              <p style={{ color: TEXT2, fontSize: 10, margin: "1px 0 0" }}>{t.direction} • E:{t.entryPrice} SL:{t.stopLoss} TP:{t.takeProfit}</p>
-                              {t.strategy && <p style={{ color: TEXT3, fontSize: 9, margin: "1px 0 0" }}>📊 {t.strategy}</p>}
-                              {t.session && <p style={{ color: TEXT3, fontSize: 9, margin: "1px 0 0" }}>🕐 {t.session}</p>}
+                              <p style={{ color: TEXT2, fontSize: 10, margin: "2px 0 0" }}>
+                                {t.direction} • E:{t.entryPrice || "—"} SL:{t.stopLoss || "—"} TP:{t.takeProfit || "—"}
+                              </p>
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+                                {t.strategy && (
+                                  <span style={{ color: TEXT3, fontSize: 9 }}>📊 {t.strategy}</span>
+                                )}
+                                {t.session && (
+                                  <span style={{ color: TEXT3, fontSize: 9 }}>🕐 {t.session}</span>
+                                )}
+                                {t.lotSize && (
+                                  <span style={{ color: TEXT3, fontSize: 9 }}>📦 Lot: {t.lotSize}</span>
+                                )}
+                                {t.pips && (
+                                  <span style={{ color: TEXT3, fontSize: 9 }}>📏 {t.pips} pips</span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                          <div style={{ textAlign: "right" }}>
-                            <span style={{ background: sc + "18", color: sc, fontWeight: 700, fontSize: 10, padding: "2px 8px", borderRadius: 6, display: "inline-block" }}>{t.status}</span>
-                            {t.profit_loss !== "" && t.profit_loss !== undefined && <p style={{ color: pl >= 0 ? GREEN : RED_NEG, fontWeight: 900, fontSize: 13, margin: "4px 0 0" }}>{pl >= 0 ? "+" : ""}${pl}</p>}
-                            {t.rrr && <p style={{ color: TEXT2, fontSize: 9, margin: "1px 0 0" }}>RR 1:{t.rrr}</p>}
-                            <button onClick={() => handleDeleteTrade(t.id)} style={{ marginTop: 5, color: RED_NEG, background: "none", border: "none", fontSize: 9, cursor: "pointer", display: "flex", alignItems: "center", gap: 2, marginLeft: "auto" }}><FaTrash size={8} /> Delete</button>
+                          <div style={{ textAlign: "right", flexShrink: 0 }}>
+                            <span style={{ background: sc + "18", color: sc, fontWeight: 700, fontSize: 10, padding: "2px 8px", borderRadius: 6, display: "inline-block" }}>
+                              {t.status}
+                            </span>
+                            {t.profit_loss !== "" && t.profit_loss !== undefined && (
+                              <p style={{ color: pl >= 0 ? GREEN : RED_NEG, fontWeight: 900, fontSize: 15, margin: "5px 0 0" }}>
+                                {pl >= 0 ? "+" : ""}${pl}
+                              </p>
+                            )}
+                            {t.rrr && (
+                              <p style={{ color: GOLD, fontSize: 10, fontWeight: 700, margin: "2px 0 0" }}>
+                                RR 1:{t.rrr}
+                              </p>
+                            )}
+                            <button
+                              onClick={() => handleDeleteTrade(t.id)}
+                              style={{ marginTop: 6, color: RED_NEG, background: "none", border: "none", fontSize: 9, cursor: "pointer", display: "flex", alignItems: "center", gap: 2, marginLeft: "auto" }}
+                            >
+                              <FaTrash size={8} /> Delete
+                            </button>
                           </div>
                         </div>
-                        {t.notes_psychology && <div style={{ marginTop: 8, background: GOLD_DIM2, borderRadius: 7, padding: "6px 10px", borderLeft: `2px solid ${GOLD}` }}><p style={{ color: GOLD, fontSize: 8, fontWeight: 700, margin: "0 0 2px", textTransform: "uppercase" }}>🧠 Psychology</p><p style={{ color: TEXT2, fontSize: 11, margin: 0 }}>{t.notes_psychology}</p></div>}
-                        {t.setupImageURL && <img src={t.setupImageURL} alt="" style={{ marginTop: 8, height: 90, borderRadius: 8, objectFit: "cover" }} />}
+
+                        {/* ROW 2: Emotion badge */}
+                        {t.emotion && (
+                          <div style={{ marginTop: 9 }}>
+                            <span style={{ background: GOLD_DIM, border: BORDER_G, borderRadius: 6, padding: "3px 10px", color: GOLD, fontSize: 10, fontWeight: 700 }}>
+                              🧘 {t.emotion}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* ROW 3: Psychology notes */}
+                        {t.notes_psychology && (
+                          <div style={{ marginTop: 9, background: GOLD_DIM2, borderRadius: 7, padding: "7px 11px", borderLeft: `2px solid ${GOLD}` }}>
+                            <p style={{ color: GOLD, fontSize: 8, fontWeight: 700, margin: "0 0 3px", textTransform: "uppercase", letterSpacing: "0.06em" }}>🧠 Psychology</p>
+                            <p style={{ color: TEXT2, fontSize: 11, margin: 0, lineHeight: 1.5 }}>{t.notes_psychology}</p>
+                          </div>
+                        )}
+
+                        {/* ROW 4: Chart screenshot */}
+                        {t.setupImageURL && (
+                          <div style={{ marginTop: 9 }}>
+                            <p style={{ color: TEXT3, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 5px" }}>📸 Chart Setup</p>
+                            <img
+                              src={t.setupImageURL}
+                              alt="Chart Setup"
+                              style={{ width: "100%", maxHeight: 240, borderRadius: 10, objectFit: "cover", cursor: "pointer", border: BORDER, display: "block" }}
+                              onClick={() => window.open(t.setupImageURL, "_blank")}
+                            />
+                          </div>
+                        )}
                       </div>
                     );
                   })}
