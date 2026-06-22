@@ -337,8 +337,23 @@ function fmtValue(key, val) {
   if (typeof val === "number" && isTimestampKey(key) && val > 1e11) {
     try { return new Date(val).toLocaleString(); } catch { return String(val); }
   }
+  const [authed, setAuthed] = useState(false);
+const [loginPass, setLoginPass] = useState("");
+const [loginErr, setLoginErr] = useState("");
+const [loginLoading, setLoginLoading] = useState(false);
   if (val && typeof val === "object" && typeof val.toDate === "function") {
     try { return val.toDate().toLocaleString(); } catch { return "—"; }
+  const handleLogin = async () => {
+  setLoginLoading(true); setLoginErr("");
+  try {
+    const snap = await getDocs(collection(db, "adminSettings"));
+    const mainDoc = snap.docs.find(d => d.id === "main");
+    const stored = mainDoc?.data()?.password;
+    if (stored && loginPass === stored) { setAuthed(true); }
+    else { setLoginErr("Password-ka waa khalad, isku day markale."); }
+  } catch { setLoginErr("Firestore connection failed."); }
+  finally { setLoginLoading(false); }
+};
   }
   if (typeof val === "boolean") return val ? "Yes" : "No";
   if (Array.isArray(val)) return `${val.length} item${val.length === 1 ? "" : "s"}`;
@@ -517,6 +532,32 @@ function EnrollmentsPage() {
     } catch (err) { window.alert(err.message); }
     finally { setBusy((b) => ({ ...b, [e.id]: false })); }
   };
+  if (!authed) return (
+  <>
+    <GlobalStyle />
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: C.surfaceCard, border: `1px solid ${C.border}`, borderRadius: 20, padding: 40, width: 360, boxShadow: "0 8px 40px rgba(0,0,0,0.5)" }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 14, background: C.red, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", boxShadow: `0 4px 20px ${C.redGlow}` }}>
+            <span style={{ color: "#fff", fontWeight: 900, fontSize: 28 }}>H</span>
+          </div>
+          <div style={{ color: C.text, fontWeight: 800, fontSize: 18 }}>DREAM CRT TRADING</div>
+          <div style={{ color: C.textMuted, fontSize: 13, marginTop: 4 }}>Admin Panel — Login</div>
+        </div>
+        <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Password</label>
+        <input type="password" value={loginPass} onChange={e => setLoginPass(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && handleLogin()}
+          placeholder="Enter admin password"
+          style={{ width: "100%", padding: "12px 16px", borderRadius: 10, background: C.bgDeep, border: `1px solid ${C.border}`, color: C.text, fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit", marginBottom: 12 }} />
+        {loginErr && <div style={{ color: C.errorRed, fontSize: 13, marginBottom: 12, padding: "9px 12px", background: C.errorDim, borderRadius: 8 }}>{loginErr}</div>}
+        <button onClick={handleLogin} disabled={loginLoading}
+          style={{ width: "100%", padding: "13px 0", background: C.red, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: loginLoading ? "not-allowed" : "pointer", opacity: loginLoading ? 0.7 : 1 }}>
+          {loginLoading ? "Checking…" : "Login →"}
+        </button>
+      </div>
+    </div>
+  </>
+);
   const q = search.trim().toLowerCase();
   const list = q ? enrollments.filter((e) => JSON.stringify(e).toLowerCase().includes(q)) : enrollments;
   return (
