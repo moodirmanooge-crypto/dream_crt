@@ -5,6 +5,7 @@ import {
   addDoc,
   doc,
   setDoc,
+  getDoc,
 } from "firebase/firestore";
 import { db, auth } from "../firebase/config.js";
 import { signOut, onAuthStateChanged } from "firebase/auth";
@@ -19,7 +20,6 @@ export default function Home() {
   const [type, setType] = useState("Trading Lessons");
   const [message, setMessage] = useState("");
 
-  // ── Payment Modal state ───────────────────────────────────────────────────
   const [showPayModal, setShowPayModal] = useState(false);
   const [payPhone, setPayPhone] = useState("");
   const [payEmail, setPayEmail] = useState("");
@@ -29,13 +29,10 @@ export default function Home() {
   const [paying, setPaying] = useState(false);
   const [payDone, setPayDone] = useState(false);
 
-  // ── Admin Portal state ────────────────────────────────────────────────────
   const [showAdminPortal, setShowAdminPortal] = useState(false);
   const [adminPin, setAdminPin] = useState("");
   const [adminError, setAdminError] = useState("");
   const [adminShaking, setAdminShaking] = useState(false);
-
-  const ADMIN_PASSWORD = "dreamcrt2024admin";
 
   useEffect(() => {
     fetchCourses();
@@ -84,27 +81,35 @@ export default function Home() {
     window.location.href = user ? "/journal" : "/login";
   };
 
-  // ── Admin portal handlers ─────────────────────────────────────────────────
   const openAdminPortal = () => {
     setAdminPin("");
     setAdminError("");
     setShowAdminPortal(true);
   };
 
-  const handleAdminLogin = () => {
-    if (adminPin === ADMIN_PASSWORD) {
-      setShowAdminPortal(false);
-      setAdminPin("");
-      window.location.href = "/admin";
-    } else {
-      setAdminError("Passwordka waa khalad. Isku day mar kale.");
-      setAdminShaking(true);
-      setAdminPin("");
-      setTimeout(() => setAdminShaking(false), 600);
+  const handleAdminLogin = async () => {
+    try {
+      const docSnap = await getDoc(doc(db, "adminSettings", "main"));
+      if (docSnap.exists()) {
+        const correctPassword = docSnap.data().password;
+        if (adminPin === correctPassword) {
+          setShowAdminPortal(false);
+          setAdminPin("");
+          window.location.href = "/admin";
+        } else {
+          setAdminError("Passwordka waa khalad. Isku day mar kale.");
+          setAdminShaking(true);
+          setAdminPin("");
+          setTimeout(() => setAdminShaking(false), 600);
+        }
+      } else {
+        setAdminError("Admin settings lama helin Firestore-ka.");
+      }
+    } catch (err) {
+      setAdminError("Khalad: " + err.message);
     }
   };
 
-  // ── Open payment modal for any service ───────────────────────────────────
   const openPayModal = (courseId, courseName, coursePrice) => {
     setPayCourseId(courseId);
     setPayCourseName(courseName);
@@ -129,7 +134,6 @@ export default function Home() {
     setPaying(false);
   };
 
-  // ── Services data ─────────────────────────────────────────────────────────
   const services = [
     {
       title: "Basic Forex Course 25$",
@@ -191,13 +195,11 @@ export default function Home() {
     },
   ];
 
-  // ── Only the FIRST course from Firestore ─────────────────────────────────
   const displayCourse = courses.length > 0 ? [courses[0]] : [];
 
   return (
     <div className="text-white min-h-screen overflow-x-hidden" style={{ background: "#0d0d0d" }}>
 
-      {/* ── Admin Portal shake animation ── */}
       <style>{`
         @keyframes shake {
           0%,100%{transform:translateX(0)}
@@ -211,13 +213,10 @@ export default function Home() {
         .dot-btn:hover span { background: #f5c518 !important; }
       `}</style>
 
-      {/* ─────────── NAVBAR ─────────── */}
       <nav className="flex items-center justify-between px-5 md:px-10 py-4 sticky top-0 z-50"
         style={{ background: "rgba(13,13,13,0.97)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
 
-        {/* Logo + 3-dot admin button */}
         <div className="flex items-center gap-2">
-          {/* ── 3-dot admin portal button ── */}
           <button
             className="dot-btn"
             onClick={openAdminPortal}
@@ -304,7 +303,6 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* MOBILE MENU */}
       {menuOpen && (
         <div className="md:hidden fixed top-[65px] left-0 right-0 z-40 px-5 py-6 flex flex-col gap-4"
           style={{ background: "rgba(13,13,13,0.98)", borderBottom: "1px solid rgba(245,197,24,0.15)" }}>
@@ -351,7 +349,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* ─────────── HERO ─────────── */}
       <section id="home" className="relative flex flex-col overflow-hidden"
         style={{ minHeight: "calc(100vh - 65px)", background: "linear-gradient(135deg, #0d0d0d 0%, #1a1200 50%, #0d0d0d 100%)" }}>
         <div className="absolute inset-0 pointer-events-none" style={{ overflow: "hidden" }}>
@@ -439,7 +436,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─────────── TRUST BAR ─────────── */}
       <div className="mx-5 md:mx-20 mb-16 md:mb-20 px-5 md:px-8 py-4 md:py-5 rounded-2xl flex flex-wrap justify-around gap-4 md:gap-6 items-center"
         style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(245,197,24,0.1)" }}>
         {[
@@ -455,7 +451,6 @@ export default function Home() {
         ))}
       </div>
 
-      {/* ─────────── COURSES ─────────── */}
       <section id="courses" className="px-5 md:px-20 py-16 md:py-24">
         <div className="text-center mb-12 md:mb-20">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-5"
@@ -532,7 +527,6 @@ export default function Home() {
         )}
       </section>
 
-      {/* ─────────── ABOUT ─────────── */}
       <section id="about" className="px-5 md:px-20 py-20 md:py-32 text-center"
         style={{ borderTop: "1px solid rgba(245,197,24,0.08)" }}>
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-6"
@@ -546,7 +540,6 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
         </p>
       </section>
 
-      {/* ─────────── CONTACT ─────────── */}
       <section id="contact" className="px-5 md:px-20 py-16 md:py-24 text-center"
         style={{ borderTop: "1px solid rgba(245,197,24,0.12)" }}>
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-6"
@@ -568,7 +561,6 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
         </div>
       </section>
 
-      {/* ─────────── JOURNAL MODAL ─────────── */}
       {showJournalForm && (
         <div className="fixed inset-0 flex items-center justify-center z-50 px-4" style={{ background: "rgba(0,0,0,0.85)" }}>
           <div className="w-full max-w-2xl p-6 md:p-10 rounded-3xl relative max-h-[90vh] overflow-y-auto"
@@ -600,15 +592,12 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
         </div>
       )}
 
-      {/* ─────────── PAYMENT MODAL ─────────── */}
       {showPayModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 px-4"
           style={{ background: "rgba(0,0,0,0.88)" }}
           onClick={(e) => { if (e.target === e.currentTarget) { setShowPayModal(false); setPayDone(false); } }}>
           <div className="w-full max-w-md rounded-3xl relative max-h-[90vh] overflow-y-auto"
             style={{ background: "#080808", border: "1px solid rgba(245,197,24,0.25)" }}>
-
-            {/* Header */}
             <div className="flex items-center justify-between px-7 pt-7 pb-5"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               <div>
@@ -619,7 +608,6 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
                 className="w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold"
                 style={{ background: "rgba(255,255,255,0.05)", color: "#94a3b8", border: "none", cursor: "pointer" }}>✕</button>
             </div>
-
             <div className="px-7 py-6">
               {!payDone ? (
                 <>
@@ -705,7 +693,6 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
         </div>
       )}
 
-      {/* ─────────── ADMIN PORTAL MODAL ─────────── */}
       {showAdminPortal && (
         <div
           className="fixed inset-0 flex items-center justify-center z-[100] px-4"
@@ -723,14 +710,12 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
               overflow: "hidden",
             }}
           >
-            {/* Header */}
             <div style={{
               background: "linear-gradient(135deg, #1a1000 0%, #0d0d0d 100%)",
               padding: "28px 28px 20px",
               borderBottom: "1px solid rgba(245,197,24,0.1)",
               textAlign: "center",
             }}>
-              {/* Shield icon */}
               <div style={{
                 width: "56px",
                 height: "56px",
@@ -753,7 +738,6 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
               </p>
             </div>
 
-            {/* Body */}
             <div style={{ padding: "24px 28px 28px" }}>
               <label style={{
                 display: "block",
@@ -791,7 +775,6 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
                 onBlur={(e) => { if (!adminError) e.target.style.borderColor = "rgba(245,197,24,0.2)"; }}
               />
 
-              {/* Error message */}
               {adminError && (
                 <div style={{
                   marginTop: "10px",
@@ -810,7 +793,6 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
                 </div>
               )}
 
-              {/* Login button */}
               <button
                 onClick={handleAdminLogin}
                 style={{
@@ -836,7 +818,6 @@ Koorsooyinkayga gaarka ah (Premium Courses) waxay kuu  soo gaabinayaan safarkaas
                 🔐 Enter Admin Dashboard
               </button>
 
-              {/* Cancel */}
               <button
                 onClick={() => { setShowAdminPortal(false); setAdminPin(""); setAdminError(""); }}
                 style={{
