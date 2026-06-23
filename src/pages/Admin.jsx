@@ -798,34 +798,70 @@ function UploadContentPage() {
   const singleFileRef = useRef(null);
   const lessonFileRef = useRef(null);
 
+  const PLAYLIST_TYPES = ["playlist", "basic_forex", "crt_course", "mentorship", "copy_trading"];
+
   const uploadWithProgress = (storageRef, file, onProg) =>
     new Promise((resolve, reject) => {
       const task = uploadBytesResumable(storageRef, file);
-      task.on("state_changed", (snap) => onProg(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)), reject,
-        () => getDownloadURL(task.snapshot.ref).then(resolve).catch(reject));
+      task.on("state_changed",
+        (snap) => onProg(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+        reject,
+        () => getDownloadURL(task.snapshot.ref).then(resolve).catch(reject)
+      );
     });
 
   const addLesson = () => {
     if (!lessonTitle.trim()) { alert("Lesson-ka cinwaankiisa gali"); return; }
     if (!lessonFile) { alert("Lesson-ka file-kiisa dooro"); return; }
-    setLessons(prev => [...prev, { id: Date.now().toString(), title: lessonTitle.trim(), file: lessonFile, fileType: lessonFileType, order: prev.length + 1 }]);
+    setLessons(prev => [...prev, {
+      id: Date.now().toString(),
+      title: lessonTitle.trim(),
+      file: lessonFile,
+      fileType: lessonFileType,
+      order: prev.length + 1
+    }]);
     setLessonTitle(""); setLessonFile(null); setAddingLesson(false);
   };
-  const removeLesson = (id) => setLessons(prev => prev.filter(l => l.id !== id).map((l, i) => ({ ...l, order: i + 1 })));
-  const moveLessonUp = (idx) => { if (idx === 0) return; setLessons(prev => { const a = [...prev]; [a[idx-1],a[idx]] = [a[idx],a[idx-1]]; return a.map((l,i)=>({...l,order:i+1})); }); };
-  const moveLessonDown = (idx) => { setLessons(prev => { if (idx >= prev.length-1) return prev; const a=[...prev]; [a[idx],a[idx+1]]=[a[idx+1],a[idx]]; return a.map((l,i)=>({...l,order:i+1})); }); };
+
+  const removeLesson = (id) =>
+    setLessons(prev => prev.filter(l => l.id !== id).map((l, i) => ({ ...l, order: i + 1 })));
+
+  const moveLessonUp = (idx) => {
+    if (idx === 0) return;
+    setLessons(prev => {
+      const a = [...prev];
+      [a[idx-1], a[idx]] = [a[idx], a[idx-1]];
+      return a.map((l, i) => ({ ...l, order: i + 1 }));
+    });
+  };
+
+  const moveLessonDown = (idx) => {
+    setLessons(prev => {
+      if (idx >= prev.length - 1) return prev;
+      const a = [...prev];
+      [a[idx], a[idx+1]] = [a[idx+1], a[idx]];
+      return a.map((l, i) => ({ ...l, order: i + 1 }));
+    });
+  };
 
   const handleUpload = async () => {
     if (!title.trim()) { setMsg("⚠️ Course title buuxi"); return; }
-    if (category === "playlist" && lessons.length === 0) { setMsg("⚠️ Ugu yaraan 1 lesson ku dar"); return; }
-    if ((category === "single_video" || category === "single_pdf") && !singleFile) { setMsg("⚠️ File-ka dooro"); return; }
+    if (PLAYLIST_TYPES.includes(category) && lessons.length === 0) {
+      setMsg("⚠️ Ugu yaraan 1 lesson ku dar"); return;
+    }
+    if ((category === "single_video" || category === "single_pdf") && !singleFile) {
+      setMsg("⚠️ File-ka dooro"); return;
+    }
     setUploading(true); setProgress(0); setMsg("");
     const coursePrice = Number(price) || 0;
     try {
       setProgressLabel("🖼️ Thumbnail uploading…");
       let thumbnailURL = "";
-      if (thumbnail) { const tRef = ref(storage, `thumbnails/${Date.now()}_${thumbnail.name}`); thumbnailURL = await uploadWithProgress(tRef, thumbnail, () => {}); }
-      if (category === "playlist") {
+      if (thumbnail) {
+        const tRef = ref(storage, `thumbnails/${Date.now()}_${thumbnail.name}`);
+        thumbnailURL = await uploadWithProgress(tRef, thumbnail, () => {});
+      }
+      if (PLAYLIST_TYPES.includes(category)) {
         const uploadedLessons = [];
         for (let i = 0; i < lessons.length; i++) {
           const lesson = lessons[i];
@@ -834,42 +870,95 @@ function UploadContentPage() {
           const folder = lesson.fileType === "pdf" ? "pdfs" : "videos";
           const lRef = ref(storage, `${folder}/lessons/${Date.now()}_${lesson.file.name}`);
           const fileURL = await uploadWithProgress(lRef, lesson.file, () => {});
-          uploadedLessons.push({ title: lesson.title, fileURL, fileType: lesson.fileType === "pdf" ? "PDF" : "Video", order: lesson.order });
+          uploadedLessons.push({
+            title: lesson.title,
+            fileURL,
+            fileType: lesson.fileType === "pdf" ? "PDF" : "Video",
+            order: lesson.order
+          });
         }
-        setProgressLabel("💾 Saving playlist…"); setProgress(90);
-        await addDoc(collection(db, "courses"), { title: title.trim(), description: description.trim(), price: coursePrice, thumbnailURL, category: "playlist", type: "Playlist", lessons: uploadedLessons, lessonCount: uploadedLessons.length, createdAt: Date.now(), status: "Published", locked: coursePrice > 0, isPaid: false });
+        setProgressLabel("💾 Saving…"); setProgress(90);
+        await addDoc(collection(db, "courses"), {
+          title: title.trim(),
+          description: description.trim(),
+          price: coursePrice,
+          thumbnailURL,
+          category,
+          type: "Playlist",
+          lessons: uploadedLessons,
+          lessonCount: uploadedLessons.length,
+          createdAt: Date.now(),
+          status: "Published",
+          locked: coursePrice > 0,
+          isPaid: false
+        });
       } else {
         const folder = category === "single_pdf" ? "pdfs" : "videos";
         setProgressLabel(`📤 ${category === "single_pdf" ? "PDF" : "Video"} uploading…`);
         const fRef = ref(storage, `${folder}/${Date.now()}_${singleFile.name}`);
         const fileURL = await uploadWithProgress(fRef, singleFile, (p) => setProgress(Math.round(p * 0.85)));
         setProgressLabel("💾 Saving…"); setProgress(90);
-        await addDoc(collection(db, "courses"), { title: title.trim(), description: description.trim(), price: coursePrice, thumbnailURL, fileURL, category: category === "single_pdf" ? "single_pdf" : "single_video", type: category === "single_pdf" ? "PDF" : "Video", createdAt: Date.now(), status: "Published", locked: coursePrice > 0, isPaid: false });
+        await addDoc(collection(db, "courses"), {
+          title: title.trim(),
+          description: description.trim(),
+          price: coursePrice,
+          thumbnailURL,
+          fileURL,
+          category: category === "single_pdf" ? "single_pdf" : "single_video",
+          type: category === "single_pdf" ? "PDF" : "Video",
+          createdAt: Date.now(),
+          status: "Published",
+          locked: coursePrice > 0,
+          isPaid: false
+        });
       }
       setProgress(100); setProgressLabel("✅ Done!");
       setMsg("✅ Course si guul leh ayaa loo upload garey!");
-      setTimeout(() => { setTitle(""); setDescription(""); setPrice(""); setThumbnail(null); setThumbnailPreview(null); setSingleFile(null); setLessons([]); setStep(1); setCategory(""); setProgress(0); setProgressLabel(""); }, 2000);
-    } catch (err) { setMsg("❌ " + (err.message || "Upload failed.")); }
-    finally { setUploading(false); }
+      setTimeout(() => {
+        setTitle(""); setDescription(""); setPrice("");
+        setThumbnail(null); setThumbnailPreview(null);
+        setSingleFile(null); setLessons([]);
+        setStep(1); setCategory("");
+        setProgress(0); setProgressLabel("");
+      }, 2000);
+    } catch (err) {
+      setMsg("❌ " + (err.message || "Upload failed."));
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const iS = { width: "100%", padding: "11px 14px", borderRadius: 10, background: C.bgDeep, border: `1px solid ${C.border}`, color: C.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" };
+  const iS = {
+    width: "100%", padding: "11px 14px", borderRadius: 10,
+    background: C.bgDeep, border: `1px solid ${C.border}`,
+    color: C.text, fontSize: 13, outline: "none",
+    boxSizing: "border-box", fontFamily: "inherit"
+  };
 
+  // ── STEP 1: Choose category ──
   if (step === 1) {
     return (
-      <div style={{ maxWidth: 800, margin: "0 auto" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{ marginBottom: 28 }}>
           <h2 style={{ color: C.text, fontWeight: 900, fontSize: 22, margin: "0 0 6px" }}>Upload New Course</h2>
           <p style={{ color: C.textMuted, fontSize: 14 }}>Nooca course-ka dooro si ugu habboon</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
           {[
-            { id: "single_video", icon: "🎬", label: "Single Video Lesson", sub: "Cashar keliya oo muuqaal ah", color: C.amber, colorDim: C.amberDim },
-            { id: "single_pdf",   icon: "📄", label: "Single PDF Lesson",   sub: "Cashar keliya oo PDF ah", color: C.errorRed, colorDim: C.errorDim },
-            { id: "playlist",     icon: "🎓", label: "Full Course (Playlist)", sub: "Cashar badan oo is-xiga", color: C.blue, colorDim: C.blueDim },
+            { id: "single_video", icon: "🎬", label: "Single Video Lesson",      sub: "Cashar keliya oo muuqaal ah",               color: C.amber,      colorDim: C.amberDim },
+            { id: "single_pdf",   icon: "📄", label: "Single PDF Lesson",         sub: "Cashar keliya oo PDF ah",                   color: C.errorRed,   colorDim: C.errorDim },
+            { id: "playlist",     icon: "🎓", label: "Full Course (Playlist)",     sub: "Cashar badan oo is-xiga",                   color: C.blue,       colorDim: C.blueDim },
+            { id: "basic_forex",  icon: "📈", label: "Basic Forex Course 35$",     sub: "Bilowga Ganacsiga",                         color: "#f5c518",    colorDim: "rgba(245,197,24,0.15)" },
+            { id: "crt_course",   icon: "⭐", label: "CRT Course 75$",             sub: "Barashada CRT (Mudo Kooban)",               color: "#a78bfa",    colorDim: "rgba(167,139,250,0.15)" },
+            { id: "mentorship",   icon: "🤝", label: "Premium Mentorship 125$",    sub: "Hagidda Shakhsiyadeed & Maareynta",         color: "#22c55e",    colorDim: "rgba(34,197,94,0.15)" },
+            { id: "copy_trading", icon: "💹", label: "Copy Trading Services",      sub: "Maalgashi Toos Ah",                         color: "#f97316",    colorDim: "rgba(249,115,22,0.15)" },
           ].map(opt => (
             <button key={opt.id} onClick={() => { setCategory(opt.id); setStep(2); }}
-              style={{ textAlign: "left", cursor: "pointer", background: C.surfaceCard, border: `2px solid ${category === opt.id ? opt.color : C.border}`, borderRadius: 18, padding: 24, transition: "all .2s", display: "flex", flexDirection: "column", gap: 14 }}
+              style={{
+                textAlign: "left", cursor: "pointer", background: C.surfaceCard,
+                border: `2px solid ${C.border}`, borderRadius: 18, padding: 24,
+                transition: "all .2s", display: "flex", flexDirection: "column", gap: 14
+              }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = opt.color; e.currentTarget.style.boxShadow = `0 8px 24px ${opt.colorDim}`; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = "none"; }}>
               <div style={{ fontSize: 40 }}>{opt.icon}</div>
@@ -877,7 +966,9 @@ function UploadContentPage() {
                 <p style={{ color: C.text, fontWeight: 800, fontSize: 16, marginBottom: 8 }}>{opt.label}</p>
                 <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.6 }}>{opt.sub}</p>
               </div>
-              <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 6, color: opt.color, fontWeight: 700, fontSize: 13 }}>Dooro <span style={{ fontSize: 16 }}>→</span></div>
+              <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 6, color: opt.color, fontWeight: 700, fontSize: 13 }}>
+                Dooro <span style={{ fontSize: 16 }}>→</span>
+              </div>
             </button>
           ))}
         </div>
@@ -885,107 +976,186 @@ function UploadContentPage() {
     );
   }
 
-  const catInfo = { single_video: { icon: "🎬", label: "Single Video Lesson", color: C.amber }, single_pdf: { icon: "📄", label: "Single PDF Lesson", color: C.errorRed }, playlist: { icon: "🎓", label: "Full Course (Playlist)", color: C.blue } }[category];
+  // ── catInfo for step 2 ──
+  const catInfo = {
+    single_video: { icon: "🎬", label: "Single Video Lesson",      color: C.amber    },
+    single_pdf:   { icon: "📄", label: "Single PDF Lesson",         color: C.errorRed },
+    playlist:     { icon: "🎓", label: "Full Course (Playlist)",    color: C.blue     },
+    basic_forex:  { icon: "📈", label: "Basic Forex Course 35$",    color: "#f5c518"  },
+    crt_course:   { icon: "⭐", label: "CRT Course 75$",            color: "#a78bfa"  },
+    mentorship:   { icon: "🤝", label: "Premium Mentorship 125$",   color: "#22c55e"  },
+    copy_trading: { icon: "💹", label: "Copy Trading Services",     color: "#f97316"  },
+  }[category];
 
+  // ── STEP 2: Upload form ──
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-        <button onClick={() => { setStep(1); setMsg(""); }} style={{ background: "none", border: "none", color: C.textMuted, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>← Back</button>
+        <button onClick={() => { setStep(1); setMsg(""); }}
+          style={{ background: "none", border: "none", color: C.textMuted, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+          ← Back
+        </button>
         <div style={{ width: 1, height: 16, background: C.border }} />
         <span style={{ fontSize: 20 }}>{catInfo.icon}</span>
         <span style={{ color: catInfo.color, fontWeight: 700, fontSize: 15 }}>{catInfo.label}</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: category === "playlist" ? "1fr" : "1fr 1fr", gap: 22 }}>
+
+      <div style={{ display: "grid", gridTemplateColumns: PLAYLIST_TYPES.includes(category) ? "1fr" : "1fr 1fr", gap: 22 }}>
+        {/* ── LEFT: Course Details ── */}
         <div style={{ ...CARD }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
             <div style={{ width: 3, height: 18, background: catInfo.color, borderRadius: 2 }} />
             <span style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>Course Details</span>
           </div>
+
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Course Title *</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Basic Forex Somali" style={iS} onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
+            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Basic Forex Somali" style={iS}
+              onFocus={e => (e.target.style.borderColor = catInfo.color)}
+              onBlur={e => (e.target.style.borderColor = C.border)} />
           </div>
+
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Description</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Maxaa ardaygu ka baran doonaa course-kan?" rows={3} style={{ ...iS, resize: "vertical" }} onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
+            <textarea value={description} onChange={e => setDescription(e.target.value)}
+              placeholder="Maxaa ardaygu ka baran doonaa course-kan?" rows={3}
+              style={{ ...iS, resize: "vertical" }}
+              onFocus={e => (e.target.style.borderColor = catInfo.color)}
+              onBlur={e => (e.target.style.borderColor = C.border)} />
           </div>
+
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Price (USD) — 0 = bilaash</label>
-            <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" style={iS} onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
+            <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" style={iS}
+              onFocus={e => (e.target.style.borderColor = catInfo.color)}
+              onBlur={e => (e.target.style.borderColor = C.border)} />
           </div>
+
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Thumbnail (optional)</label>
             <div onClick={() => thumbRef.current?.click()}
               style={{ border: `2px dashed ${thumbnail ? C.green : C.border}`, borderRadius: 12, padding: 16, cursor: "pointer", background: C.bgDeep, display: "flex", alignItems: "center", gap: 12, transition: "all .2s" }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)} onMouseLeave={e => (e.currentTarget.style.borderColor = thumbnail ? C.green : C.border)}>
+              onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = thumbnail ? C.green : C.border)}>
               {thumbnailPreview
-                ? <><img src={thumbnailPreview} alt="" style={{ width: 60, height: 60, borderRadius: 8, objectFit: "cover" }} /><div><p style={{ color: C.green, fontWeight: 600, fontSize: 13 }}>✓ {thumbnail.name}</p><p style={{ color: C.textMuted, fontSize: 11 }}>{(thumbnail.size / 1048576).toFixed(1)} MB</p></div></>
-                : <><div style={{ fontSize: 28 }}>🖼️</div><span style={{ color: C.textMuted, fontSize: 13 }}>Click to upload thumbnail image</span></>}
+                ? <>
+                    <img src={thumbnailPreview} alt="" style={{ width: 60, height: 60, borderRadius: 8, objectFit: "cover" }} />
+                    <div>
+                      <p style={{ color: C.green, fontWeight: 600, fontSize: 13 }}>✓ {thumbnail.name}</p>
+                      <p style={{ color: C.textMuted, fontSize: 11 }}>{(thumbnail.size / 1048576).toFixed(1)} MB</p>
+                    </div>
+                  </>
+                : <>
+                    <div style={{ fontSize: 28 }}>🖼️</div>
+                    <span style={{ color: C.textMuted, fontSize: 13 }}>Click to upload thumbnail image</span>
+                  </>}
             </div>
-            <input ref={thumbRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (f) { setThumbnail(f); setThumbnailPreview(URL.createObjectURL(f)); } }} />
+            <input ref={thumbRef} type="file" accept="image/*" style={{ display: "none" }}
+              onChange={e => { const f = e.target.files[0]; if (f) { setThumbnail(f); setThumbnailPreview(URL.createObjectURL(f)); } }} />
           </div>
-          {category !== "playlist" && (
+
+          {/* Single file upload — only for single_video / single_pdf */}
+          {!PLAYLIST_TYPES.includes(category) && (
             <div>
-              <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>{category === "single_pdf" ? "PDF File *" : "Video File *"}</label>
+              <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>
+                {category === "single_pdf" ? "PDF File *" : "Video File *"}
+              </label>
               <div onClick={() => singleFileRef.current?.click()}
                 style={{ border: `2px dashed ${singleFile ? C.green : C.borderRed}`, borderRadius: 12, padding: "24px 20px", cursor: "pointer", background: C.redFaint, textAlign: "center", transition: "all .2s" }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)} onMouseLeave={e => (e.currentTarget.style.borderColor = singleFile ? C.green : C.borderRed)}>
+                onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = singleFile ? C.green : C.borderRed)}>
                 {singleFile ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
                     <div style={{ fontSize: 28 }}>{category === "single_pdf" ? "📄" : "🎬"}</div>
-                    <div><p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {singleFile.name}</p><p style={{ color: C.textMuted, fontSize: 11 }}>{(singleFile.size / 1048576).toFixed(1)} MB</p></div>
-                    <button onClick={e => { e.stopPropagation(); setSingleFile(null); }} style={{ marginLeft: "auto", background: C.errorDim, color: C.errorRed, border: "none", borderRadius: 8, padding: "6px 8px", cursor: "pointer" }}><Icon.Trash /></button>
+                    <div>
+                      <p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {singleFile.name}</p>
+                      <p style={{ color: C.textMuted, fontSize: 11 }}>{(singleFile.size / 1048576).toFixed(1)} MB</p>
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); setSingleFile(null); }}
+                      style={{ marginLeft: "auto", background: C.errorDim, color: C.errorRed, border: "none", borderRadius: 8, padding: "6px 8px", cursor: "pointer" }}>
+                      <Icon.Trash />
+                    </button>
                   </div>
                 ) : (
                   <>
                     <div style={{ fontSize: 36, marginBottom: 8 }}>{category === "single_pdf" ? "📄" : "🎬"}</div>
-                    <p style={{ color: C.textMuted, fontSize: 13, marginBottom: 4 }}>{category === "single_pdf" ? "Drag & drop PDF file here" : "Drag & drop Video file here"}</p>
-                    <p style={{ color: C.textSub, fontSize: 11 }}>{category === "single_pdf" ? "PDF only • Max 50MB" : "MP4, MOV, AVI • Max 2GB"}</p>
+                    <p style={{ color: C.textMuted, fontSize: 13, marginBottom: 4 }}>
+                      {category === "single_pdf" ? "Drag & drop PDF file here" : "Drag & drop Video file here"}
+                    </p>
+                    <p style={{ color: C.textSub, fontSize: 11 }}>
+                      {category === "single_pdf" ? "PDF only • Max 50MB" : "MP4, MOV, AVI • Max 2GB"}
+                    </p>
                   </>
                 )}
               </div>
-              <input ref={singleFileRef} type="file" accept={category === "single_pdf" ? ".pdf" : "video/*"} style={{ display: "none" }} onChange={e => { if (e.target.files[0]) setSingleFile(e.target.files[0]); }} />
+              <input ref={singleFileRef} type="file"
+                accept={category === "single_pdf" ? ".pdf" : "video/*"}
+                style={{ display: "none" }}
+                onChange={e => { if (e.target.files[0]) setSingleFile(e.target.files[0]); }} />
             </div>
           )}
         </div>
-        {category === "playlist" && (
+
+        {/* ── RIGHT: Lessons (playlist types) ── */}
+        {PLAYLIST_TYPES.includes(category) && (
           <div style={{ ...CARD }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 3, height: 18, background: C.blue, borderRadius: 2 }} />
+                <div style={{ width: 3, height: 18, background: catInfo.color, borderRadius: 2 }} />
                 <span style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>Course Lessons</span>
-                <span style={{ background: C.blueDim, color: C.blue, padding: "3px 10px", borderRadius: 8, fontSize: 12, fontWeight: 700 }}>{lessons.length} lesson{lessons.length !== 1 ? "s" : ""}</span>
+                <span style={{ background: C.blueDim, color: C.blue, padding: "3px 10px", borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
+                  {lessons.length} lesson{lessons.length !== 1 ? "s" : ""}
+                </span>
               </div>
-              <button onClick={() => setAddingLesson(true)} style={{ display: "flex", alignItems: "center", gap: 6, background: C.blue, color: "#fff", border: "none", borderRadius: 10, padding: "8px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}><Icon.Plus /> Add Lesson</button>
+              <button onClick={() => setAddingLesson(true)}
+                style={{ display: "flex", alignItems: "center", gap: 6, background: catInfo.color, color: "#fff", border: "none", borderRadius: 10, padding: "8px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                <Icon.Plus /> Add Lesson
+              </button>
             </div>
+
             {addingLesson && (
-              <div style={{ background: C.bgDeep, border: `1px solid ${C.blue}40`, borderRadius: 14, padding: 20, marginBottom: 16 }}>
-                <p style={{ color: C.blue, fontWeight: 700, fontSize: 13, marginBottom: 14 }}>✚ New Lesson</p>
+              <div style={{ background: C.bgDeep, border: `1px solid ${catInfo.color}40`, borderRadius: 14, padding: 20, marginBottom: 16 }}>
+                <p style={{ color: catInfo.color, fontWeight: 700, fontSize: 13, marginBottom: 14 }}>✚ New Lesson</p>
                 <div style={{ marginBottom: 12 }}>
                   <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>Lesson Title *</label>
-                  <input value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} placeholder="e.g. Introduction to Forex" style={iS} onFocus={e => (e.target.style.borderColor = C.blue)} onBlur={e => (e.target.style.borderColor = C.border)} />
+                  <input value={lessonTitle} onChange={e => setLessonTitle(e.target.value)}
+                    placeholder="e.g. Introduction to Forex" style={iS}
+                    onFocus={e => (e.target.style.borderColor = catInfo.color)}
+                    onBlur={e => (e.target.style.borderColor = C.border)} />
                 </div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                   {["video", "pdf"].map(t => (
                     <button key={t} onClick={() => { setLessonFileType(t); setLessonFile(null); }}
-                      style={{ flex: 1, padding: "9px 0", borderRadius: 9, border: "none", cursor: "pointer", background: lessonFileType === t ? C.blue : C.surfaceCard, color: lessonFileType === t ? "#fff" : C.textMuted, fontWeight: 700, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                      style={{ flex: 1, padding: "9px 0", borderRadius: 9, border: "none", cursor: "pointer", background: lessonFileType === t ? catInfo.color : C.surfaceCard, color: "#fff", fontWeight: 700, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                       {t === "video" ? "🎬 Video" : "📄 PDF"}
                     </button>
                   ))}
                 </div>
                 <div onClick={() => lessonFileRef.current?.click()}
                   style={{ border: `2px dashed ${lessonFile ? C.green : C.border}`, borderRadius: 10, padding: 14, cursor: "pointer", textAlign: "center", background: C.surface, marginBottom: 14, transition: "all .2s" }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = C.blue)} onMouseLeave={e => (e.currentTarget.style.borderColor = lessonFile ? C.green : C.border)}>
-                  {lessonFile ? <p style={{ color: C.green, fontWeight: 600, fontSize: 13 }}>✓ {lessonFile.name} ({(lessonFile.size / 1048576).toFixed(1)} MB)</p>
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = lessonFile ? C.green : C.border)}>
+                  {lessonFile
+                    ? <p style={{ color: C.green, fontWeight: 600, fontSize: 13 }}>✓ {lessonFile.name} ({(lessonFile.size / 1048576).toFixed(1)} MB)</p>
                     : <p style={{ color: C.textMuted, fontSize: 13 }}>{lessonFileType === "video" ? "Click to select video file" : "Click to select PDF file"}</p>}
                 </div>
-                <input ref={lessonFileRef} type="file" accept={lessonFileType === "pdf" ? ".pdf" : "video/*"} style={{ display: "none" }} onChange={e => { if (e.target.files[0]) setLessonFile(e.target.files[0]); }} />
+                <input ref={lessonFileRef} type="file"
+                  accept={lessonFileType === "pdf" ? ".pdf" : "video/*"}
+                  style={{ display: "none" }}
+                  onChange={e => { if (e.target.files[0]) setLessonFile(e.target.files[0]); }} />
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={addLesson} style={{ flex: 1, padding: "10px 0", background: C.blue, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>✓ Add Lesson</button>
-                  <button onClick={() => { setAddingLesson(false); setLessonTitle(""); setLessonFile(null); }} style={{ padding: "10px 16px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                  <button onClick={addLesson}
+                    style={{ flex: 1, padding: "10px 0", background: catInfo.color, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                    ✓ Add Lesson
+                  </button>
+                  <button onClick={() => { setAddingLesson(false); setLessonTitle(""); setLessonFile(null); }}
+                    style={{ padding: "10px 16px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                    Cancel
+                  </button>
                 </div>
               </div>
             )}
+
             {lessons.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px 0", color: C.textSub }}>
                 <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
@@ -994,17 +1164,28 @@ function UploadContentPage() {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {lessons.map((lesson, idx) => (
-                  <div key={lesson.id} className="lesson-row" style={{ background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", display: "flex", alignItems: "center", gap: 12, transition: "background .15s" }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: C.blueDim, color: C.blue, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 13, flexShrink: 0 }}>{lesson.order}</div>
+                  <div key={lesson.id} style={{ background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", display: "flex", alignItems: "center", gap: 12, transition: "background .15s" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: C.blueDim, color: C.blue, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 13, flexShrink: 0 }}>
+                      {lesson.order}
+                    </div>
                     <div style={{ fontSize: 18, flexShrink: 0 }}>{lesson.fileType === "pdf" ? "📄" : "🎬"}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ color: C.text, fontWeight: 700, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{lesson.title}</p>
                       <p style={{ color: C.textSub, fontSize: 11, marginTop: 2 }}>{lesson.file.name} • {(lesson.file.size / 1048576).toFixed(1)} MB</p>
                     </div>
                     <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                      <button onClick={() => moveLessonUp(idx)} disabled={idx === 0} style={{ background: "none", border: `1px solid ${C.border}`, color: idx === 0 ? C.textSub : C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === 0 ? "not-allowed" : "pointer", opacity: idx === 0 ? 0.4 : 1 }}><Icon.ChevronUp /></button>
-                      <button onClick={() => moveLessonDown(idx)} disabled={idx === lessons.length - 1} style={{ background: "none", border: `1px solid ${C.border}`, color: idx === lessons.length-1 ? C.textSub : C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === lessons.length-1 ? "not-allowed" : "pointer", opacity: idx === lessons.length-1 ? 0.4 : 1 }}><Icon.ChevronDown /></button>
-                      <button onClick={() => removeLesson(lesson.id)} style={{ background: C.errorDim, border: "none", color: C.errorRed, borderRadius: 7, padding: "5px 7px", cursor: "pointer" }}><Icon.Trash /></button>
+                      <button onClick={() => moveLessonUp(idx)} disabled={idx === 0}
+                        style={{ background: "none", border: `1px solid ${C.border}`, color: idx === 0 ? C.textSub : C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === 0 ? "not-allowed" : "pointer", opacity: idx === 0 ? 0.4 : 1 }}>
+                        <Icon.ChevronUp />
+                      </button>
+                      <button onClick={() => moveLessonDown(idx)} disabled={idx === lessons.length - 1}
+                        style={{ background: "none", border: `1px solid ${C.border}`, color: idx === lessons.length-1 ? C.textSub : C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === lessons.length-1 ? "not-allowed" : "pointer", opacity: idx === lessons.length-1 ? 0.4 : 1 }}>
+                        <Icon.ChevronDown />
+                      </button>
+                      <button onClick={() => removeLesson(lesson.id)}
+                        style={{ background: C.errorDim, border: "none", color: C.errorRed, borderRadius: 7, padding: "5px 7px", cursor: "pointer" }}>
+                        <Icon.Trash />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -1013,6 +1194,8 @@ function UploadContentPage() {
           </div>
         )}
       </div>
+
+      {/* ── BOTTOM: Upload button ── */}
       <div style={{ ...CARD, marginTop: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: C.redFaint, border: `1px solid ${C.borderRed}`, fontSize: 12, color: C.textMuted }}>
           <span style={{ color: C.redLight }}><Icon.Lock /></span>
@@ -1023,15 +1206,29 @@ function UploadContentPage() {
             <div style={{ background: "#1e1e1e", borderRadius: 99, height: 8, overflow: "hidden", marginBottom: 8 }}>
               <div style={{ width: `${progress}%`, height: "100%", background: `linear-gradient(90deg, ${catInfo.color}, ${catInfo.color}cc)`, borderRadius: 99, transition: "width .3s" }} />
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.textMuted }}><span>{progressLabel}</span><span>{progress}%</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.textMuted }}>
+              <span>{progressLabel}</span><span>{progress}%</span>
+            </div>
           </div>
         )}
-        {msg && <div style={{ marginBottom: 16, padding: "11px 16px", borderRadius: 10, fontSize: 13, background: msg.startsWith("✅") ? "#0a2a18" : "#2a0a0a", border: `1px solid ${msg.startsWith("✅") ? C.green + "40" : C.errorRed + "40"}`, color: msg.startsWith("✅") ? C.green : C.errorRed }}>{msg}</div>}
+        {msg && (
+          <div style={{ marginBottom: 16, padding: "11px 16px", borderRadius: 10, fontSize: 13, background: msg.startsWith("✅") ? "#0a2a18" : "#2a0a0a", border: `1px solid ${msg.startsWith("✅") ? C.green + "40" : C.errorRed + "40"}`, color: msg.startsWith("✅") ? C.green : C.errorRed }}>
+            {msg}
+          </div>
+        )}
         <div style={{ display: "flex", gap: 12 }}>
-          <button onClick={handleUpload} disabled={uploading} style={{ flex: 1, padding: "14px 0", background: catInfo.color, color: category === "playlist" ? "#fff" : "#000", border: "none", borderRadius: 12, fontWeight: 900, fontSize: 15, cursor: uploading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 9, opacity: uploading ? 0.65 : 1 }}>
-            {uploading ? <><div style={{ width: 20, height: 20, border: "2px solid rgba(0,0,0,0.3)", borderTopColor: "#000", borderRadius: "50%", animation: "spin 1s linear infinite" }} />{progressLabel || "Uploading…"}</> : <><Icon.Upload /> {catInfo.icon} Upload {catInfo.label}</>}
+          <button onClick={handleUpload} disabled={uploading}
+            style={{ flex: 1, padding: "14px 0", background: catInfo.color, color: "#fff", border: "none", borderRadius: 12, fontWeight: 900, fontSize: 15, cursor: uploading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 9, opacity: uploading ? 0.65 : 1 }}>
+            {uploading
+              ? <><div style={{ width: 20, height: 20, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 1s linear infinite" }} />{progressLabel || "Uploading…"}</>
+              : <><Icon.Upload /> {catInfo.icon} Upload {catInfo.label}</>}
           </button>
-          {!uploading && <button onClick={() => { setStep(1); setCategory(""); setMsg(""); }} style={{ padding: "14px 20px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Cancel</button>}
+          {!uploading && (
+            <button onClick={() => { setStep(1); setCategory(""); setMsg(""); }}
+              style={{ padding: "14px 20px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              Cancel
+            </button>
+          )}
         </div>
       </div>
     </div>
