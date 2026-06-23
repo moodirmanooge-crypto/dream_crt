@@ -18,6 +18,7 @@ import TradingTemplate from "./pages/TradingTemplate.jsx";
 import MyCourses from "./pages/mycourses.jsx";
 import Contact from "./pages/contact.jsx";
 import TradeHistory from "./pages/TradeHistory.jsx";
+import Archives from "./pages/Archives.jsx";
 
 function App() {
   return (
@@ -26,7 +27,7 @@ function App() {
 
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} /> {/* ✅ Contact route */}
+        <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/admin" element={<Admin />} />
@@ -39,6 +40,7 @@ function App() {
         <Route path="/course/:id" element={<CoursePlayer />} />
         <Route path="/mycourses" element={<MyCourses />} />
         <Route path="/history" element={<TradeHistory />} />
+        <Route path="/archives" element={<Archives />} />
 
       </Routes>
     </BrowserRouter>
