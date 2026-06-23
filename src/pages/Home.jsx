@@ -212,7 +212,7 @@ const openPayModal = (courseId, courseName, coursePrice) => {
     { label: "Home", href: "#home", active: true },
     { label: "Courses", href: "#courses" },
     { label: "Services", href: "#services" },
-    { label: "Archives", href: "/archives" },
+    { label: "Achievements", href: "/Achievements" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
     { label: "Community", href: "/community" },
@@ -222,7 +222,7 @@ const openPayModal = (courseId, courseName, coursePrice) => {
     { label: "Home", href: "#home" },
     { label: "Courses", href: "#courses" },
     { label: "Services", href: "#services" },
-    { label: "Archives", href: "/archives" },
+    { label: "Achievements", href: "/Achievements" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
     { label: "Community", href: "/community" },
@@ -275,14 +275,14 @@ const openPayModal = (courseId, courseName, coursePrice) => {
               className="transition"
               style={link.active
                 ? { color: "#f5c518", borderBottom: "2px solid #f5c518", paddingBottom: "2px" }
-                : link.label === "Archives"
+                : link.label === "Achievements"
                   ? { color: "#f5c518", opacity: 0.8 }
                   : { color: "#d1d5db" }
               }
               onMouseEnter={(e) => { if (!link.active) e.target.style.color = "#f5c518"; }}
-              onMouseLeave={(e) => { if (!link.active && link.label !== "Archives") e.target.style.color = "#d1d5db"; }}
+              onMouseLeave={(e) => { if (!link.active && link.label !== "Achievements") e.target.style.color = "#d1d5db"; }}
             >
-              {link.label === "Archives" ? "🏆 " + link.label : link.label}
+              {link.label === "Achievements" ? "🏆 " + link.label : link.label}
             </a>
           ))}
           <button onClick={handleJournalNav} className="transition"
@@ -335,10 +335,10 @@ const openPayModal = (courseId, courseName, coursePrice) => {
             <a key={link.label} href={link.href} onClick={() => setMenuOpen(false)}
               className="text-base font-semibold py-2"
               style={{
-                color: link.label === "Archives" ? "#f5c518" : "#d1d5db",
+                color: link.label === "Achievements" ? "#f5c518" : "#d1d5db",
                 borderBottom: "1px solid rgba(255,255,255,0.05)",
               }}>
-              {link.label === "Archives" ? "🏆 " + link.label : link.label}
+              {link.label === "Achievements" ? "🏆 " + link.label : link.label}
             </a>
           ))}
           <button onClick={handleJournalNav} className="text-base font-semibold py-2 text-left"
@@ -390,7 +390,7 @@ const openPayModal = (courseId, courseName, coursePrice) => {
                 style={{ background: "#f5c518", color: "#000000" }}>🎓 Start Learning</a>
               <a href="#services" className="flex items-center gap-3 px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-sm md:text-base"
                 style={{ border: "1px solid rgba(245,197,24,0.4)", color: "#f5c518", background: "rgba(245,197,24,0.05)" }}>▶ Our Services</a>
-              <a href="/archives" className="flex items-center gap-3 px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-sm md:text-base"
+              <a href="/Achievements" className="flex items-center gap-3 px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-sm md:text-base"
                 style={{ border: "1px solid rgba(167,139,250,0.4)", color: "#a78bfa", background: "rgba(167,139,250,0.05)" }}>🏆 Achievements</a>
             </div>
           </div>
@@ -418,9 +418,9 @@ const openPayModal = (courseId, courseName, coursePrice) => {
           </div>
         </div>
 
-        {/* ── ARCHIVES PROMO BANNER ── */}
+        {/* ── Achievements PROMO BANNER ── */}
         <div className="relative z-10 mx-5 md:mx-16 mb-8">
-          <a href="/archives" style={{ textDecoration: "none" }}>
+          <a href="/Achievements" style={{ textDecoration: "none" }}>
             <div className="flex items-center justify-between px-6 py-4 rounded-2xl"
               style={{
                 background: "linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(245,197,24,0.08) 100%)",
@@ -437,7 +437,7 @@ const openPayModal = (courseId, courseName, coursePrice) => {
                   🏆
                 </div>
                 <div>
-                  <p className="font-black text-sm md:text-base" style={{ color: "#a78bfa", margin: 0 }}>Archives — Shahaadooyinka & Sawirrada</p>
+                  <p className="font-black text-sm md:text-base" style={{ color: "#a78bfa", margin: 0 }}>Achievements — Shahaadooyinka & Sawirrada</p>
                   <p className="text-xs md:text-sm" style={{ color: "#64748b", margin: "2px 0 0" }}>Ardayda guulaysatay ee shahaadooyinkooda wadaagay</p>
                 </div>
               </div>
