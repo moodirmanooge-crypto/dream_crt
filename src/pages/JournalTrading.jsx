@@ -478,9 +478,8 @@ function NewTradeModal({ onClose, onSave, profileData }) {
 
   const TIMEFRAMES = ["1min", "2min", "3min", "5min", "10min", "15min", "30min", "1H", "2H", "4H", "Daily", "Weekly"];
 
-  return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}>
-      <div style={{ width: "100%", maxWidth: 680, borderRadius: 22, overflow: "hidden", background: CARD_BG, border: BORDER_G, boxShadow: "0 0 60px rgba(245,197,24,0.12)" }}>
+  return (<div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 8px", background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}>
+      <div style={{ width: "100%", maxWidth: 920, borderRadius: 22, overflow: "hidden", background: CARD_BG, border: BORDER_G, boxShadow: "0 0 60px rgba(245,197,24,0.12)" }}>
 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 26px 16px", borderBottom: BORDER }}>
@@ -504,7 +503,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
         </div>
 
         {/* Body */}
-        <div style={{ padding: 22, overflowY: "auto", maxHeight: "62vh" }}>
+        <div style={{ padding: 22, overflowY: "auto", maxHeight: "72vh" }}>
 
           {/* ── STEP 1 ── */}
           {step === 1 && (
@@ -771,6 +770,29 @@ function JournalLightbox({ url, onClose }) {
 function JournalTradeDetailModal({ trade, onClose, onDelete }) {
   const [lightbox, setLightbox] = useState(false);
   const [imgErr, setImgErr] = useState(false);
+  // Dynamic theme — hore CARD_BG etc. fixed ayay ahaayeen
+const THEME = {
+  MAIN_BG:  isDark ? "#080808" : "#f0f0f0",
+  SIDE_BG:  isDark ? "#0e0e0e" : "#e8e8e8",
+  CARD_BG:  isDark ? "#111111" : "#ffffff",
+  CARD2:    isDark ? "#181818" : "#f5f5f5",
+  TEXT1:    isDark ? "#ffffff" : "#111111",
+  TEXT2:    isDark ? "#888888" : "#555555",
+  TEXT3:    isDark ? "#444444" : "#999999",
+};
+{/* Light/Dark Toggle */}
+<button
+  onClick={() => setIsDark(!isDark)}
+  style={{
+    width: 34, height: 34, borderRadius: 9,
+    background: CARD_BG, border: BORDER,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    cursor: "pointer", fontSize: 16, transition: "all .2s",
+  }}
+  title={isDark ? "Light Mode" : "Dark Mode"}
+>
+  {isDark ? "☀️" : "🌙"}
+</button>
   const [imgLoaded, setImgLoaded] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
