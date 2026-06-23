@@ -770,29 +770,6 @@ function JournalLightbox({ url, onClose }) {
 function JournalTradeDetailModal({ trade, onClose, onDelete }) {
   const [lightbox, setLightbox] = useState(false);
   const [imgErr, setImgErr] = useState(false);
-  // Dynamic theme — hore CARD_BG etc. fixed ayay ahaayeen
-const THEME = {
-  MAIN_BG:  isDark ? "#080808" : "#f0f0f0",
-  SIDE_BG:  isDark ? "#0e0e0e" : "#e8e8e8",
-  CARD_BG:  isDark ? "#111111" : "#ffffff",
-  CARD2:    isDark ? "#181818" : "#f5f5f5",
-  TEXT1:    isDark ? "#ffffff" : "#111111",
-  TEXT2:    isDark ? "#888888" : "#555555",
-  TEXT3:    isDark ? "#444444" : "#999999",
-};
-{/* Light/Dark Toggle */}
-<button
-  onClick={() => setIsDark(!isDark)}
-  style={{
-    width: 34, height: 34, borderRadius: 9,
-    background: CARD_BG, border: BORDER,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    cursor: "pointer", fontSize: 16, transition: "all .2s",
-  }}
-  title={isDark ? "Light Mode" : "Dark Mode"}
->
-  {isDark ? "☀️" : "🌙"}
-</button>
   const [imgLoaded, setImgLoaded] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -1424,7 +1401,7 @@ export default function JournalTrading() {
   const scoreColor = tradeScore >= 70 ? GREEN : tradeScore >= 40 ? GOLD : RED_NEG;
 
   return (
-    <div style={{ minHeight: "100vh", background: MAIN_BG, color: TEXT1, display: "flex", overflow: "hidden" }}>
+   <div style={{ minHeight: "100vh", background: isDark ? "#080808" : "#f0f0f0", color: isDark ? "#ffffff" : "#111111", display: "flex", overflow: "hidden" }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
         @keyframes fadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
@@ -1448,7 +1425,7 @@ export default function JournalTrading() {
       )}
 
       {/* ── SIDEBAR ── */}
-      <div style={{ width: sidebarOpen ? 220 : 64, background: SIDE_BG, borderRight: `1px solid rgba(255,255,255,0.05)`, padding: sidebarOpen ? "18px 10px" : "18px 8px", display: "flex", flexDirection: "column", flexShrink: 0, transition: "width .25s ease" }}>
+      <div style={{ width: sidebarOpen ? 220 : 64, background: isDark ? "#0e0e0e" : "#e8e8e8", borderRight: `1px solid rgba(255,255,255,0.05)`, padding: sidebarOpen ? "18px 10px" : "18px 8px", display: "flex", flexDirection: "column", flexShrink: 0, transition: "width .25s ease" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, paddingLeft: sidebarOpen ? 4 : 2, marginBottom: 24, overflow: "hidden" }}>
           <div style={{ width: 34, height: 34, borderRadius: 9, background: GOLD, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <FaChartLine style={{ color: "#000", fontSize: 15 }} />
