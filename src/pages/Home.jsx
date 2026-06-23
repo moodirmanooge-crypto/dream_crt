@@ -151,7 +151,7 @@ export default function Home() {
       payId: "basic-forex-course", payPrice: "25",
     },
     {
-      title: "CRT Course 60$",
+      title: "CRT Course 75$",
       subtitle: "Barashada CRT (Mudo Kooban)",
       items: [
         "Waxa aad Heleysaa:",
@@ -165,7 +165,7 @@ export default function Home() {
       payId: "crt-course-60", payPrice: "60",
     },
     {
-      title: "Premium Mentorship 100$",
+      title: "Premium Mentorship 120$",
       subtitle: "Hagidda Shakhsiyadeed & Maareynta",
       items: [
         "Waxa ku dhex jira",
