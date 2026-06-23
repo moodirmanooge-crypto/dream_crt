@@ -1,50 +1,53 @@
 import { useEffect, useState, useRef } from "react";
-import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
+import {
+  collection, addDoc, getDocs, deleteDoc,
+  doc, query, orderBy, updateDoc, increment,
+} from "firebase/firestore";
 import { db, auth } from "../firebase/config.js";
 import { onAuthStateChanged } from "firebase/auth";
 
 export default function Archives() {
-  const [user, setUser] = useState(null);
-  const [tab, setTab] = useState("gallery");
-  const [archives, setArchives] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser]           = useState(null);
+  const [tab, setTab]             = useState("gallery");
+  const [archives, setArchives]   = useState([]);
+  const [loading, setLoading]     = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadDone, setUploadDone] = useState(false);
+  const [deleting, setDeleting]   = useState(null); // id being deleted
 
-  const [upName, setUpName] = useState("");
   const [upCaption, setUpCaption] = useState("");
-  const [upType, setUpType] = useState("Shahaado");
-  const [upFile, setUpFile] = useState(null);
+  const [upType, setUpType]       = useState("Shahaado");
+  const [upFile, setUpFile]       = useState(null);
   const [upPreview, setUpPreview] = useState(null);
-  const [upError, setUpError] = useState("");
-  const [lightbox, setLightbox] = useState(null);
+  const [upError, setUpError]     = useState("");
+  const [lightbox, setLightbox]   = useState(null);
   const fileRef = useRef();
 
+  // ── Auth ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      if (u) setUpName(u.displayName || "");
-    });
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
     return () => unsub();
   }, []);
 
   useEffect(() => { fetchArchives(); }, []);
 
+  // ── Fetch ─────────────────────────────────────────────────────────────
   const fetchArchives = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, "archives"), orderBy("createdAt", "desc"));
+      const q    = query(collection(db, "archives"), orderBy("createdAt", "desc"));
       const snap = await getDocs(q);
       setArchives(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     } catch (e) { console.error(e); }
     setLoading(false);
   };
 
+  // ── File pick ─────────────────────────────────────────────────────────
   const handleFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) { setUpError("Fadlan sawir kaliya soo geli (JPG, PNG, WEBP)."); return; }
-    if (file.size > 5 * 1024 * 1024) { setUpError("Faylku waa inuu ka yar yahay 5MB."); return; }
+    if (file.size > 5 * 1024 * 1024)    { setUpError("Faylku waa inuu ka yar yahay 5MB."); return; }
     setUpError("");
     setUpFile(file);
     const reader = new FileReader();
@@ -52,41 +55,67 @@ export default function Archives() {
     reader.readAsDataURL(file);
   };
 
+  // ── Upload ────────────────────────────────────────────────────────────
   const handleUpload = async () => {
-    if (!upName.trim()) { setUpError("Magacaaga geli."); return; }
-    if (!upFile) { setUpError("Sawir soo dooro."); return; }
+    if (!user)    { setUpError("Fadlan login samee."); return; }
+    if (!upFile)  { setUpError("Sawir soo dooro."); return; }
     setUpError("");
     setUploading(true);
     try {
       const base64 = await new Promise((res, rej) => {
         const r = new FileReader();
-        r.onload = () => res(r.result);
+        r.onload  = () => res(r.result);
         r.onerror = rej;
         r.readAsDataURL(upFile);
       });
       await addDoc(collection(db, "archives"), {
-        name: upName.trim(),
-        caption: upCaption.trim(),
-        type: upType,
+        name:        user.displayName || user.email.split("@")[0],
+        email:       user.email,
+        uid:         user.uid,
+        caption:     upCaption.trim(),
+        type:        upType,
         imageBase64: base64,
-        email: user?.email || "",
-        approved: true,   // ← TOOS approved=true: qof walba wuu arki karaa
-        createdAt: Date.now(),
+        approved:    true,
+        views:       0,
+        createdAt:   Date.now(),
       });
       setUploadDone(true);
-      setUpName(""); setUpCaption(""); setUpFile(null); setUpPreview(null); setUpType("Shahaado");
+      setUpCaption(""); setUpFile(null); setUpPreview(null); setUpType("Shahaado");
       if (fileRef.current) fileRef.current.value = "";
       fetchArchives();
     } catch (err) { setUpError("Khalad: " + err.message); }
     setUploading(false);
   };
 
-  // ── Qof walba wuu arki karaa — approved filter la saaray ──
+  // ── Delete (owner only) ───────────────────────────────────────────────
+  const handleDelete = async (id) => {
+    if (!window.confirm("Sawirkaan tirtiraysaa?")) return;
+    setDeleting(id);
+    try {
+      await deleteDoc(doc(db, "archives", id));
+      setArchives((prev) => prev.filter((a) => a.id !== id));
+      if (lightbox?.id === id) setLightbox(null);
+    } catch (err) { alert("Khalad: " + err.message); }
+    setDeleting(null);
+  };
+
+  // ── Open lightbox + increment views ──────────────────────────────────
+  const openLightbox = async (item) => {
+    setLightbox(item);
+    try {
+      await updateDoc(doc(db, "archives", item.id), { views: increment(1) });
+      setArchives((prev) =>
+        prev.map((a) => a.id === item.id ? { ...a, views: (a.views || 0) + 1 } : a)
+      );
+    } catch (_) {}
+  };
+
   const shahaadoList = archives.filter((a) => a.type === "Shahaado");
   const sawirList    = archives.filter((a) => a.type === "Sawir");
 
   return (
     <div className="min-h-screen text-white" style={{ background: "#0d0d0d" }}>
+
       {/* NAV */}
       <nav className="flex items-center justify-between px-5 md:px-10 py-4 sticky top-0 z-50"
         style={{ background: "rgba(13,13,13,0.97)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
@@ -119,7 +148,8 @@ export default function Archives() {
         {[{ key: "gallery", label: "🖼️ Gallery" }, { key: "upload", label: "⬆️ Soo Geli" }].map((t) => (
           <button key={t.key} onClick={() => { setTab(t.key); setUploadDone(false); }}
             style={{
-              padding: "10px 24px", borderRadius: "12px", fontWeight: 700, fontSize: "14px", cursor: "pointer", transition: "all 0.2s",
+              padding: "10px 24px", borderRadius: "12px", fontWeight: 700, fontSize: "14px",
+              cursor: "pointer", transition: "all 0.2s",
               border: tab === t.key ? "1px solid #f5c518" : "1px solid rgba(255,255,255,0.08)",
               background: tab === t.key ? "rgba(245,197,24,0.12)" : "transparent",
               color: tab === t.key ? "#f5c518" : "#64748b",
@@ -129,7 +159,7 @@ export default function Archives() {
         ))}
       </div>
 
-      {/* GALLERY TAB */}
+      {/* ── GALLERY TAB ── */}
       {tab === "gallery" && (
         <div className="px-5 md:px-14 pb-20">
           {loading ? (
@@ -138,8 +168,16 @@ export default function Archives() {
             </div>
           ) : (
             <>
-              <Section title="🎓 Shahaadooyinka" color="#f5c518" items={shahaadoList} onOpen={setLightbox} />
-              <Section title="📸 Sawirrada Guusha" color="#a78bfa" items={sawirList} onOpen={setLightbox} />
+              <Section
+                title="🎓 Shahaadooyinka" color="#f5c518"
+                items={shahaadoList} onOpen={openLightbox}
+                currentUid={user?.uid} onDelete={handleDelete} deleting={deleting}
+              />
+              <Section
+                title="📸 Sawirrada Guusha" color="#a78bfa"
+                items={sawirList} onOpen={openLightbox}
+                currentUid={user?.uid} onDelete={handleDelete} deleting={deleting}
+              />
               {shahaadoList.length === 0 && sawirList.length === 0 && (
                 <div className="text-center py-20" style={{ color: "#64748b" }}>
                   <div className="text-5xl mb-3">🗂️</div>
@@ -151,12 +189,24 @@ export default function Archives() {
         </div>
       )}
 
-      {/* UPLOAD TAB */}
+      {/* ── UPLOAD TAB ── */}
       {tab === "upload" && (
         <div className="px-5 pb-20 flex justify-center">
           <div className="w-full max-w-lg rounded-3xl p-7 md:p-10"
             style={{ background: "#0f0f0f", border: "1px solid rgba(245,197,24,0.2)" }}>
-            {uploadDone ? (
+
+            {/* Not logged in */}
+            {!user ? (
+              <div className="text-center py-10">
+                <div className="text-5xl mb-4">🔐</div>
+                <p style={{ color: "#64748b", marginBottom: 16 }}>Sawir soo geliso, marka hore login samee.</p>
+                <a href="/login"
+                  style={{ padding: "12px 32px", borderRadius: 12, background: "#f5c518", color: "#000", fontWeight: 900, textDecoration: "none", display: "inline-block" }}>
+                  Login
+                </a>
+              </div>
+            ) : uploadDone ? (
+              /* Success */
               <div className="text-center py-6">
                 <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 text-4xl"
                   style={{ background: "rgba(245,197,24,0.08)", border: "2px solid #f5c518" }}>✅</div>
@@ -170,8 +220,21 @@ export default function Archives() {
                 </button>
               </div>
             ) : (
+              /* Upload form */
               <>
-                <h2 className="text-2xl font-black mb-6" style={{ color: "#f5c518" }}>⬆️ Soo Geli Sawirgaaga</h2>
+                <h2 className="text-2xl font-black mb-2" style={{ color: "#f5c518" }}>⬆️ Soo Geli Sawirgaaga</h2>
+
+                {/* Auto name badge */}
+                <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl"
+                  style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.15)" }}>
+                  <span style={{ fontSize: 18 }}>👤</span>
+                  <div>
+                    <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>MAGACAAGA</p>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: "#f5c518", margin: 0 }}>
+                      {user.displayName || user.email.split("@")[0]}
+                    </p>
+                  </div>
+                </div>
 
                 {/* Type */}
                 <div className="flex gap-3 mb-5">
@@ -188,18 +251,26 @@ export default function Archives() {
                   ))}
                 </div>
 
-                <label style={labelStyle}>Magacaaga Buuxa</label>
-                <input type="text" value={upName} onChange={(e) => setUpName(e.target.value)} placeholder="Magacaaga..." style={inputStyle} />
-
                 <label style={labelStyle}>Faallo / Caption</label>
-                <textarea value={upCaption} onChange={(e) => setUpCaption(e.target.value)} placeholder="Sharax yar ama faallo..." rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+                <textarea
+                  value={upCaption} onChange={(e) => setUpCaption(e.target.value)}
+                  placeholder="Sharax yar ama faallo..." rows={3}
+                  style={{ ...inputStyle, resize: "vertical" }}
+                />
 
                 <label style={labelStyle}>Sawirka / Shahaadada</label>
                 <div onClick={() => fileRef.current?.click()}
-                  style={{ border: "2px dashed rgba(245,197,24,0.3)", borderRadius: "14px", padding: "24px", textAlign: "center", cursor: "pointer", background: upPreview ? "transparent" : "rgba(245,197,24,0.03)", marginBottom: "16px", position: "relative", overflow: "hidden" }}>
+                  style={{
+                    border: "2px dashed rgba(245,197,24,0.3)", borderRadius: "14px", padding: "24px",
+                    textAlign: "center", cursor: "pointer",
+                    background: upPreview ? "transparent" : "rgba(245,197,24,0.03)",
+                    marginBottom: "10px", position: "relative", overflow: "hidden",
+                  }}>
                   {upPreview
                     ? <img src={upPreview} alt="preview" style={{ maxHeight: 220, borderRadius: 10, objectFit: "contain", margin: "0 auto", display: "block" }} />
-                    : (<><div style={{ fontSize: 36, marginBottom: 8 }}>🖼️</div><p style={{ color: "#f5c518", fontWeight: 700, fontSize: 14 }}>Sawirka halkaan ku riix si aad u soo geliso</p><p style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>JPG, PNG, WEBP · Max 5MB</p></>)}
+                    : (<><div style={{ fontSize: 36, marginBottom: 8 }}>🖼️</div>
+                        <p style={{ color: "#f5c518", fontWeight: 700, fontSize: 14 }}>Sawirka halkaan ku riix si aad u soo geliso</p>
+                        <p style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>JPG, PNG, WEBP · Max 5MB</p></>)}
                 </div>
                 <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
                 {upPreview && (
@@ -228,24 +299,42 @@ export default function Archives() {
         </div>
       )}
 
-      {/* LIGHTBOX */}
+      {/* ── LIGHTBOX ── */}
       {lightbox && (
         <div className="fixed inset-0 flex items-center justify-center z-50 px-4"
           style={{ background: "rgba(0,0,0,0.93)", backdropFilter: "blur(8px)" }}
           onClick={() => setLightbox(null)}>
-          <div style={{ maxWidth: 680, width: "100%", borderRadius: 20, overflow: "hidden", background: "#111", border: "1px solid rgba(245,197,24,0.2)", position: "relative" }}
+          <div
+            style={{ maxWidth: 680, width: "100%", borderRadius: 20, overflow: "hidden", background: "#111", border: "1px solid rgba(245,197,24,0.2)", position: "relative" }}
             onClick={(e) => e.stopPropagation()}>
             <img src={lightbox.imageBase64} alt={lightbox.name} style={{ width: "100%", maxHeight: "70vh", objectFit: "contain", display: "block" }} />
             <div style={{ padding: "16px 20px" }}>
-              <p style={{ fontWeight: 800, fontSize: 16, color: "#fff", marginBottom: 4 }}>{lightbox.name}</p>
-              {lightbox.caption && <p style={{ color: "#94a3b8", fontSize: 13 }}>{lightbox.caption}</p>}
-              <span style={{
-                display: "inline-block", marginTop: 8, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700,
-                background: lightbox.type === "Shahaado" ? "rgba(245,197,24,0.12)" : "rgba(167,139,250,0.12)",
-                color: lightbox.type === "Shahaado" ? "#f5c518" : "#a78bfa",
-              }}>
-                {lightbox.type === "Shahaado" ? "🎓 Shahaado" : "📸 Sawir"}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <p style={{ fontWeight: 800, fontSize: 16, color: "#fff", margin: 0 }}>{lightbox.name}</p>
+                {/* Views */}
+                <span style={{ fontSize: 12, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
+                  👁️ {(lightbox.views || 0) + 1}
+                </span>
+              </div>
+              {lightbox.caption && <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 8 }}>{lightbox.caption}</p>}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{
+                  display: "inline-block", padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+                  background: lightbox.type === "Shahaado" ? "rgba(245,197,24,0.12)" : "rgba(167,139,250,0.12)",
+                  color: lightbox.type === "Shahaado" ? "#f5c518" : "#a78bfa",
+                }}>
+                  {lightbox.type === "Shahaado" ? "🎓 Shahaado" : "📸 Sawir"}
+                </span>
+                {/* Delete in lightbox — owner only */}
+                {user?.uid === lightbox.uid && (
+                  <button
+                    onClick={() => handleDelete(lightbox.id)}
+                    disabled={deleting === lightbox.id}
+                    style={{ fontSize: 12, color: "#ff4757", background: "rgba(255,71,87,0.08)", border: "1px solid rgba(255,71,87,0.25)", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontWeight: 700 }}>
+                    {deleting === lightbox.id ? "⏳" : "🗑️ Tirtir"}
+                  </button>
+                )}
+              </div>
             </div>
             <button onClick={() => setLightbox(null)}
               style={{ position: "absolute", top: 16, right: 16, width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -258,7 +347,8 @@ export default function Archives() {
   );
 }
 
-function Section({ title, color, items, onOpen }) {
+// ── Section component ─────────────────────────────────────────────────
+function Section({ title, color, items, onOpen, currentUid, onDelete, deleting }) {
   if (items.length === 0) return null;
   return (
     <div className="mb-14">
@@ -270,18 +360,40 @@ function Section({ title, color, items, onOpen }) {
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {items.map((item) => (
-          <div key={item.id} onClick={() => onOpen(item)}
-            style={{ borderRadius: 16, overflow: "hidden", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer", transition: "all 0.2s" }}
+          <div key={item.id}
+            style={{ borderRadius: 16, overflow: "hidden", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer", transition: "all 0.2s", position: "relative" }}
             onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.borderColor = `${color}55`; e.currentTarget.style.boxShadow = `0 12px 32px ${color}18`; }}
             onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.boxShadow = "none"; }}>
-            <img src={item.imageBase64} alt={item.name} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
-            <div style={{ padding: "10px 12px" }}>
-              <p style={{ fontWeight: 700, fontSize: 13, color: "#fff", marginBottom: 2 }}>{item.name}</p>
-              {item.caption && (
-                <p style={{ fontSize: 11, color: "#64748b", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                  {item.caption}
-                </p>
-              )}
+
+            {/* Delete button — owner only, top-right corner */}
+            {currentUid === item.uid && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                disabled={deleting === item.id}
+                title="Tirtir"
+                style={{
+                  position: "absolute", top: 8, right: 8, zIndex: 2,
+                  width: 28, height: 28, borderRadius: "50%",
+                  background: "rgba(0,0,0,0.75)", border: "1px solid rgba(255,71,87,0.5)",
+                  color: "#ff4757", fontSize: 13, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                {deleting === item.id ? "⏳" : "🗑️"}
+              </button>
+            )}
+
+            <div onClick={() => onOpen(item)}>
+              <img src={item.imageBase64} alt={item.name} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
+              <div style={{ padding: "10px 12px" }}>
+                <p style={{ fontWeight: 700, fontSize: 13, color: "#fff", marginBottom: 2 }}>{item.name}</p>
+                {item.caption && (
+                  <p style={{ fontSize: 11, color: "#64748b", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                    {item.caption}
+                  </p>
+                )}
+                {/* Views */}
+                <p style={{ fontSize: 10, color: "#374151", marginTop: 4 }}>👁️ {item.views || 0} views</p>
+              </div>
             </div>
           </div>
         ))}
@@ -290,6 +402,7 @@ function Section({ title, color, items, onOpen }) {
   );
 }
 
+// ── Shared styles ─────────────────────────────────────────────────────
 const labelStyle = {
   display: "block", color: "#94a3b8", fontSize: 11, fontWeight: 700,
   textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8,
