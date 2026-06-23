@@ -41,6 +41,7 @@ function App() {
         <Route path="/mycourses" element={<MyCourses />} />
         <Route path="/history" element={<TradeHistory />} />
         <Route path="/archives" element={<Archives />} />
+        <Route path="/Achievements" element={<Archives />} />
 
       </Routes>
     </BrowserRouter>

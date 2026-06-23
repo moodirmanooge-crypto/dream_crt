@@ -27,6 +27,7 @@ export default function Home() {
   const [payCourseId, setPayCourseId] = useState("");
   const [payCoursePrice, setPayCoursePrice] = useState("");
   const [paying, setPaying] = useState(false);
+  const [payDone, setPayDone] = useState(false);
   const [userApprovedCourses, setUserApprovedCourses] = useState([]);
 
   const [showAdminPortal, setShowAdminPortal] = useState(false);
@@ -57,41 +58,26 @@ export default function Home() {
       const querySnapshot = await getDocs(collection(db, "courses"));
       const data = querySnapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
       setCourses(data);
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) { console.log(error); }
   };
 
   const logout = async () => {
-    try {
-      await signOut(auth);
-      alert("Logged Out");
-    } catch (error) {
-      alert(error.message);
-    }
+    try { await signOut(auth); alert("Logged Out"); }
+    catch (error) { alert(error.message); }
   };
 
   const submitJournal = async () => {
     if (!fullName || !email || !message) { alert("Please fill all fields"); return; }
     try {
-      await addDoc(collection(db, "journalRequests"), {
-        fullName, email, type, message, status: "Pending", createdAt: Date.now(),
-      });
+      await addDoc(collection(db, "journalRequests"), { fullName, email, type, message, status: "Pending", createdAt: Date.now() });
       alert("Submitted Successfully");
       setFullName(""); setMessage(""); setType("Trading Lessons"); setShowJournalForm(false);
     } catch (error) { alert(error.message); }
   };
 
-  const handleJournalNav = () => {
-    setMenuOpen(false);
-    window.location.href = user ? "/journal" : "/login";
-  };
+  const handleJournalNav = () => { setMenuOpen(false); window.location.href = user ? "/journal" : "/login"; };
 
-  const openAdminPortal = () => {
-    setAdminPin("");
-    setAdminError("");
-    setShowAdminPortal(true);
-  };
+  const openAdminPortal = () => { setAdminPin(""); setAdminError(""); setShowAdminPortal(true); };
 
   const handleAdminLogin = async () => {
     try {
@@ -99,37 +85,27 @@ export default function Home() {
       if (docSnap.exists()) {
         const correctPassword = docSnap.data().password;
         if (adminPin === correctPassword) {
-          setShowAdminPortal(false);
-          setAdminPin("");
-          window.location.href = "/admin";
+          setShowAdminPortal(false); setAdminPin(""); window.location.href = "/admin";
         } else {
           setAdminError("Passwordka waa khalad. Isku day mar kale.");
-          setAdminShaking(true);
-          setAdminPin("");
+          setAdminShaking(true); setAdminPin("");
           setTimeout(() => setAdminShaking(false), 600);
         }
-      } else {
-        setAdminError("Admin settings lama helin Firestore-ka.");
-      }
-    } catch (err) {
-      setAdminError("Khalad: " + err.message);
-    }
+      } else { setAdminError("Admin settings lama helin Firestore-ka."); }
+    } catch (err) { setAdminError("Khalad: " + err.message); }
   };
 
-const openPayModal = (courseId, courseName, coursePrice) => {
-  // Haddii approved yahay → toos course page
-  if (userApprovedCourses.includes(courseId)) {
-    window.location.href = `/course/${courseId}`;
-    return;
-  }
-  setPayCourseId(courseId);
-  setPayCourseName(courseName);
-  setPayCoursePrice(coursePrice);
-  setPayDone(false);
-  setPayPhone("");
-  if (user) setPayEmail(user.email || "");
-  setShowPayModal(true);
-};
+  const openPayModal = (courseId, courseName, coursePrice) => {
+    if (userApprovedCourses.includes(courseId)) {
+      window.location.href = `/course/${courseId}`;
+      return;
+    }
+    setPayCourseId(courseId); setPayCourseName(courseName); setPayCoursePrice(coursePrice);
+    setPayDone(false); setPayPhone("");
+    if (user) setPayEmail(user.email || "");
+    setShowPayModal(true);
+  };
+
   const handlePay = async () => {
     if (!payPhone || !payEmail) { alert("Fadlan buuxi dhammaan meelaha"); return; }
     setPaying(true);
@@ -146,60 +122,30 @@ const openPayModal = (courseId, courseName, coursePrice) => {
 
   const services = [
     {
-      title: "Basic Forex Course 35$",
-      subtitle: "Bilowga Ganacsiga",
-      items: [
-        "Waxa aad Heleysaa:",
-        "📹 Casharro Video ah",
-        "📚 Buug PDF ah",
-        "🎥 Live Zoom sessions",
-        "👨‍🏫 Macalin ku hago",
-        "✅ Sixida casharada",
-      ],
-      benefit: "Faa'iidada: Waa aasaaska saxda ah ee aad ku baraneyso suuqa adigoo ka badbaadaya jahwareerka.",
+      title: "Basic Forex Course 35$", subtitle: "Bilowga Ganacsiga",
+      items: ["Waxa aad Heleysaa:", "📹 Casharro Video ah", "📚 Buug PDF ah", "🎥 Live Zoom sessions", "👨\u200d🏫 Macalin ku hago", "✅ Sixida casharada"],
+      benefit: "Faa\'iidada: Waa aasaaska saxda ah ee aad ku baraneyso suuqa adigoo ka badbaadaya jahwareerka.",
       color: "#f5c518", colorDim: "rgba(245,197,24,0.12)", colorBorder: "rgba(245,197,24,0.25)",
       payId: "basic-forex-course", payPrice: "25",
     },
     {
-      title: "CRT Course 75$",
-      subtitle: "Barashada CRT (Mudo Kooban)",
-      items: [
-        "Waxa aad Heleysaa:",
-        "💻 Zoom Live ah — casharro toos ah",
-        "📚 Buug PDF ah — shaxanno & xeerar",
-        "🎯 Sixid & Hagid Joogto ah",
-        "✅ Khaladaadkaaga waa lagaa saxayaa",
-      ],
+      title: "CRT Course 75$", subtitle: "Barashada CRT (Mudo Kooban)",
+      items: ["Waxa aad Heleysaa:", "💻 Zoom Live ah — casharro toos ah", "📚 Buug PDF ah — shaxanno & xeerar", "🎯 Sixid & Hagid Joogto ah", "✅ Khaladaadkaaga waa lagaa saxayaa"],
       benefit: "⏱️ Uma baahnid bilooyin badan oo jahwareer ah; mudo kooban gudaheed waxaad ku baranaysaa CRT Strategy",
       color: "#a78bfa", colorDim: "rgba(167,139,250,0.12)", colorBorder: "rgba(167,139,250,0.25)",
       payId: "crt-course-60", payPrice: "60",
     },
     {
-      title: "Premium Mentorship 125$",
-      subtitle: "Hagidda Shakhsiyadeed & Maareynta",
-      items: [
-        "Waxa ku dhex jira",
-        "🎥 Live Zoom joogto ah",
-        "📚 Buug PDF ah",
-        "🤝 Caawin gaar ah iyo",
-        "📊 Maareynta Account Challenge",
-      ],
-      benefit: "Faa'iidada: Safarkaaga oo dhan oo aan ku barbar taaganahay iyo caawin toos ah si aad Funded u noqoto",
+      title: "Premium Mentorship 125$", subtitle: "Hagidda Shakhsiyadeed & Maareynta",
+      items: ["Waxa ku dhex jira", "🎥 Live Zoom joogto ah", "📚 Buug PDF ah", "🤝 Caawin gaar ah iyo", "📊 Maareynta Account Challenge"],
+      benefit: "Faa\'iidada: Safarkaaga oo dhan oo aan ku barbar taaganahay iyo caawin toos ah si aad Funded u noqoto",
       color: "#22c55e", colorDim: "rgba(34,197,94,0.12)", colorBorder: "rgba(34,197,94,0.25)",
       payId: "premium-mentorship-100", payPrice: "100",
     },
     {
-      tag: "Maalgashi",
-      title: "Copy Trading Services",
-      subtitle: "Maalgashi Toos Ah",
-      items: [
-        "💳 Qaabka 1-aad: Is-qorid bille ah oo ah $50/Bishii.",
-        "💰 Qaabka 2-aad: 25% oo laga gooyo oo keliya lacagta",
-        "faa'iidada ah ee laguu sameeyo (Profit Share)",
-        "🔄 Toos u raac xirfaddayda",
-        "⏰ Waqti kuma baahnid",
-      ],
-      benefit: "Copy Trading-kayga wuxuu kuu saamaxayaa inaad si toos ah u koobiyeysato entry-yadayda. Xataa haddii aad suuqa ku cusub tahay ama aad tahay qof aad u busy ah, waxaad ka faa'iidaysan kartaa khibraddayda adoo waqti iyo dadaalba badbaadinaya",
+      tag: "Maalgashi", title: "Copy Trading Services", subtitle: "Maalgashi Toos Ah",
+      items: ["💳 Qaabka 1-aad: Is-qorid bille ah oo ah $50/Bishii.", "💰 Qaabka 2-aad: 25% oo laga gooyo oo keliya lacagta", "faa\'iidada ah ee laguu sameeyo (Profit Share)", "🔄 Toos u raac xirfaddayda", "⏰ Waqti kuma baahnid"],
+      benefit: "Copy Trading-kayga wuxuu kuu saamaxayaa inaad si toos ah u koobiyeysato entry-yadayda. Xataa haddii aad suuqa ku cusub tahay ama aad tahay qof aad u busy ah, waxaad ka faa\'iidaysan kartaa khibraddayda adoo waqti iyo dadaalba badbaadinaya",
       color: "#f97316", colorDim: "rgba(249,115,22,0.12)", colorBorder: "rgba(249,115,22,0.25)",
       payId: "copy-trading-services", payPrice: "50",
     },
@@ -207,7 +153,6 @@ const openPayModal = (courseId, courseName, coursePrice) => {
 
   const displayCourse = courses.length > 0 ? [courses[0]] : [];
 
-  // ── NAV LINKS (desktop) ──────────────────────────────────────────────
   const desktopLinks = [
     { label: "Home", href: "#home", active: true },
     { label: "Courses", href: "#courses" },
@@ -230,58 +175,28 @@ const openPayModal = (courseId, courseName, coursePrice) => {
 
   return (
     <div className="text-white min-h-screen overflow-x-hidden" style={{ background: "#0d0d0d" }}>
-
       <style>{`
-        @keyframes shake {
-          0%,100%{transform:translateX(0)}
-          20%{transform:translateX(-8px)}
-          40%{transform:translateX(8px)}
-          60%{transform:translateX(-6px)}
-          80%{transform:translateX(6px)}
-        }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
         .shake { animation: shake 0.5s ease; }
-        .dot-btn:hover { background: rgba(245,197,24,0.18) !important; }
-        .dot-btn:hover span { background: #f5c518 !important; }
       `}</style>
 
-      {/* ── NAV ── */}
+      {/* NAV */}
       <nav className="flex items-center justify-between px-5 md:px-10 py-4 sticky top-0 z-50"
         style={{ background: "rgba(13,13,13,0.97)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-
         <div className="flex items-center gap-2">
-          <button
-            className="dot-btn"
-            onClick={openAdminPortal}
-            title="Admin Portal"
-            style={{
-              display: "flex", flexDirection: "column", justifyContent: "center",
-              alignItems: "center", gap: "4px", width: "32px", height: "32px",
-              borderRadius: "8px", border: "1px solid rgba(245,197,24,0.2)",
-              background: "rgba(245,197,24,0.05)", cursor: "pointer", padding: "0",
-              marginRight: "4px", transition: "background 0.2s",
-            }}
-          >
-            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "rgba(245,197,24,0.5)", display: "block", transition: "background 0.2s" }} />
-            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "rgba(245,197,24,0.5)", display: "block", transition: "background 0.2s" }} />
-            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "rgba(245,197,24,0.5)", display: "block", transition: "background 0.2s" }} />
-          </button>
           <span className="font-black text-xl md:text-2xl tracking-tight" style={{ color: "#f5c518" }}>DREAM CRT</span>
         </div>
 
         {/* Desktop links */}
         <div className="hidden md:flex gap-5 lg:gap-7 text-sm font-semibold">
           {desktopLinks.map((link) => (
-            <a key={link.label} href={link.href}
-              className="transition"
+            <a key={link.label} href={link.href} className="transition"
               style={link.active
                 ? { color: "#f5c518", borderBottom: "2px solid #f5c518", paddingBottom: "2px" }
-                : link.label === "Achievements"
-                  ? { color: "#f5c518", opacity: 0.8 }
-                  : { color: "#d1d5db" }
+                : link.label === "Achievements" ? { color: "#f5c518", opacity: 0.8 } : { color: "#d1d5db" }
               }
               onMouseEnter={(e) => { if (!link.active) e.target.style.color = "#f5c518"; }}
-              onMouseLeave={(e) => { if (!link.active && link.label !== "Achievements") e.target.style.color = "#d1d5db"; }}
-            >
+              onMouseLeave={(e) => { if (!link.active && link.label !== "Achievements") e.target.style.color = "#d1d5db"; }}>
               {link.label === "Achievements" ? "🏆 " + link.label : link.label}
             </a>
           ))}
@@ -316,7 +231,6 @@ const openPayModal = (courseId, courseName, coursePrice) => {
               </>
             )}
           </div>
-          {/* Hamburger */}
           <button className="md:hidden flex flex-col justify-center items-center w-9 h-9 rounded-lg gap-1.5"
             style={{ border: "1px solid rgba(245,197,24,0.3)", background: "rgba(245,197,24,0.05)" }}
             onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
@@ -334,10 +248,7 @@ const openPayModal = (courseId, courseName, coursePrice) => {
           {mobileLinks.map((link) => (
             <a key={link.label} href={link.href} onClick={() => setMenuOpen(false)}
               className="text-base font-semibold py-2"
-              style={{
-                color: link.label === "Achievements" ? "#f5c518" : "#d1d5db",
-                borderBottom: "1px solid rgba(255,255,255,0.05)",
-              }}>
+              style={{ color: link.label === "Achievements" ? "#f5c518" : "#d1d5db", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               {link.label === "Achievements" ? "🏆 " + link.label : link.label}
             </a>
           ))}
@@ -370,7 +281,7 @@ const openPayModal = (courseId, courseName, coursePrice) => {
         </div>
       )}
 
-      {/* ── HERO ── */}
+      {/* HERO */}
       <section id="home" className="relative flex flex-col overflow-hidden"
         style={{ minHeight: "calc(100vh - 65px)", background: "linear-gradient(135deg, #0d0d0d 0%, #1a1200 50%, #0d0d0d 100%)" }}>
         <div className="absolute inset-0 pointer-events-none" style={{ overflow: "hidden" }}>
@@ -418,24 +329,16 @@ const openPayModal = (courseId, courseName, coursePrice) => {
           </div>
         </div>
 
-        {/* ── Achievements PROMO BANNER ── */}
+        {/* Achievements Promo Banner */}
         <div className="relative z-10 mx-5 md:mx-16 mb-8">
           <a href="/Achievements" style={{ textDecoration: "none" }}>
             <div className="flex items-center justify-between px-6 py-4 rounded-2xl"
-              style={{
-                background: "linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(245,197,24,0.08) 100%)",
-                border: "1px solid rgba(167,139,250,0.3)",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
+              style={{ background: "linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(245,197,24,0.08) 100%)", border: "1px solid rgba(167,139,250,0.3)", cursor: "pointer", transition: "all 0.2s" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(167,139,250,0.6)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; e.currentTarget.style.transform = "none"; }}
-            >
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; e.currentTarget.style.transform = "none"; }}>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-                  style={{ background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.3)" }}>
-                  🏆
-                </div>
+                  style={{ background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.3)" }}>🏆</div>
                 <div>
                   <p className="font-black text-sm md:text-base" style={{ color: "#a78bfa", margin: 0 }}>Achievements — Shahaadooyinka & Sawirrada</p>
                   <p className="text-xs md:text-sm" style={{ color: "#64748b", margin: "2px 0 0" }}>Ardayda guulaysatay ee shahaadooyinkooda wadaagay</p>
@@ -446,6 +349,7 @@ const openPayModal = (courseId, courseName, coursePrice) => {
           </a>
         </div>
 
+        {/* Services Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 px-5 md:px-16 pb-16">
           {services.map((svc, i) => (
             <div key={i} className="rounded-3xl p-7 md:p-9 flex flex-col gap-6 transition-all duration-300"
@@ -459,9 +363,7 @@ const openPayModal = (courseId, courseName, coursePrice) => {
                 </div>
                 <div className="flex-1">
                   <div className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-2"
-                    style={{ background: "rgba(0,0,0,0.3)", color: svc.color }}>
-                    {svc.tag}
-                  </div>
+                    style={{ background: "rgba(0,0,0,0.3)", color: svc.color }}>{svc.tag}</div>
                   <h3 className="text-xl md:text-2xl font-black" style={{ color: "#ffffff" }}>{svc.title}</h3>
                   <p className="text-sm mt-1" style={{ color: svc.color, fontWeight: 600 }}>{svc.subtitle}</p>
                 </div>
@@ -478,22 +380,15 @@ const openPayModal = (courseId, courseName, coursePrice) => {
                 <p className="text-sm leading-relaxed" style={{ color: "#94a3b8" }}>{svc.benefit}</p>
               </div>
               <button
-  onClick={() => {
-    if (userApprovedCourses.includes(svc.payId)) {
-      // Scroll to courses section
-      document.getElementById("courses")?.scrollIntoView({ behavior: "smooth" });
-    } else {
-      openPayModal(svc.payId, svc.title, svc.payPrice);
-    }
-  }}
-  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm w-fit"
-  style={{
-    background: userApprovedCourses.includes(svc.payId) ? "#22c55e" : svc.color,
-    color: "#000000", border: "none", cursor: "pointer"
-  }}>
-  {userApprovedCourses.includes(svc.payId) ? "✅ Bought — Access Courses" : "Iibso/BUY →"}
-</button>
-              
+                onClick={() => {
+                  if (userApprovedCourses.includes(svc.payId)) {
+                    document.getElementById("courses")?.scrollIntoView({ behavior: "smooth" });
+                  } else { openPayModal(svc.payId, svc.title, svc.payPrice); }
+                }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm w-fit"
+                style={{ background: userApprovedCourses.includes(svc.payId) ? "#22c55e" : svc.color, color: "#000000", border: "none", cursor: "pointer" }}>
+                {userApprovedCourses.includes(svc.payId) ? "✅ Bought — Access Courses" : "Iibso/BUY →"}
+              </button>
             </div>
           ))}
         </div>
@@ -501,12 +396,7 @@ const openPayModal = (courseId, courseName, coursePrice) => {
 
       <div className="mx-5 md:mx-20 mb-16 md:mb-20 px-5 md:px-8 py-4 md:py-5 rounded-2xl flex flex-wrap justify-around gap-4 md:gap-6 items-center"
         style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(245,197,24,0.1)" }}>
-        {[
-          { icon: "🛡️", label: "Trusted Education" },
-          { icon: "📈", label: "Proven Strategies" },
-          { icon: "👤", label: "Expert Mentors" },
-          { icon: "🏆", label: "Results Driven" },
-        ].map((item, i) => (
+        {[{ icon: "🛡️", label: "Trusted Education" }, { icon: "📈", label: "Proven Strategies" }, { icon: "👤", label: "Expert Mentors" }, { icon: "🏆", label: "Results Driven" }].map((item, i) => (
           <div key={i} className="flex items-center gap-2 md:gap-3">
             <span className="text-lg md:text-xl">{item.icon}</span>
             <span className="text-xs md:text-sm font-semibold" style={{ color: "#94a3b8" }}>{item.label}</span>
@@ -514,22 +404,15 @@ const openPayModal = (courseId, courseName, coursePrice) => {
         ))}
       </div>
 
-      {/* ── COURSES ── */}
+      {/* COURSES */}
       <section id="courses" className="px-5 md:px-20 py-16 md:py-24">
         <div className="text-center mb-12 md:mb-20">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-5"
-            style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.2)", color: "#f5c518" }}>
-            ✦ Courses
-          </div>
-          <h2 className="text-3xl md:text-5xl font-black">
-            Latest<span style={{ color: "#f5c518" }}> Courses</span>
-          </h2>
+            style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.2)", color: "#f5c518" }}>✦ Courses</div>
+          <h2 className="text-3xl md:text-5xl font-black">Latest<span style={{ color: "#f5c518" }}> Courses</span></h2>
         </div>
         {courses.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-5xl mb-4">📚</div>
-            <p style={{ color: "#64748b" }}>Courses loading...</p>
-          </div>
+          <div className="text-center py-20"><div className="text-5xl mb-4">📚</div><p style={{ color: "#64748b" }}>Courses loading...</p></div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
             {displayCourse.map((course) => (
@@ -538,24 +421,18 @@ const openPayModal = (courseId, courseName, coursePrice) => {
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 20px 40px rgba(245,197,24,0.1)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
                 {course.thumbnailURL ? (
-                  <img src={course.thumbnailURL} alt={course.title} className="w-full object-cover"
-                    style={{ height: "clamp(180px, 40vw, 240px)" }} />
+                  <img src={course.thumbnailURL} alt={course.title} className="w-full object-cover" style={{ height: "clamp(180px, 40vw, 240px)" }} />
                 ) : course.fileURL && course.type === "Video" ? (
-                  <video src={course.fileURL} className="w-full object-cover pointer-events-none"
-                    style={{ height: "clamp(180px, 40vw, 240px)" }} muted playsInline preload="metadata" />
+                  <video src={course.fileURL} className="w-full object-cover pointer-events-none" style={{ height: "clamp(180px, 40vw, 240px)" }} muted playsInline preload="metadata" />
                 ) : (
-                  <div className="w-full flex items-center justify-center"
-                    style={{ height: "clamp(180px, 40vw, 240px)", background: "rgba(245,197,24,0.05)" }}>
+                  <div className="w-full flex items-center justify-center" style={{ height: "clamp(180px, 40vw, 240px)", background: "rgba(245,197,24,0.05)" }}>
                     <span style={{ fontSize: 64 }}>{course.type === "PDF" ? "📄" : course.type === "Playlist" ? "🎓" : "🎬"}</span>
                   </div>
                 )}
                 <div className="p-5 md:p-8">
                   {course.type && (
                     <span className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
-                      style={{
-                        background: course.type === "PDF" ? "rgba(255,71,87,0.15)" : course.type === "Playlist" ? "rgba(59,130,246,0.15)" : "rgba(245,158,11,0.15)",
-                        color: course.type === "PDF" ? "#ff4757" : course.type === "Playlist" ? "#3b82f6" : "#f59e0b",
-                      }}>
+                      style={{ background: course.type === "PDF" ? "rgba(255,71,87,0.15)" : course.type === "Playlist" ? "rgba(59,130,246,0.15)" : "rgba(245,158,11,0.15)", color: course.type === "PDF" ? "#ff4757" : course.type === "Playlist" ? "#3b82f6" : "#f59e0b" }}>
                       {course.type} {course.lessonCount ? `• ${course.lessonCount} Lessons` : ""}
                     </span>
                   )}
@@ -570,21 +447,16 @@ const openPayModal = (courseId, courseName, coursePrice) => {
                     <span className="text-2xl md:text-3xl font-black" style={{ color: "#f5c518" }}>
                       {Number(course.price) === 0 ? "FREE" : `$${course.price}`}
                     </span>
-                   <button
-  onClick={() => {
-    if (Number(course.price) === 0 || userApprovedCourses.includes(course.id)) {
-      window.location.href = `/course/${course.id}`;
-    } else {
-      openPayModal(course.id, course.title, course.price);
-    }
-  }}
-
-  style={{
-    background: userApprovedCourses.includes(course.id) ? "#22c55e" : "#f5c518",
-    color: "#000000"
-  }}>
-  {userApprovedCourses.includes(course.id) ? "✅ Access Course" : Number(course.price) === 0 ? "Access Free" : "Buy Course"}
-</button>
+                    <button
+                      onClick={() => {
+                        if (Number(course.price) === 0 || userApprovedCourses.includes(course.id)) {
+                          window.location.href = `/course/${course.id}`;
+                        } else { openPayModal(course.id, course.title, course.price); }
+                      }}
+                      className="px-5 md:px-6 py-2.5 md:py-3 rounded-xl font-black text-sm transition-all"
+                      style={{ background: userApprovedCourses.includes(course.id) ? "#22c55e" : "#f5c518", color: "#000000" }}>
+                      {userApprovedCourses.includes(course.id) ? "✅ Access Course" : Number(course.price) === 0 ? "Access Free" : "Buy Course"}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -593,82 +465,39 @@ const openPayModal = (courseId, courseName, coursePrice) => {
         )}
       </section>
 
-      {/* ── ABOUT ── */}
-      <section id="about" className="px-5 md:px-20 py-20 md:py-32 text-center"
-        style={{ borderTop: "1px solid rgba(245,197,24,0.08)" }}>
+      {/* ABOUT */}
+      <section id="about" className="px-5 md:px-20 py-20 md:py-32 text-center" style={{ borderTop: "1px solid rgba(245,197,24,0.08)" }}>
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-6"
-          style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.2)", color: "#f5c518" }}>
-          ✦ Nagu saabsan
-        </div>
+          style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.2)", color: "#f5c518" }}>✦ Nagu saabsan</div>
         <h2 className="text-3xl md:text-5xl font-black mb-6">About <span style={{ color: "#f5c518" }}>DREAM CRT</span></h2>
         <p className="text-base md:text-xl max-w-4xl mx-auto leading-loose" style={{ color: "#f7f8fa" }}>
           Dream CRT ACADEMY Waa ACADEMY _dii ugu horreeysay ee bulshada Soomaaliyeed u soo bandhigta CRT Strategy. Ka dib markii aan si guul leh u tababarnay 500+ arday oo aan siiyey koorsooyin bilaash ah, waxaan ogaanay caqabadda ugu weyn ee haysata dadka Forex-ka: ka barta baraha bulshada (Self-study) waxay leedahay jahwareer iyo safar aad u dheer. Koorsooyinkayaga gaarka ah (Premium Courses) waxay kuu soo gaabinayayaan safarkaas dheer. Uma baahnid inaad keligaa ku dhex wareerto suuqan baaxadda leh; halkan waxaad ka heleysaa hagid toos ah, nidaam saxan oo diyaarsan, iyo caawin joogto ah oo kugu hagta guusha
         </p>
       </section>
 
-      {/* ── CONTACT ── */}
-      <section id="contact" className="px-5 md:px-20 py-16 md:py-24 text-center"
-        style={{ borderTop: "1px solid rgba(245,197,24,0.12)" }}>
+      {/* CONTACT */}
+      <section id="contact" className="px-5 md:px-20 py-16 md:py-24 text-center" style={{ borderTop: "1px solid rgba(245,197,24,0.12)" }}>
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-6"
-          style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.2)", color: "#f5c518" }}>
-          ✦ Xiriir
-        </div>
+          style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.2)", color: "#f5c518" }}>✦ Xiriir</div>
         <h2 className="text-3xl md:text-4xl font-black mb-4">Contact Us</h2>
         <p className="text-base md:text-xl mb-8" style={{ color: "#64748b" }}>Su'aalo ma qabtaa? Nala soo xiriir!</p>
         <div className="flex flex-wrap justify-center gap-4">
           <a href="mailto:dreamcrt89@gmail.com" className="flex items-center gap-3 px-6 py-3 rounded-xl font-bold text-sm"
-            style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.3)", color: "#f5c518" }}>
-            📧 dreamcrt89@gmail.com
-          </a>
+            style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.3)", color: "#f5c518" }}>📧 dreamcrt89@gmail.com</a>
           <a href="https://wa.me/252612515121" target="_blank" rel="noreferrer"
             className="flex items-center gap-3 px-6 py-3 rounded-xl font-bold text-sm"
-            style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e" }}>
-            💬 WhatsApp
-          </a>
+            style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e" }}>💬 WhatsApp</a>
         </div>
       </section>
 
-      {/* ── JOURNAL MODAL ── */}
-      {showJournalForm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 px-4" style={{ background: "rgba(0,0,0,0.85)" }}>
-          <div className="w-full max-w-2xl p-6 md:p-10 rounded-3xl relative max-h-[90vh] overflow-y-auto"
-            style={{ background: "#111111", border: "1px solid rgba(245,197,24,0.3)" }}>
-            <button onClick={() => setShowJournalForm(false)} className="absolute top-4 right-4 text-2xl"
-              style={{ color: "#f5c518", background: "none", border: "none", cursor: "pointer" }}>✕</button>
-            <h2 className="text-2xl md:text-4xl font-black text-center mb-8 md:mb-10" style={{ color: "#f5c518" }}>Trading Journal</h2>
-            <div className="space-y-4 md:space-y-5">
-              <input type="text" placeholder="Enter Your Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)}
-                className="w-full p-4 rounded-xl outline-none text-white text-base"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(245,197,24,0.25)" }} />
-              <input type="email" placeholder="Enter Your Email" value={email} onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-4 rounded-xl outline-none text-white text-base"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(245,197,24,0.25)" }} />
-              <select value={type} onChange={(e) => setType(e.target.value)}
-                className="w-full p-4 rounded-xl outline-none text-white text-base"
-                style={{ background: "#111111", border: "1px solid rgba(245,197,24,0.25)" }}>
-                <option>Trading Lessons</option>
-                <option>Trading Journal</option>
-                <option>Back Testing</option>
-              </select>
-              <textarea placeholder="Write Your Message..." value={message} onChange={(e) => setMessage(e.target.value)}
-                className="w-full p-4 rounded-xl outline-none text-white h-32 md:h-36 text-base"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(245,197,24,0.25)", resize: "vertical" }} />
-              <button onClick={submitJournal} className="w-full py-3 md:py-4 rounded-xl text-lg md:text-xl font-black"
-                style={{ background: "#f5c518", color: "#000000" }}>Submit Request</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── PAY MODAL ── */}
+      {/* PAY MODAL */}
       {showPayModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 px-4"
           style={{ background: "rgba(0,0,0,0.88)" }}
           onClick={(e) => { if (e.target === e.currentTarget) { setShowPayModal(false); setPayDone(false); } }}>
           <div className="w-full max-w-md rounded-3xl relative max-h-[90vh] overflow-y-auto"
             style={{ background: "#080808", border: "1px solid rgba(245,197,24,0.25)" }}>
-            <div className="flex items-center justify-between px-7 pt-7 pb-5"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <div className="flex items-center justify-between px-7 pt-7 pb-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#f5c518" }}>💳 Lacag Bixin</p>
                 <h2 className="text-white text-xl font-black">{payCourseName}</h2>
@@ -682,13 +511,9 @@ const openPayModal = (courseId, courseName, coursePrice) => {
                 <>
                   <div className="mb-6">
                     <p className="text-gray-600 text-xs mb-1">Course Price</p>
-                    <p className="text-white text-4xl font-black">
-                      ${payCoursePrice}
-                      <span className="text-gray-600 text-base font-normal ml-1">/ hal mar</span>
-                    </p>
+                    <p className="text-white text-4xl font-black">${payCoursePrice}<span className="text-gray-600 text-base font-normal ml-1">/ hal mar</span></p>
                   </div>
-                  <div className="rounded-2xl p-4 mb-6"
-                    style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.25)" }}>
+                  <div className="rounded-2xl p-4 mb-6" style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.25)" }}>
                     <p className="font-black text-sm mb-2" style={{ color: "#f5c518" }}>📋 QAABKA LACAG BIXINTA:</p>
                     <p className="text-gray-300 text-sm leading-relaxed">
                       KUDIR LACAGTA COURSE KA NUMBARKAAN{" "}
@@ -698,15 +523,13 @@ const openPayModal = (courseId, courseName, coursePrice) => {
                   </div>
                   <div className="mb-4">
                     <label className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2 block">Email Address</label>
-                    <input type="email" value={payEmail} onChange={(e) => setPayEmail(e.target.value)}
-                      placeholder="your@email.com" className="w-full px-4 py-3.5 rounded-xl outline-none text-white text-sm"
-                      style={{ background: "#000", border: "1px solid rgba(255,255,255,0.08)" }} />
+                    <input type="email" value={payEmail} onChange={(e) => setPayEmail(e.target.value)} placeholder="your@email.com"
+                      className="w-full px-4 py-3.5 rounded-xl outline-none text-white text-sm" style={{ background: "#000", border: "1px solid rgba(255,255,255,0.08)" }} />
                   </div>
                   <div className="mb-6">
                     <label className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2 block">EVC Number</label>
-                    <input type="text" value={payPhone} onChange={(e) => setPayPhone(e.target.value)}
-                      placeholder="61xxxxxxx" className="w-full px-4 py-3.5 rounded-xl outline-none text-white text-sm"
-                      style={{ background: "#000", border: "1px solid rgba(255,255,255,0.08)" }} />
+                    <input type="text" value={payPhone} onChange={(e) => setPayPhone(e.target.value)} placeholder="61xxxxxxx"
+                      className="w-full px-4 py-3.5 rounded-xl outline-none text-white text-sm" style={{ background: "#000", border: "1px solid rgba(255,255,255,0.08)" }} />
                   </div>
                   <button onClick={handlePay} disabled={paying}
                     className="w-full py-4 rounded-2xl font-black text-black text-base disabled:opacity-60 disabled:cursor-not-allowed"
@@ -724,27 +547,12 @@ const openPayModal = (courseId, courseName, coursePrice) => {
                   <h3 className="text-white text-2xl font-black mb-2">Order <span style={{ color: "#f5c518" }}>Received!</span></h3>
                   <p className="text-gray-400 text-sm mb-5">Order-kaagu waa la helay. Admin-ku wuu fiirin doonaa oo course-ka wuu kuu furi doonaa.</p>
                   <div className="rounded-2xl p-5 text-left mb-5" style={{ background: "#111111", border: "1px solid rgba(245,197,24,0.2)" }}>
-                    {[
-                      { label: "Course", value: payCourseName },
-                      { label: "Email", value: payEmail },
-                      { label: "Number", value: payPhone },
-                      { label: "Amount", value: `$${payCoursePrice}` },
-                      { label: "Status", value: "⏳ Pending Approval", gold: true },
-                    ].map((row, i) => (
-                      <div key={i} className="flex justify-between text-sm py-2"
-                        style={{ borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                    {[{ label: "Course", value: payCourseName }, { label: "Email", value: payEmail }, { label: "Number", value: payPhone }, { label: "Amount", value: `$${payCoursePrice}` }, { label: "Status", value: "⏳ Pending Approval", gold: true }].map((row, i) => (
+                      <div key={i} className="flex justify-between text-sm py-2" style={{ borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
                         <span style={{ color: "#64748b" }}>{row.label}</span>
-                        <span className="font-semibold truncate max-w-[180px]"
-                          style={{ color: row.gold ? "#f5c518" : "#ffffff" }}>{row.value}</span>
+                        <span className="font-semibold truncate max-w-[180px]" style={{ color: row.gold ? "#f5c518" : "#ffffff" }}>{row.value}</span>
                       </div>
                     ))}
-                  </div>
-                  <div className="rounded-2xl p-4 text-sm text-left"
-                    style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.2)" }}>
-                    <p className="font-bold mb-1" style={{ color: "#f5c518" }}>⚠️ Xasuusin:</p>
-                    <p className="text-gray-400 text-xs leading-relaxed">
-                      Marka la approve gareeyo, course-ka isla markiiba wuu kuu furmayaa. Fadlan dib u soo gal account-kaaga si aad u aragto.
-                    </p>
                   </div>
                   <button onClick={() => { setShowPayModal(false); setPayDone(false); }}
                     className="mt-5 w-full py-3 rounded-xl font-bold text-sm"
@@ -758,7 +566,7 @@ const openPayModal = (courseId, courseName, coursePrice) => {
         </div>
       )}
 
-      {/* ── ADMIN PORTAL ── */}
+      {/* ADMIN PORTAL — hidden button, modal still works via keyboard shortcut */}
       {showAdminPortal && (
         <div className="fixed inset-0 flex items-center justify-center z-[100] px-4"
           style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(8px)" }}
@@ -775,8 +583,7 @@ const openPayModal = (courseId, courseName, coursePrice) => {
               <input type="password" value={adminPin} onChange={(e) => { setAdminPin(e.target.value); setAdminError(""); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleAdminLogin(); }}
                 placeholder="••••••••••••" autoFocus
-                style={{ width: "100%", padding: "14px 16px", borderRadius: "12px", background: "#000000", border: `1px solid ${adminError ? "rgba(255,71,87,0.5)" : "rgba(245,197,24,0.2)"}`, color: "#ffffff", fontSize: "16px", outline: "none", letterSpacing: "4px", fontFamily: "monospace", boxSizing: "border-box" }}
-              />
+                style={{ width: "100%", padding: "14px 16px", borderRadius: "12px", background: "#000000", border: `1px solid ${adminError ? "rgba(255,71,87,0.5)" : "rgba(245,197,24,0.2)"}`, color: "#ffffff", fontSize: "16px", outline: "none", letterSpacing: "4px", fontFamily: "monospace", boxSizing: "border-box" }} />
               {adminError && (
                 <div style={{ marginTop: "10px", padding: "10px 14px", borderRadius: "10px", background: "rgba(255,71,87,0.08)", border: "1px solid rgba(255,71,87,0.3)", color: "#ff4757", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
                   ⚠️ {adminError}
@@ -790,12 +597,10 @@ const openPayModal = (courseId, courseName, coursePrice) => {
                 style={{ width: "100%", marginTop: "10px", padding: "12px 0", borderRadius: "12px", background: "transparent", color: "#64748b", fontWeight: 600, fontSize: "13px", border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer" }}>
                 Xir / Cancel
               </button>
-              <p style={{ textAlign: "center", color: "#2d3748", fontSize: "11px", marginTop: "16px" }}>🔒 Secured · Authorized Access Only</p>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
