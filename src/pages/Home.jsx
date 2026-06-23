@@ -174,7 +174,7 @@ export default function Home() {
         "🤝 Caawin gaar ah iyo",
         "📊 Maareynta Account Challenge",
       ],
-      benefit: "Faa'iidada: Safarkaaga oo dhan oo aan ku barbar taaganahay iyo caawin toos ah si aad u gudubto akoonnada waaweyn",
+      benefit: "Faa'iidada: Safarkaaga oo dhan oo aan ku barbar taaganahay iyo caawin toos ah si aad Funded u noqoto",
       color: "#22c55e", colorDim: "rgba(34,197,94,0.12)", colorBorder: "rgba(34,197,94,0.25)",
       payId: "premium-mentorship-100", payPrice: "100",
     },
