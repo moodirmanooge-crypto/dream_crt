@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   addDoc, collection, query, orderBy, updateDoc, doc,
-  arrayUnion, arrayRemove, onSnapshot, getDoc,
+  arrayUnion, arrayRemove, onSnapshot, getDoc, increment,
 } from "firebase/firestore";
 import {
-  FaCheckCircle, FaHeart, FaRegHeart, FaUserPlus, FaUserCheck,
+  FaCheckCircle, FaUserPlus, FaUserCheck,
   FaShare, FaWhatsapp, FaTelegram, FaLink, FaComment, FaTimes,
-  FaFilter, FaReply, FaChartLine, FaTrophy, FaFire,
+  FaReply, FaChartLine, FaTrophy, FaFire,
 } from "react-icons/fa";
 import { db, auth, storage } from "../firebase/config.js";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +19,17 @@ const NAV_BG  = "linear-gradient(180deg,#0a1628 0%,#060d1f 100%)";
 const MAIN_BG = "#060d1f";
 const CARD_BG = "linear-gradient(145deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 100%)";
 const CARD_BORDER = "1px solid rgba(212,175,55,0.2)";
+
+// ── REACTION EMOJIS ──────────────────────────────────────────────────
+const REACTIONS = ["👍","😭","😡","🤣","🙏"];
+
+// ── FORMAT COUNT (1k, 1M) ────────────────────────────────────────────
+function formatCount(n) {
+  if (!n || isNaN(n)) return 0;
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1) + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1) + "k";
+  return n;
+}
 
 // ── SHARE MODAL ──────────────────────────────────────────────────────
 function ShareModal({ post, onClose }) {
@@ -71,7 +82,6 @@ function ProfileModal({ uid, onClose }) {
       try {
         const profSnap = await getDoc(doc(db, "profiles", uid));
         if (profSnap.exists()) setProfile(profSnap.data());
-        const q = query(collection(db, "trades"));
         const snap = await new Promise(res => {
           const unsub = onSnapshot(query(collection(db,"trades")), s => { unsub(); res(s); });
         });
@@ -92,11 +102,9 @@ function ProfileModal({ uid, onClose }) {
   return (
     <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:60, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0.8)", backdropFilter:"blur(8px)", padding:16 }}>
       <div onClick={e=>e.stopPropagation()} style={{ width:"100%", maxWidth:420, borderRadius:28, background:"linear-gradient(145deg,#0d1b35,#07111f)", border:CARD_BORDER, overflow:"hidden", boxShadow:"0 0 60px rgba(212,175,55,0.12)" }}>
-        {/* Header gradient */}
         <div style={{ height:100, background:"linear-gradient(135deg,rgba(212,175,55,0.15),rgba(59,130,246,0.1))", position:"relative" }}>
           <button onClick={onClose} style={{ position:"absolute", top:14, right:14, color:"#6688aa", background:"rgba(0,0,0,0.3)", border:"none", borderRadius:"50%", width:32, height:32, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}><FaTimes/></button>
         </div>
-        {/* Avatar */}
         <div style={{ display:"flex", flexDirection:"column", alignItems:"center", marginTop:-44, padding:"0 28px 28px" }}>
           <div style={{ width:88, height:88, borderRadius:"50%", border:`3px solid ${GOLD}`, overflow:"hidden", marginBottom:14, boxShadow:"0 0 20px rgba(212,175,55,0.3)" }}>
             <img src={avatarURL} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
@@ -110,7 +118,6 @@ function ProfileModal({ uid, onClose }) {
                 <FaCheckCircle style={{ color:"#3b82f6", fontSize:14 }} />
               </div>
               <p style={{ color:"#445", fontSize:13, margin:"0 0 20px" }}>Professional Trader</p>
-              {/* Stats */}
               <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, width:"100%", marginBottom:20 }}>
                 {[
                   { label:"Total Trades", value:trades.length, color:GOLD, icon:<FaChartLine/> },
@@ -124,7 +131,6 @@ function ProfileModal({ uid, onClose }) {
                   </div>
                 ))}
               </div>
-              {/* Recent trades */}
               {trades.length > 0 && (
                 <div style={{ width:"100%" }}>
                   <p style={{ color:"#6688aa", fontSize:12, fontWeight:700, marginBottom:10 }}>RECENT TRADES</p>
@@ -159,8 +165,30 @@ function ProfileModal({ uid, onClose }) {
   );
 }
 
+// ── REACTION PICKER ──────────────────────────────────────────────────
+function ReactionPicker({ onSelect, onClose }) {
+  return (
+    <div style={{
+      position:"absolute", bottom:"calc(100% + 8px)", left:"50%", transform:"translateX(-50%)",
+      background:"linear-gradient(145deg,#0d1b35,#07111f)", border:CARD_BORDER,
+      borderRadius:40, padding:"8px 12px", display:"flex", gap:6, zIndex:50,
+      boxShadow:"0 8px 32px rgba(0,0,0,0.5)",
+      animation:"popIn .15s ease",
+    }}>
+      {REACTIONS.map(emoji => (
+        <button key={emoji} onClick={() => onSelect(emoji)}
+          style={{ background:"none", border:"none", cursor:"pointer", fontSize:22, lineHeight:1, transition:"transform .1s", padding:4 }}
+          onMouseEnter={e => e.currentTarget.style.transform="scale(1.35)"}
+          onMouseLeave={e => e.currentTarget.style.transform="scale(1)"}>
+          {emoji}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ── COMMENTS SECTION ─────────────────────────────────────────────────
-function CommentsSection({ postId, currentUser }) {
+function CommentsSection({ postId, currentUser, onCommentAdded }) {
   const [comments, setComments]   = useState([]);
   const [text, setText]           = useState("");
   const [replyTo, setReplyTo]     = useState(null); // { id, userName }
@@ -184,7 +212,10 @@ function CommentsSection({ postId, currentUser }) {
       userId:    currentUser.uid,
       replies:   [],
     });
+    // increment commentCount on the post
+    await updateDoc(doc(db,"posts",postId), { commentCount: increment(1) });
     setText("");
+    if (onCommentAdded) onCommentAdded();
   };
 
   const submitReply = async (commentId) => {
@@ -211,7 +242,7 @@ function CommentsSection({ postId, currentUser }) {
 
   return (
     <div style={{ borderTop:"1px solid rgba(212,175,55,0.1)", paddingTop:16, marginTop:4 }}>
-      {/* Input */}
+      {/* Comment input */}
       <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 16px 16px" }}>
         <Avatar photo={currentUser?.photoURL} name={currentUser?.displayName||"U"} size={34} />
         <div style={{ flex:1, display:"flex", gap:8 }}>
@@ -221,45 +252,56 @@ function CommentsSection({ postId, currentUser }) {
         </div>
       </div>
 
-      {/* Comments */}
-      <div style={{ display:"flex", flexDirection:"column", gap:12, padding:"0 16px 16px" }}>
+      {/* Comments list */}
+      <div style={{ display:"flex", flexDirection:"column", gap:14, padding:"0 16px 16px" }}>
         {comments.map(c => (
           <div key={c.id}>
             <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-              <Avatar photo={c.userPhoto} name={c.userName} size={30} />
+              <Avatar photo={c.userPhoto} name={c.userName} size={32} />
               <div style={{ flex:1 }}>
-                <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:"0 16px 16px 16px", padding:"10px 14px", display:"inline-block", maxWidth:"100%" }}>
+                {/* Comment bubble */}
+                <div style={{ background:"rgba(255,255,255,0.06)", borderRadius:"0 18px 18px 18px", padding:"10px 14px", display:"inline-block", maxWidth:"100%" }}>
                   <span style={{ color:GOLD2, fontWeight:700, fontSize:12, marginRight:8 }}>{c.userName}</span>
-                  <span style={{ color:"#aab", fontSize:13 }}>{c.text}</span>
+                  <span style={{ color:"#ccd", fontSize:13 }}>{c.text}</span>
                 </div>
+                {/* Meta row */}
                 <div style={{ display:"flex", alignItems:"center", gap:14, marginTop:5, paddingLeft:4 }}>
-                  <span style={{ color:"#334", fontSize:11 }}>{new Date(c.createdAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</span>
-                  <button onClick={() => setReplyTo(replyTo?.id===c.id ? null : { id:c.id, userName:c.userName })}
-                    style={{ background:"none", border:"none", color:"#6688aa", fontSize:11, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
+                  <span style={{ color:"#445", fontSize:11 }}>{new Date(c.createdAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</span>
+                  <button
+                    onClick={() => setReplyTo(replyTo?.id===c.id ? null : { id:c.id, userName:c.userName })}
+                    style={{ background:"none", border:"none", color: replyTo?.id===c.id ? GOLD2 : "#6688aa", fontSize:11, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
                     <FaReply size={10}/> Reply
                   </button>
                 </div>
+
                 {/* Replies */}
                 {(c.replies||[]).length > 0 && (
-                  <div style={{ marginTop:10, paddingLeft:12, borderLeft:"2px solid rgba(212,175,55,0.15)", display:"flex", flexDirection:"column", gap:8 }}>
+                  <div style={{ marginTop:10, paddingLeft:14, borderLeft:"2px solid rgba(212,175,55,0.18)", display:"flex", flexDirection:"column", gap:10 }}>
                     {(c.replies||[]).map((r,i) => (
                       <div key={i} style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
-                        <Avatar photo={r.userPhoto} name={r.userName} size={24} />
-                        <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:"0 12px 12px 12px", padding:"8px 12px" }}>
-                          <span style={{ color:GOLD2, fontWeight:700, fontSize:11, marginRight:6 }}>{r.userName}</span>
-                          <span style={{ color:"#8899aa", fontSize:12 }}>{r.text}</span>
+                        <Avatar photo={r.userPhoto} name={r.userName} size={26} />
+                        <div>
+                          <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:"0 14px 14px 14px", padding:"8px 12px", display:"inline-block" }}>
+                            <span style={{ color:GOLD2, fontWeight:700, fontSize:11, marginRight:6 }}>{r.userName}</span>
+                            <span style={{ color:"#aab", fontSize:12 }}>{r.text}</span>
+                          </div>
+                          <div style={{ color:"#334", fontSize:10, marginTop:3, paddingLeft:4 }}>
+                            {new Date(r.createdAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-                {/* Reply input */}
+
+                {/* Reply input box */}
                 {replyTo?.id === c.id && (
-                  <div style={{ display:"flex", gap:8, marginTop:10, paddingLeft:12 }}>
+                  <div style={{ display:"flex", gap:8, marginTop:10, paddingLeft:14 }}>
                     <Avatar photo={currentUser?.photoURL} name={currentUser?.displayName||"U"} size={26} />
                     <div style={{ flex:1, display:"flex", gap:8 }}>
                       <input value={replyText} onChange={e=>setReplyText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submitReply(c.id)}
-                        placeholder={`Reply to ${c.userName}...`} style={{ flex:1, background:"rgba(255,255,255,0.05)", border:"1px solid rgba(212,175,55,0.15)", borderRadius:16, padding:"7px 14px", color:"#fff", fontSize:12, outline:"none" }} />
+                        placeholder={`Reply to ${c.userName}...`} autoFocus
+                        style={{ flex:1, background:"rgba(255,255,255,0.05)", border:`1px solid ${GOLD}44`, borderRadius:16, padding:"7px 14px", color:"#fff", fontSize:12, outline:"none" }} />
                       <button onClick={()=>submitReply(c.id)} style={{ background:`linear-gradient(135deg,${GOLD},${GOLD2})`, color:"#000", border:"none", borderRadius:16, padding:"7px 14px", fontSize:11, fontWeight:700, cursor:"pointer" }}>↩</button>
                     </div>
                   </div>
@@ -278,24 +320,57 @@ function PostCard({ post, currentUser }) {
   const [showComments,  setShowComments]  = useState(false);
   const [shareModal,    setShareModal]    = useState(false);
   const [profileModal,  setProfileModal]  = useState(false);
+  const [showReactions, setShowReactions] = useState(false);
+  const reactionRef = useRef(null);
+
   const [localPost, setLocalPost] = useState({
     ...post,
-    likes:     Array.isArray(post.likes)     ? post.likes     : [],
-    followers: Array.isArray(post.followers) ? post.followers : [],
+    likes:        Array.isArray(post.likes)     ? post.likes     : [],
+    followers:    Array.isArray(post.followers) ? post.followers : [],
+    reactions:    post.reactions || {},   // { uid: emoji }
+    commentCount: post.commentCount || 0,
+    shareCount:   post.shareCount   || 0,
   });
 
-  const isLiked     = localPost.likes.includes(currentUser?.uid);
+  // Close reaction picker when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (reactionRef.current && !reactionRef.current.contains(e.target)) {
+        setShowReactions(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const myReaction = currentUser ? (localPost.reactions?.[currentUser.uid] || null) : null;
+  const totalReactions = Object.keys(localPost.reactions || {}).length;
+
+  // Count each emoji
+  const reactionCounts = Object.values(localPost.reactions || {}).reduce((acc, emoji) => {
+    acc[emoji] = (acc[emoji] || 0) + 1;
+    return acc;
+  }, {});
+  const topReactions = Object.entries(reactionCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([e])=>e);
+
   const isFollowing = localPost.followers.includes(currentUser?.uid);
 
-  const likePost = async () => {
+  const handleReaction = async (emoji) => {
     if (!currentUser) return;
+    setShowReactions(false);
     const ref = doc(db,"posts",localPost.id);
-    if (isLiked) {
-      await updateDoc(ref, { likes: arrayRemove(currentUser.uid) });
-      setLocalPost(p => ({ ...p, likes: p.likes.filter(id=>id!==currentUser.uid) }));
+    const uid = currentUser.uid;
+
+    if (myReaction === emoji) {
+      // Remove reaction
+      const newReactions = { ...localPost.reactions };
+      delete newReactions[uid];
+      await updateDoc(ref, { [`reactions.${uid}`]: null });
+      setLocalPost(p => ({ ...p, reactions: newReactions }));
     } else {
-      await updateDoc(ref, { likes: arrayUnion(currentUser.uid) });
-      setLocalPost(p => ({ ...p, likes: [...p.likes, currentUser.uid] }));
+      // Add/change reaction
+      await updateDoc(ref, { [`reactions.${uid}`]: emoji });
+      setLocalPost(p => ({ ...p, reactions: { ...p.reactions, [uid]: emoji } }));
     }
   };
 
@@ -303,6 +378,15 @@ function PostCard({ post, currentUser }) {
     if (!currentUser || isFollowing) return;
     await updateDoc(doc(db,"posts",localPost.id), { followers: arrayUnion(currentUser.uid) });
     setLocalPost(p => ({ ...p, followers: [...p.followers, currentUser.uid] }));
+  };
+
+  const handleShare = async () => {
+    setShareModal(true);
+    // Increment share count
+    try {
+      await updateDoc(doc(db,"posts",localPost.id), { shareCount: increment(1) });
+      setLocalPost(p => ({ ...p, shareCount: (p.shareCount||0)+1 }));
+    } catch(e) {}
   };
 
   const avatarURL = localPost.profileImage || `https://ui-avatars.com/api/?name=${localPost.userName||"T"}&background=d4af37&color=000&bold=true`;
@@ -330,12 +414,12 @@ function PostCard({ post, currentUser }) {
                 <span style={{ color:"#fff", fontWeight:900, fontSize:15 }}>{localPost.userName}</span>
                 <FaCheckCircle style={{ color:"#3b82f6", fontSize:13 }} />
               </div>
-              <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:3 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:3, flexWrap:"wrap" }}>
                 <span style={{ color:GOLD, fontSize:11, fontWeight:600 }}>Professional Trader</span>
                 <span style={{ color:"#334", fontSize:10 }}>•</span>
                 <span style={{ color:"#445", fontSize:11 }}>{new Date(localPost.createdAt).toLocaleDateString()}</span>
                 <span style={{ color:"#334", fontSize:10 }}>•</span>
-                <span style={{ color:"#6688aa", fontSize:11 }}>{(localPost.followers||[]).length} followers</span>
+                <span style={{ color:"#6688aa", fontSize:11 }}>{formatCount((localPost.followers||[]).length)} followers</span>
               </div>
             </div>
           </div>
@@ -368,32 +452,57 @@ function PostCard({ post, currentUser }) {
           </div>
         )}
 
+        {/* Reaction summary bar (shows above actions if reactions exist) */}
+        {totalReactions > 0 && (
+          <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 20px 10px" }}>
+            <div style={{ display:"flex" }}>
+              {topReactions.map((e,i) => (
+                <span key={i} style={{ fontSize:15, marginRight:-2 }}>{e}</span>
+              ))}
+            </div>
+            <span style={{ color:"#6688aa", fontSize:12 }}>{formatCount(totalReactions)}</span>
+          </div>
+        )}
+
         {/* Actions */}
         <div style={{ display:"flex", alignItems:"center", borderTop:"1px solid rgba(212,175,55,0.08)", padding:"4px 0" }}>
-          {/* Like */}
-          <button onClick={likePost}
-            style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"12px 0", background:"none", border:"none", cursor:"pointer", color: isLiked?"#ef4444":"#6688aa", fontSize:13, fontWeight:700, transition:"color .2s" }}>
-            {isLiked ? <FaHeart style={{ fontSize:16 }}/> : <FaRegHeart style={{ fontSize:16 }}/>}
-            <span>{localPost.likes.length}</span>
-          </button>
+
+          {/* Reaction button */}
+          <div ref={reactionRef} style={{ flex:1, position:"relative" }}>
+            {showReactions && (
+              <ReactionPicker onSelect={handleReaction} onClose={()=>setShowReactions(false)} />
+            )}
+            <button
+              onClick={() => setShowReactions(v => !v)}
+              style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:7, padding:"12px 0", background:"none", border:"none", cursor:"pointer", fontSize:13, fontWeight:700, color: myReaction ? GOLD2 : "#6688aa", transition:"color .2s" }}>
+              <span style={{ fontSize: myReaction ? 17 : 16 }}>{myReaction || "👍"}</span>
+              <span>{formatCount(totalReactions)}</span>
+            </button>
+          </div>
 
           {/* Comment */}
           <button onClick={()=>setShowComments(!showComments)}
             style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"12px 0", background:"none", border:"none", cursor:"pointer", color: showComments?GOLD2:"#6688aa", fontSize:13, fontWeight:700, transition:"color .2s" }}>
             <FaComment style={{ fontSize:16 }}/>
-            <span>{localPost.commentCount || 0}</span>
+            <span>{formatCount(localPost.commentCount || 0)}</span>
           </button>
 
           {/* Share */}
-          <button onClick={()=>setShareModal(true)}
+          <button onClick={handleShare}
             style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"12px 0", background:"none", border:"none", cursor:"pointer", color:"#6688aa", fontSize:13, fontWeight:700 }}>
             <FaShare style={{ fontSize:16 }}/>
-            <span>{localPost.shareCount || 0}</span>
+            <span>{formatCount(localPost.shareCount || 0)}</span>
           </button>
         </div>
 
         {/* Comments section */}
-        {showComments && <CommentsSection postId={localPost.id} currentUser={currentUser} />}
+        {showComments && (
+          <CommentsSection
+            postId={localPost.id}
+            currentUser={currentUser}
+            onCommentAdded={() => setLocalPost(p => ({ ...p, commentCount: (p.commentCount||0)+1 }))}
+          />
+        )}
       </article>
     </>
   );
@@ -405,7 +514,7 @@ export default function Community() {
   const [loading,     setLoading]     = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [filter,      setFilter]      = useState("all"); // all | following
+  const [filter,      setFilter]      = useState("all");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, user => { setCurrentUser(user); setAuthLoading(false); });
@@ -417,7 +526,14 @@ export default function Community() {
     const unsub = onSnapshot(q, snap => {
       const data = snap.docs.map(d => {
         const item = d.data();
-        return { id:d.id, ...item, likes: Array.isArray(item.likes)?item.likes:[], followers: Array.isArray(item.followers)?item.followers:[] };
+        return {
+          id:d.id, ...item,
+          likes:        Array.isArray(item.likes)     ? item.likes     : [],
+          followers:    Array.isArray(item.followers) ? item.followers : [],
+          reactions:    item.reactions    || {},
+          commentCount: item.commentCount || 0,
+          shareCount:   item.shareCount   || 0,
+        };
       });
       setPosts(data);
       setLoading(false);
@@ -442,6 +558,7 @@ export default function Community() {
     <div style={{ minHeight:"100vh", background:MAIN_BG, color:"#fff" }}>
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes popIn{from{opacity:0;transform:translateX(-50%) scale(.7)}to{opacity:1;transform:translateX(-50%) scale(1)}}
         ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:#060d1f} ::-webkit-scrollbar-thumb{background:#1a2a4a;border-radius:4px}
         @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
       `}</style>
@@ -476,9 +593,9 @@ export default function Community() {
 
           {/* Live bar */}
           <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:18, background:"rgba(0,0,0,0.2)", borderRadius:12, padding:"10px 16px", border:"1px solid rgba(255,255,255,0.05)" }}>
-            <div style={{ width:8, height:8, borderRadius:"50%", background:"#22c55e", animation:"pulse 2s infinite" }} />
+            <div style={{ width:8, height:8, borderRadius:"50%", background:"#22c55e" }} />
             <span style={{ color:"#22c55e", fontSize:12, fontWeight:700 }}>LIVE</span>
-            <span style={{ color:"#445", fontSize:12, marginLeft:4 }}>{posts.length} posts from the community</span>
+            <span style={{ color:"#445", fontSize:12, marginLeft:4 }}>{formatCount(posts.length)} posts from the community</span>
             <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:6 }}>
               <div style={{ width:6, height:6, borderRadius:"50%", background:GOLD }} />
               <span style={{ color:GOLD, fontSize:11, fontWeight:600 }}>Real-time updates</span>
