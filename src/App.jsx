@@ -18,7 +18,7 @@ import TradingTemplate from "./pages/TradingTemplate.jsx";
 import MyCourses from "./pages/mycourses.jsx";
 import Contact from "./pages/contact.jsx";
 import TradeHistory from "./pages/TradeHistory.jsx";
-import Archives from "./pages/Archives.jsx";
+import Archives from "./pages/archiven.jsx";
 
 function App() {
   return (
