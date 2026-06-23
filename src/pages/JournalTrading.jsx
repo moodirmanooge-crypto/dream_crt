@@ -2171,15 +2171,88 @@ export default function JournalTrading() {
         )}
 
         {/* ── SETTINGS ── */}
-        {activeTab === "settings" && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 400 }}>
-            <div style={{ textAlign: "center" }}>
-              <span style={{ fontSize: 40 }}>⚙️</span>
-              <p style={{ color: TEXT1, fontWeight: 900, fontSize: 16, marginTop: 12 }}>Settings</p>
-              <p style={{ color: TEXT3, fontSize: 13 }}>Coming Soon</p>
-            </div>
+{activeTab === "settings" && (
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: 400,
+    }}
+  >
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 500,
+        background: CARD_BG,
+        border: `1px solid ${BORDER}`,
+        borderRadius: 20,
+        padding: 24,
+      }}
+    >
+      <h2
+        style={{
+          color: TEXT1,
+          fontWeight: 900,
+          marginBottom: 20,
+          textAlign: "center",
+        }}
+      >
+        ⚙️ Settings
+      </h2>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: 16,
+          borderRadius: 14,
+          background: BG2,
+          border: `1px solid ${BORDER}`,
+        }}
+      >
+        <div>
+          <div
+            style={{
+              color: TEXT1,
+              fontWeight: 800,
+              fontSize: 15,
+            }}
+          >
+            Theme Mode
           </div>
-        )}
+          <div
+            style={{
+              color: TEXT3,
+              fontSize: 13,
+              marginTop: 4,
+            }}
+          >
+            Choose Dashboard Appearance
+          </div>
+        </div>
+
+        <select
+          value={theme}
+          onChange={(e) => setTheme(e.target.value)}
+          style={{
+            padding: "10px 14px",
+            borderRadius: 10,
+            border: `1px solid ${BORDER}`,
+            background: BG1,
+            color: TEXT1,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          <option value="dark">🌙 Dark Mode</option>
+          <option value="light">☀️ Light Mode</option>
+        </select>
+      </div>
+    </div>
+  </div>
+)}
 
       </div>
     </div>
