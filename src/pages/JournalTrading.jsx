@@ -2162,7 +2162,7 @@ export default function JournalTrading() {
               <p style={{ color: TEXT2, marginBottom: 18, fontSize: 12 }}>Session-ka aad ku fiicantahay ogaado</p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
                 {sessStats.map(s => {
-                  const em = s.session === "Asian" ? "🌏" : s.session === "London" ? "🇬🇧" : s.session === "New York" ? "" : "", pn = parseFloat(s.pnl);
+                  const em = s.session === "Asian" ? "" : s.session === "London" ? "🇬🇧" : s.session === "New York" ? "" : "", pn = parseFloat(s.pnl);
                   return (
                     <div key={s.session} style={{ background: CARD2, borderRadius: 12, padding: "14px 16px", border: BORDER }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
