@@ -2097,62 +2097,7 @@ export default function JournalTrading() {
           </div>
         )}
 
-        {/* ── GOALS ── */}
-        {activeTab === "goals" && (
-          <div style={{ padding: "20px 26px", animation: "fadeIn .3s ease" }}>
-            <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "20px 22px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <div>
-                  <h1 style={{ color: TEXT1, fontWeight: 900, fontSize: 18, margin: 0 }}>Trading Goals</h1>
-                  <p style={{ color: TEXT2, margin: "3px 0 0", fontSize: 11 }}>Targets-kaaga taabo oo raac</p>
-                </div>
-                <button onClick={() => setShowGoalForm(!showGoalForm)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, fontWeight: 700, color: "#000", cursor: "pointer", border: "none", background: GOLD, fontSize: 12 }}><FaPlus size={10} /> Add Goal</button>
-              </div>
-              {showGoalForm && (
-                <div style={{ background: CARD2, borderRadius: 12, padding: "16px", border: BORDER_G, marginBottom: 14 }}>
-                  <p style={{ color: TEXT1, fontWeight: 900, fontSize: 13, margin: "0 0 10px" }}>New Goal</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <input type="text" placeholder="Goal title..." value={newGoal.title} onChange={e => setNewGoal({ ...newGoal, title: e.target.value })} style={{ ...iS, gridColumn: "span 2" }} />
-                    <input type="number" placeholder="Target ($)" value={newGoal.target} onChange={e => setNewGoal({ ...newGoal, target: e.target.value })} style={iS} />
-                    <input type="number" placeholder="Current ($)" value={newGoal.current} onChange={e => setNewGoal({ ...newGoal, current: e.target.value })} style={iS} />
-                    <select value={newGoal.type} onChange={e => setNewGoal({ ...newGoal, type: e.target.value })} style={iS}><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="custom">Custom</option></select>
-                    <input type="date" value={newGoal.deadline} onChange={e => setNewGoal({ ...newGoal, deadline: e.target.value })} style={iS} />
-                  </div>
-                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                    <button onClick={handleSaveGoal} style={{ padding: "8px 16px", borderRadius: 9, fontWeight: 900, color: "#000", cursor: "pointer", border: "none", background: GOLD, fontSize: 12 }}>Save</button>
-                    <button onClick={() => setShowGoalForm(false)} style={{ padding: "8px 16px", borderRadius: 9, fontWeight: 700, color: TEXT2, cursor: "pointer", background: "none", border: BORDER, fontSize: 12 }}>Cancel</button>
-                  </div>
-                </div>
-              )}
-              {goals.length === 0 ? <p style={{ color: TEXT3, textAlign: "center", padding: "40px 0", fontSize: 13 }}>No Goals Yet!</p> : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-                  {goals.map(goal => {
-                    const cur = parseFloat(goal.current || 0), tar = parseFloat(goal.target || 1), prog = Math.min(100, Math.round((cur / tar) * 100));
-                    return (
-                      <div key={goal.id} style={{ background: CARD2, borderRadius: 12, padding: "14px 16px", border: goal.completed ? `1px solid rgba(34,197,94,0.25)` : BORDER }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 9 }}>
-                          <div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{goal.completed && <FaCheckCircle style={{ color: GREEN, fontSize: 12 }} />}<h2 style={{ color: goal.completed ? GREEN : TEXT1, fontWeight: 900, fontSize: 13, margin: 0, textDecoration: goal.completed ? "line-through" : "none" }}>{goal.title}</h2></div>
-                            <p style={{ color: TEXT3, fontSize: 10, margin: "2px 0 0", textTransform: "capitalize" }}>{goal.type} goal {goal.deadline ? `• Due: ${goal.deadline}` : ""}</p>
-                          </div>
-                          <div style={{ display: "flex", gap: 6 }}>
-                            <button onClick={() => handleToggleGoal(goal)} style={{ color: GREEN, background: "none", border: `1px solid rgba(34,197,94,0.25)`, borderRadius: 6, padding: "3px 8px", fontSize: 9, cursor: "pointer" }}>{goal.completed ? "Undo" : "✓ Done"}</button>
-                            <button onClick={() => handleDeleteGoal(goal.id)} style={{ color: RED_NEG, background: "none", border: "none", cursor: "pointer" }}><FaTrash size={10} /></button>
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                          <span style={{ color: TEXT2, fontSize: 10 }}>${cur} / ${tar}</span>
-                          <span style={{ color: prog >= 100 ? GREEN : GOLD, fontWeight: 700, fontSize: 10 }}>{prog}%</span>
-                        </div>
-                        <div style={{ height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 5, overflow: "hidden" }}><div style={{ height: "100%", width: `${prog}%`, borderRadius: 5, transition: "width .5s", background: prog >= 100 ? GREEN : GOLD }} /></div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        
 
         {/* ── SESSIONS ── */}
         {activeTab === "sessions" && (
