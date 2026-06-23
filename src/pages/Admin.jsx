@@ -189,7 +189,7 @@ const Icon = {
     </svg>
   ),
   LockOpen: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 14, height: 14 }}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 20, height: 20 }}>
       <rect x="3" y="11" width="18" height="11" rx="2" />
       <path d="M7 11V7a5 5 0 0 1 9.9-1" />
     </svg>
@@ -210,7 +210,6 @@ const Icon = {
       <polyline points="18 15 12 9 6 15" />
     </svg>
   ),
-  // Login-specific
   EyeOff: () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 18, height: 18 }}>
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
@@ -234,37 +233,23 @@ const Icon = {
 
 // ── Colour tokens ─────────────────────────────────────────────────────────────
 const C = {
-  bg: "#0a0a0a",
-  bgDeep: "#050505",
-  surface: "#111111",
-  surfaceCard: "#161616",
-  surfaceHover: "#1c1c1c",
-  border: "#2a2a2a",
-  borderRed: "#3d2a05",
-  red: "#e0a526",
-  redBright: "#f0b93e",
-  redLight: "#f5c34a",
-  redDim: "rgba(224,165,38,0.15)",
-  redFaint: "rgba(224,165,38,0.07)",
+  bg: "#0a0a0a", bgDeep: "#050505", surface: "#111111",
+  surfaceCard: "#161616", surfaceHover: "#1c1c1c",
+  border: "#2a2a2a", borderRed: "#3d2a05",
+  red: "#e0a526", redBright: "#f0b93e", redLight: "#f5c34a",
+  redDim: "rgba(224,165,38,0.15)", redFaint: "rgba(224,165,38,0.07)",
   redGlow: "rgba(224,165,38,0.25)",
-  text: "#ffffff",
-  textMuted: "#888888",
-  textSub: "#555555",
-  green: "#22c55e",
-  greenDim: "rgba(34,197,94,0.15)",
-  errorRed: "#ff4757",
-  errorDim: "rgba(255,71,87,0.15)",
-  amber: "#f59e0b",
-  amberDim: "rgba(245,158,11,0.15)",
-  blue: "#3b82f6",
-  blueDim: "rgba(59,130,246,0.15)",
+  text: "#ffffff", textMuted: "#888888", textSub: "#555555",
+  green: "#22c55e", greenDim: "rgba(34,197,94,0.15)",
+  errorRed: "#ff4757", errorDim: "rgba(255,71,87,0.15)",
+  amber: "#f59e0b", amberDim: "rgba(245,158,11,0.15)",
+  blue: "#3b82f6", blueDim: "rgba(59,130,246,0.15)",
 };
 
 const CARD = {
   background: C.surfaceCard,
   border: `1px solid ${C.border}`,
-  borderRadius: 16,
-  padding: 24,
+  borderRadius: 16, padding: 24,
   boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
 };
 
@@ -304,18 +289,20 @@ const MOCK_UPLOADS = [
   { id: "5", name: "AI Basics.pdf", type: "PDF", size: "1.8 MB", date: "Apr 27, 2026", status: "Published" },
 ];
 
+// ── PATCH 1: NAV with courseAccess ────────────────────────────────────────────
 const NAV = [
-  { id: "dashboard", label: "Dashboard", Icon: Icon.Home },
-  { id: "upload", label: "Upload Content", Icon: Icon.Upload },
-  { id: "uploads", label: "All Uploads", Icon: Icon.AllUploads },
-  { id: "income", label: "Income", Icon: Icon.Income },
-  { id: "courses", label: "Courses", Icon: Icon.Courses },
-  { id: "students", label: "Students", Icon: Icon.Students },
-  { id: "traders", label: "Traders", Icon: Icon.UserOne },
-  { id: "data", label: "All Data", Icon: Icon.Data },
-  { id: "psychology", label: "Psychology", Icon: Icon.Brain },
-  { id: "messages", label: "Messages", Icon: Icon.Messages },
-  { id: "settings", label: "Settings", Icon: Icon.Settings },
+  { id: "dashboard",   label: "Dashboard",      Icon: Icon.Home },
+  { id: "upload",      label: "Upload Content",  Icon: Icon.Upload },
+  { id: "uploads",     label: "All Uploads",     Icon: Icon.AllUploads },
+  { id: "income",      label: "Income",          Icon: Icon.Income },
+  { id: "courses",     label: "Courses",         Icon: Icon.Courses },
+  { id: "courseAccess",label: "Course Access",   Icon: Icon.LockOpen },
+  { id: "students",    label: "Students",        Icon: Icon.Students },
+  { id: "traders",     label: "Traders",         Icon: Icon.UserOne },
+  { id: "data",        label: "All Data",        Icon: Icon.Data },
+  { id: "psychology",  label: "Psychology",      Icon: Icon.Brain },
+  { id: "messages",    label: "Messages",        Icon: Icon.Messages },
+  { id: "settings",    label: "Settings",        Icon: Icon.Settings },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -326,195 +313,80 @@ function AdminLogin({ onLogin }) {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const handleLogin = async () => {
     if (!password.trim()) { setError("Passwordka geli"); return; }
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       const snap = await getDoc(doc(db, "adminSettings", "main"));
       if (!snap.exists()) { setError("Admin settings lama helin — Firestore hubi"); setLoading(false); return; }
       const storedPw = snap.data().password;
-      if (password === storedPw) {
-        // Save session so page refresh doesn't log out
-        sessionStorage.setItem("admin_auth", "1");
-        onLogin();
-      } else {
-        setError("Passwordku khalad ah — mar kale isku day");
-      }
-    } catch (err) {
-      setError("Khalad: " + (err.message || "Firestore connection failed"));
-    }
+      if (password === storedPw) { sessionStorage.setItem("admin_auth", "1"); onLogin(); }
+      else { setError("Passwordku khalad ah — mar kale isku day"); }
+    } catch (err) { setError("Khalad: " + (err.message || "Firestore connection failed")); }
     setLoading(false);
   };
-
   const handleKey = (e) => { if (e.key === "Enter") handleLogin(); };
-
   return (
-    <div style={{
-      minHeight: "100vh", background: C.bgDeep, display: "flex", alignItems: "center",
-      justifyContent: "center", fontFamily: "'Inter', system-ui, sans-serif",
-      backgroundImage: `radial-gradient(ellipse at 60% 20%, ${C.redDim} 0%, transparent 60%)`,
-    }}>
-      <div className="login-card" style={{
-        width: "100%", maxWidth: 420, padding: "0 20px",
-      }}>
-        {/* Logo */}
+    <div style={{ minHeight: "100vh", background: C.bgDeep, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', system-ui, sans-serif", backgroundImage: `radial-gradient(ellipse at 60% 20%, ${C.redDim} 0%, transparent 60%)` }}>
+      <div className="login-card" style={{ width: "100%", maxWidth: 420, padding: "0 20px" }}>
         <div style={{ textAlign: "center", marginBottom: 36 }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: 18, background: C.red, margin: "0 auto 16px",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: `0 8px 32px ${C.redGlow}`,
-          }}>
+          <div style={{ width: 64, height: 64, borderRadius: 18, background: C.red, margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 8px 32px ${C.redGlow}` }}>
             <span style={{ color: "#fff", fontWeight: 900, fontSize: 30, lineHeight: 1 }}>H</span>
           </div>
           <div style={{ color: C.text, fontWeight: 900, fontSize: 22, letterSpacing: ".5px" }}>DREAM CRT</div>
           <div style={{ color: C.red, fontWeight: 700, fontSize: 14, letterSpacing: 2, marginTop: 2 }}>TRADING ACADEMY</div>
           <div style={{ color: C.textSub, fontSize: 12, marginTop: 8 }}>Admin Dashboard • Secure Access</div>
         </div>
-
-        {/* Card */}
-        <div style={{
-          background: C.surfaceCard, border: `1px solid ${C.border}`,
-          borderRadius: 20, padding: 32,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-        }}>
-          {/* Shield icon */}
-          <div style={{
-            width: 52, height: 52, borderRadius: 14, background: C.redDim,
-            border: `1px solid ${C.borderRed}`, display: "flex", alignItems: "center",
-            justifyContent: "center", color: C.red, marginBottom: 20,
-          }}>
-            <Icon.ShieldCheck />
-          </div>
-
+        <div style={{ background: C.surfaceCard, border: `1px solid ${C.border}`, borderRadius: 20, padding: 32, boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: C.redDim, border: `1px solid ${C.borderRed}`, display: "flex", alignItems: "center", justifyContent: "center", color: C.red, marginBottom: 20 }}><Icon.ShieldCheck /></div>
           <div style={{ color: C.text, fontWeight: 800, fontSize: 20, marginBottom: 4 }}>Admin Login</div>
-          <div style={{ color: C.textMuted, fontSize: 13, marginBottom: 24 }}>
-            Passwordka geli si aad u gasho dashboard-ka
-          </div>
-
-          {/* Password field */}
-          <label style={{
-            display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700,
-            textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 8,
-          }}>Password</label>
+          <div style={{ color: C.textMuted, fontSize: 13, marginBottom: 24 }}>Passwordka geli si aad u gasho dashboard-ka</div>
+          <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 8 }}>Password</label>
           <div style={{ position: "relative", marginBottom: 16 }}>
-            <input
-              className="login-input"
-              type={showPw ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder="••••••••"
-              autoFocus
-              style={{
-                width: "100%", padding: "13px 46px 13px 16px",
-                background: C.bgDeep, border: `1px solid ${C.border}`,
-                borderRadius: 12, color: C.text, fontSize: 15,
-                outline: "none", fontFamily: "inherit",
-                transition: "border-color .2s, box-shadow .2s",
-                letterSpacing: showPw ? "normal" : "3px",
-              }}
-            />
-            <button
-              onClick={() => setShowPw(!showPw)}
-              style={{
-                position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
-                background: "none", border: "none", color: C.textMuted, cursor: "pointer",
-                padding: 2, display: "flex", alignItems: "center",
-              }}
-            >
+            <input className="login-input" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={handleKey} placeholder="••••••••" autoFocus
+              style={{ width: "100%", padding: "13px 46px 13px 16px", background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 12, color: C.text, fontSize: 15, outline: "none", fontFamily: "inherit", transition: "border-color .2s, box-shadow .2s", letterSpacing: showPw ? "normal" : "3px" }} />
+            <button onClick={() => setShowPw(!showPw)} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: C.textMuted, cursor: "pointer", padding: 2, display: "flex", alignItems: "center" }}>
               {showPw ? <Icon.EyeOff /> : <Icon.EyeOn />}
             </button>
           </div>
-
-          {/* Error */}
-          {error && (
-            <div style={{
-              marginBottom: 16, padding: "10px 14px", borderRadius: 10,
-              background: C.errorDim, border: `1px solid ${C.errorRed}40`,
-              color: C.errorRed, fontSize: 13, display: "flex", alignItems: "center", gap: 8,
-            }}>
-              <span>⚠️</span> {error}
-            </div>
-          )}
-
-          {/* Login button */}
-          <button
-            onClick={handleLogin}
-            disabled={loading}
-            style={{
-              width: "100%", padding: "14px 0",
-              background: loading ? C.surface : C.red,
-              color: loading ? C.textMuted : "#000",
-              border: "none", borderRadius: 12,
-              fontWeight: 800, fontSize: 15, cursor: loading ? "not-allowed" : "pointer",
-              transition: "all .2s",
-              boxShadow: loading ? "none" : `0 4px 20px ${C.redGlow}`,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-              fontFamily: "inherit",
-            }}
-          >
-            {loading ? (
-              <>
-                <div style={{ width: 18, height: 18, border: "2px solid #444", borderTopColor: C.red, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-                Xaqiijinaya…
-              </>
-            ) : (
-              <>🔓 Dashboard Fur</>
-            )}
+          {error && <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: C.errorDim, border: `1px solid ${C.errorRed}40`, color: C.errorRed, fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}><span>⚠️</span> {error}</div>}
+          <button onClick={handleLogin} disabled={loading}
+            style={{ width: "100%", padding: "14px 0", background: loading ? C.surface : C.red, color: loading ? C.textMuted : "#000", border: "none", borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: loading ? "not-allowed" : "pointer", transition: "all .2s", boxShadow: loading ? "none" : `0 4px 20px ${C.redGlow}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
+            {loading ? (<><div style={{ width: 18, height: 18, border: "2px solid #444", borderTopColor: C.red, borderRadius: "50%", animation: "spin 1s linear infinite" }} />Xaqiijinaya…</>) : (<>🔓 Dashboard Fur</>)}
           </button>
         </div>
-
-        <div style={{ textAlign: "center", color: C.textSub, fontSize: 11, marginTop: 20 }}>
-          DREAM CRT Trading Academy © 2026
-        </div>
+        <div style={{ textAlign: "center", color: C.textSub, fontSize: 11, marginTop: 20 }}>DREAM CRT Trading Academy © 2026</div>
       </div>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Firestore reading helpers
+// Firestore helpers
 // ═══════════════════════════════════════════════════════════════════════════════
 function useCollectionData(name) {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   useEffect(() => {
-    setLoading(true);
-    setError("");
-    const unsub = onSnapshot(
-      collection(db, name),
-      (snap) => {
-        setDocs(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-      },
-      (err) => {
-        setError(err.message || "Failed to load data.");
-        setLoading(false);
-      }
+    setLoading(true); setError("");
+    const unsub = onSnapshot(collection(db, name),
+      (snap) => { setDocs(snap.docs.map((d) => ({ id: d.id, ...d.data() }))); setLoading(false); },
+      (err) => { setError(err.message || "Failed to load data."); setLoading(false); }
     );
     return () => unsub();
   }, [name]);
   return { docs, loading, error };
 }
 
-const prettyKey = (k) =>
-  String(k).replace(/([A-Z])/g, " $1").replace(/[_-]/g, " ").replace(/^./, (c) => c.toUpperCase()).trim();
+const prettyKey = (k) => String(k).replace(/([A-Z])/g, " $1").replace(/[_-]/g, " ").replace(/^./, (c) => c.toUpperCase()).trim();
 const isTimestampKey = (k) => /date|created|updated|time|timestamp/i.test(k);
-const isImageUrl = (v) =>
-  typeof v === "string" && /^https?:\/\//.test(v) &&
-  /(\.png|\.jpe?g|\.webp|\.gif|firebasestorage.*alt=media)/i.test(v);
+const isImageUrl = (v) => typeof v === "string" && /^https?:\/\//.test(v) && /(\.png|\.jpe?g|\.webp|\.gif|firebasestorage.*alt=media)/i.test(v);
 
 function fmtValue(key, val) {
   if (val === null || val === undefined || val === "") return "—";
-  if (typeof val === "number" && isTimestampKey(key) && val > 1e11) {
-    try { return new Date(val).toLocaleString(); } catch { return String(val); }
-  }
-  if (val && typeof val === "object" && typeof val.toDate === "function") {
-    try { return val.toDate().toLocaleString(); } catch { return "—"; }
-  }
+  if (typeof val === "number" && isTimestampKey(key) && val > 1e11) { try { return new Date(val).toLocaleString(); } catch { return String(val); } }
+  if (val && typeof val === "object" && typeof val.toDate === "function") { try { return val.toDate().toLocaleString(); } catch { return "—"; } }
   if (typeof val === "boolean") return val ? "Yes" : "No";
   if (Array.isArray(val)) return `${val.length} item${val.length === 1 ? "" : "s"}`;
   if (typeof val === "object") return JSON.stringify(val);
@@ -530,33 +402,19 @@ const statusColor = (s) => {
 };
 
 function LoadingBox() {
-  return (
-    <div style={{ padding: "54px 0", textAlign: "center", color: C.textMuted, fontSize: 14 }}>
-      <span className="pulse" style={{ color: C.red, marginRight: 8 }}>●</span> Loading…
-    </div>
-  );
+  return (<div style={{ padding: "54px 0", textAlign: "center", color: C.textMuted, fontSize: 14 }}><span className="pulse" style={{ color: C.red, marginRight: 8 }}>●</span> Loading…</div>);
 }
 function EmptyBox({ name }) {
-  return (
-    <div style={{ padding: "54px 0", textAlign: "center" }}>
-      <div style={{ fontSize: 40, marginBottom: 10 }}>🗂️</div>
-      <div style={{ color: C.textMuted, fontSize: 14 }}>No records found in "{name}".</div>
-    </div>
-  );
+  return (<div style={{ padding: "54px 0", textAlign: "center" }}><div style={{ fontSize: 40, marginBottom: 10 }}>🗂️</div><div style={{ color: C.textMuted, fontSize: 14 }}>No records found in "{name}".</div></div>);
 }
 function ErrorBox({ msg }) {
-  return (
-    <div style={{ padding: "12px 16px", borderRadius: 10, marginBottom: 16, fontSize: 13, background: "#2a0a0a", border: `1px solid ${C.errorRed}40`, color: C.errorRed }}>
-      ⚠️ {msg} — fadlan hubi Firestore rules-ka in admin-ka loo ogol yahay akhrinta.
-    </div>
-  );
+  return (<div style={{ padding: "12px 16px", borderRadius: 10, marginBottom: 16, fontSize: 13, background: "#2a0a0a", border: `1px solid ${C.errorRed}40`, color: C.errorRed }}>⚠️ {msg} — fadlan hubi Firestore rules-ka in admin-ka loo ogol yahay akhrinta.</div>);
 }
 function SearchBox({ value, onChange, placeholder }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 14px", minWidth: 220 }}>
       <span style={{ color: C.textSub }}><Icon.Search /></span>
-      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || "Search…"}
-        style={{ background: "transparent", border: "none", outline: "none", color: C.text, fontSize: 13, width: "100%", fontFamily: "inherit" }} />
+      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || "Search…"} style={{ background: "transparent", border: "none", outline: "none", color: C.text, fontSize: 13, width: "100%", fontFamily: "inherit" }} />
     </div>
   );
 }
@@ -587,8 +445,7 @@ function DataCard({ data }) {
           return (
             <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "6px 0", borderTop: `1px solid ${C.border}40` }}>
               <span style={{ color: C.textSub, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".4px", flexShrink: 0, paddingTop: 1 }}>{prettyKey(k)}</span>
-              {isLink
-                ? <a href={v} target="_blank" rel="noreferrer" style={{ color: C.redLight, fontSize: 12, textDecoration: "none", fontWeight: 600 }}>Open ↗</a>
+              {isLink ? <a href={v} target="_blank" rel="noreferrer" style={{ color: C.redLight, fontSize: 12, textDecoration: "none", fontWeight: 600 }}>Open ↗</a>
                 : <span style={{ color: C.text, fontSize: 12, textAlign: "right", wordBreak: "break-word", maxWidth: 200 }}>{fmtValue(k, v)}</span>}
             </div>
           );
@@ -654,8 +511,7 @@ function DataExplorer() {
     <div>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 22 }}>
         {TABS.map((t) => {
-          const s = sets[t.id];
-          const isActive = tab === t.id;
+          const s = sets[t.id]; const isActive = tab === t.id;
           return (
             <button key={t.id} onClick={() => setTab(t.id)} className="card-hover"
               style={{ flex: "1 1 150px", minWidth: 150, textAlign: "left", cursor: "pointer", background: isActive ? C.redDim : C.surfaceCard, border: `1px solid ${isActive ? C.red : C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: isActive ? `0 6px 24px ${C.redGlow}` : "none" }}>
@@ -687,9 +543,8 @@ function EnrollmentsPage() {
   const userName = (id) => users.find((u) => u.id === id)?.fullName || users.find((u) => u.id === id)?.email || id;
   const approve = async (e, value) => {
     setBusy((b) => ({ ...b, [e.id]: true }));
-    try {
-      await updateDoc(doc(db, "enrollments", e.id), { approved: value, status: value ? "Approved" : "Pending", approvedAt: value ? Date.now() : null });
-    } catch (err) { window.alert(err.message); }
+    try { await updateDoc(doc(db, "enrollments", e.id), { approved: value, status: value ? "Approved" : "Pending", approvedAt: value ? Date.now() : null }); }
+    catch (err) { window.alert(err.message); }
     finally { setBusy((b) => ({ ...b, [e.id]: false })); }
   };
   const q = search.trim().toLowerCase();
@@ -698,9 +553,7 @@ function EnrollmentsPage() {
     <div>
       <div style={{ ...CARD, padding: "14px 18px", marginBottom: 18, display: "flex", alignItems: "center", gap: 10, background: C.redFaint, border: `1px solid ${C.borderRed}` }}>
         <span style={{ color: C.redLight }}><Icon.LockOpen /></span>
-        <span style={{ color: C.textMuted, fontSize: 13 }}>
-          Marka aad "Approve" gujiso, <strong style={{ color: C.redLight }}>enrollments/&#123;id&#125;.approved = true</strong> ayaa la dejinayaa — appka ardaygu wuxuu arki karaa course-ka oo furan.
-        </span>
+        <span style={{ color: C.textMuted, fontSize: 13 }}>Marka aad "Approve" gujiso, <strong style={{ color: C.redLight }}>enrollments/&#123;id&#125;.approved = true</strong> ayaa la dejinayaa.</span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
         <SearchBox value={search} onChange={setSearch} placeholder="Search enrollments…" />
@@ -717,9 +570,7 @@ function EnrollmentsPage() {
                   <div style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>{userName(e.userId)}</div>
                   <div style={{ color: C.textMuted, fontSize: 12, marginTop: 2 }}>Course: {courseName(e.courseId)}</div>
                 </div>
-                <span style={{ background: approved ? C.greenDim : C.amberDim, color: approved ? C.green : C.amber, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-                  {approved ? "Approved" : "Pending"}
-                </span>
+                <span style={{ background: approved ? C.greenDim : C.amberDim, color: approved ? C.green : C.amber, padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700 }}>{approved ? "Approved" : "Pending"}</span>
                 <button onClick={() => approve(e, !approved)} disabled={busy[e.id]} className="red-btn"
                   style={{ background: approved ? "transparent" : C.red, color: approved ? C.errorRed : "#fff", border: approved ? `1px solid ${C.errorDim}` : "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: busy[e.id] ? "not-allowed" : "pointer", boxShadow: approved ? "none" : `0 4px 14px ${C.redGlow}` }}>
                   {busy[e.id] ? "…" : approved ? "Unapprove" : "Approve"}
@@ -757,9 +608,7 @@ function CoursesPage() {
     <div>
       <div style={{ ...CARD, padding: "14px 18px", marginBottom: 18, display: "flex", alignItems: "center", gap: 10, background: C.redFaint, border: `1px solid ${C.borderRed}` }}>
         <span style={{ color: C.redLight }}><Icon.Lock /></span>
-        <span style={{ color: C.textMuted, fontSize: 13 }}>
-          Course-yada lacagta leh way <strong style={{ color: C.redLight }}>xidhan yihiin</strong> illaa ardaygu bixiyo. Course-ka bilaashka ah (price = 0) waa furan yahay.
-        </span>
+        <span style={{ color: C.textMuted, fontSize: 13 }}>Course-yada lacagta leh way <strong style={{ color: C.redLight }}>xidhan yihiin</strong> illaa ardaygu bixiyo.</span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
         <SearchBox value={search} onChange={setSearch} placeholder="Search courses…" />
@@ -769,13 +618,11 @@ function CoursesPage() {
       {loading ? <LoadingBox /> : list.length === 0 ? <EmptyBox name="courses" /> : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
           {list.map((c) => {
-            const locked = isLocked(c);
-            const price = Number(c.price) || 0;
+            const locked = isLocked(c); const price = Number(c.price) || 0;
             return (
               <div key={c.id} className="card-hover" style={{ ...CARD, padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
                 <div style={{ position: "relative", height: 140, background: C.surface }}>
-                  {c.thumbnailURL
-                    ? <img src={c.thumbnailURL} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  {c.thumbnailURL ? <img src={c.thumbnailURL} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: C.textSub, fontSize: 36 }}>{c.type === "Video" ? "🎬" : c.type === "Playlist" ? "🎓" : "📄"}</div>}
                   <div style={{ position: "absolute", top: 10, right: 10, display: "flex", alignItems: "center", gap: 6, background: locked ? C.errorDim : C.greenDim, color: locked ? C.errorRed : C.green, padding: "5px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, backdropFilter: "blur(6px)" }}>
                     {locked ? <><Icon.Lock /> Locked</> : <><Icon.LockOpen /> Free</>}
@@ -790,7 +637,7 @@ function CoursesPage() {
                   <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                     <span style={{ color: price > 0 ? C.redLight : C.green, fontWeight: 900, fontSize: 20 }}>{price > 0 ? `$${price.toFixed(2)}` : "FREE"}</span>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={() => toggleLock(c)} disabled={busy[c.id]} title={locked ? "Unlock course" : "Lock course"}
+                      <button onClick={() => toggleLock(c)} disabled={busy[c.id]} title={locked ? "Unlock" : "Lock"}
                         style={{ display: "flex", alignItems: "center", gap: 5, background: "transparent", border: `1px solid ${C.border}`, color: locked ? C.green : C.errorRed, borderRadius: 8, padding: "7px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                         {locked ? <><Icon.LockOpen /> Unlock</> : <><Icon.Lock /> Lock</>}
                       </button>
@@ -810,7 +657,6 @@ function CoursesPage() {
   );
 }
 
-// ── Red Button ────────────────────────────────────────────────────────────────
 const RedBtn = ({ children, onClick, disabled, style = {} }) => (
   <button onClick={onClick} disabled={disabled} className="red-btn"
     style={{ background: disabled ? "#1a1a1a" : C.red, color: disabled ? C.textMuted : "#fff", fontWeight: 700, borderRadius: 10, border: "none", cursor: disabled ? "not-allowed" : "pointer", transition: "all .2s", padding: "11px 24px", fontSize: 14, letterSpacing: ".3px", display: "inline-flex", alignItems: "center", gap: 8, boxShadow: disabled ? "none" : `0 4px 16px ${C.redGlow}`, ...style }}>
@@ -818,7 +664,6 @@ const RedBtn = ({ children, onClick, disabled, style = {} }) => (
   </button>
 );
 
-// ── Stat Card ─────────────────────────────────────────────────────────────────
 const StatCard = ({ icon, label, value, delta, redFill, sparkData }) => {
   const pts = sparkData || [30, 45, 38, 60, 52, 70, 65, 80, 75, 90];
   const w = 120, h = 36;
@@ -830,9 +675,7 @@ const StatCard = ({ icon, label, value, delta, redFill, sparkData }) => {
   return (
     <div className="card-hover" style={{ background: redFill ? `linear-gradient(135deg, #8b0000 0%, #cc1111 50%, #990000 100%)` : C.surfaceCard, border: redFill ? "none" : `1px solid ${C.border}`, borderRadius: 16, padding: "22px 24px", flex: 1, minWidth: 160, position: "relative", overflow: "hidden", boxShadow: redFill ? `0 8px 32px rgba(150,0,0,0.5), inset 0 1px 0 rgba(255,100,100,0.15)` : `0 4px 20px rgba(0,0,0,0.4)` }}>
       {!redFill && <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: `radial-gradient(circle, ${C.redDim} 0%, transparent 70%)`, pointerEvents: "none" }} />}
-      <div style={{ width: 46, height: 46, borderRadius: 12, marginBottom: 14, background: redFill ? "rgba(0,0,0,0.25)" : C.redDim, border: redFill ? "1px solid rgba(255,100,100,0.2)" : `1px solid ${C.borderRed}`, display: "flex", alignItems: "center", justifyContent: "center", color: redFill ? "#ffaaaa" : C.redLight }}>
-        {icon}
-      </div>
+      <div style={{ width: 46, height: 46, borderRadius: 12, marginBottom: 14, background: redFill ? "rgba(0,0,0,0.25)" : C.redDim, border: redFill ? "1px solid rgba(255,100,100,0.2)" : `1px solid ${C.borderRed}`, display: "flex", alignItems: "center", justifyContent: "center", color: redFill ? "#ffaaaa" : C.redLight }}>{icon}</div>
       <div style={{ color: redFill ? "rgba(255,200,200,0.7)" : C.textMuted, fontSize: 11, fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", marginBottom: 4 }}>{label}</div>
       <div style={{ color: redFill ? "#fff" : C.text, fontSize: 32, fontWeight: 900, lineHeight: 1, marginBottom: 6 }}>{value}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 5, color: redFill ? "#ffcccc" : C.redLight, fontSize: 12, marginBottom: 12 }}><Icon.TrendUp /> <span>{delta}</span></div>
@@ -844,14 +687,12 @@ const StatCard = ({ icon, label, value, delta, redFill, sparkData }) => {
   );
 };
 
-// ── Progress bar ──────────────────────────────────────────────────────────────
 const ProgressBar = ({ pct }) => (
   <div style={{ background: "#1e1e1e", borderRadius: 99, height: 6, marginTop: 8, overflow: "hidden" }}>
     <div style={{ width: `${pct}%`, height: "100%", borderRadius: 99, background: `linear-gradient(90deg, ${C.red}, ${C.redLight})`, transition: "width .3s", boxShadow: `0 0 10px ${C.redGlow}` }} />
   </div>
 );
 
-// ── Income sparkline ──────────────────────────────────────────────────────────
 const IncomeSparkline = () => {
   const pts = [30, 45, 38, 60, 52, 70, 65, 85, 78, 95, 88, 100];
   const w = 300, h = 90;
@@ -868,20 +709,17 @@ const IncomeSparkline = () => {
   );
 };
 
-// ── Field ─────────────────────────────────────────────────────────────────────
 function Field({ label, value, onChange, placeholder, textarea, type = "text" }) {
   const base = { width: "100%", padding: "12px 16px", borderRadius: 10, marginBottom: 4, background: C.bgDeep, border: `1px solid ${C.border}`, color: C.text, fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color .2s", fontFamily: "inherit" };
   return (
     <div style={{ marginBottom: 18 }}>
       <label style={{ display: "block", color: C.textMuted, fontSize: 12, marginBottom: 7, fontWeight: 600, letterSpacing: ".4px", textTransform: "uppercase" }}>{label}</label>
-      {textarea
-        ? <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={4} style={{ ...base, resize: "vertical" }} onFocus={(e) => (e.target.style.borderColor = C.red)} onBlur={(e) => (e.target.style.borderColor = C.border)} />
+      {textarea ? <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={4} style={{ ...base, resize: "vertical" }} onFocus={(e) => (e.target.style.borderColor = C.red)} onBlur={(e) => (e.target.style.borderColor = C.border)} />
         : <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={base} onFocus={(e) => (e.target.style.borderColor = C.red)} onBlur={(e) => (e.target.style.borderColor = C.border)} />}
     </div>
   );
 }
 
-// ── Uploads Table ─────────────────────────────────────────────────────────────
 function UploadsTable({ uploads, onDelete, full }) {
   return (
     <div style={{ background: C.surfaceCard, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
@@ -925,7 +763,6 @@ function UploadsTable({ uploads, onDelete, full }) {
   );
 }
 
-// ── Placeholder ───────────────────────────────────────────────────────────────
 function PlaceholderPage({ label }) {
   return (
     <div style={{ textAlign: "center", paddingTop: 80 }}>
@@ -957,7 +794,6 @@ function UploadContentPage() {
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
   const [msg, setMsg] = useState("");
-
   const thumbRef = useRef(null);
   const singleFileRef = useRef(null);
   const lessonFileRef = useRef(null);
@@ -976,13 +812,8 @@ function UploadContentPage() {
     setLessonTitle(""); setLessonFile(null); setAddingLesson(false);
   };
   const removeLesson = (id) => setLessons(prev => prev.filter(l => l.id !== id).map((l, i) => ({ ...l, order: i + 1 })));
-  const moveLessonUp = (idx) => {
-    if (idx === 0) return;
-    setLessons(prev => { const a = [...prev]; [a[idx - 1], a[idx]] = [a[idx], a[idx - 1]]; return a.map((l, i) => ({ ...l, order: i + 1 })); });
-  };
-  const moveLessonDown = (idx) => {
-    setLessons(prev => { if (idx >= prev.length - 1) return prev; const a = [...prev]; [a[idx], a[idx + 1]] = [a[idx + 1], a[idx]]; return a.map((l, i) => ({ ...l, order: i + 1 })); });
-  };
+  const moveLessonUp = (idx) => { if (idx === 0) return; setLessons(prev => { const a = [...prev]; [a[idx-1],a[idx]] = [a[idx],a[idx-1]]; return a.map((l,i)=>({...l,order:i+1})); }); };
+  const moveLessonDown = (idx) => { setLessons(prev => { if (idx >= prev.length-1) return prev; const a=[...prev]; [a[idx],a[idx+1]]=[a[idx+1],a[idx]]; return a.map((l,i)=>({...l,order:i+1})); }); };
 
   const handleUpload = async () => {
     if (!title.trim()) { setMsg("⚠️ Course title buuxi"); return; }
@@ -993,15 +824,12 @@ function UploadContentPage() {
     try {
       setProgressLabel("🖼️ Thumbnail uploading…");
       let thumbnailURL = "";
-      if (thumbnail) {
-        const tRef = ref(storage, `thumbnails/${Date.now()}_${thumbnail.name}`);
-        thumbnailURL = await uploadWithProgress(tRef, thumbnail, () => {});
-      }
+      if (thumbnail) { const tRef = ref(storage, `thumbnails/${Date.now()}_${thumbnail.name}`); thumbnailURL = await uploadWithProgress(tRef, thumbnail, () => {}); }
       if (category === "playlist") {
         const uploadedLessons = [];
         for (let i = 0; i < lessons.length; i++) {
           const lesson = lessons[i];
-          setProgressLabel(`📁 Lesson ${i + 1}/${lessons.length}: ${lesson.title}`);
+          setProgressLabel(`📁 Lesson ${i+1}/${lessons.length}: ${lesson.title}`);
           setProgress(Math.round((i / lessons.length) * 80));
           const folder = lesson.fileType === "pdf" ? "pdfs" : "videos";
           const lRef = ref(storage, `${folder}/lessons/${Date.now()}_${lesson.file.name}`);
@@ -1009,33 +837,20 @@ function UploadContentPage() {
           uploadedLessons.push({ title: lesson.title, fileURL, fileType: lesson.fileType === "pdf" ? "PDF" : "Video", order: lesson.order });
         }
         setProgressLabel("💾 Saving playlist…"); setProgress(90);
-        await addDoc(collection(db, "courses"), {
-          title: title.trim(), description: description.trim(), price: coursePrice, thumbnailURL,
-          category: "playlist", type: "Playlist", lessons: uploadedLessons, lessonCount: uploadedLessons.length,
-          createdAt: Date.now(), status: "Published", locked: coursePrice > 0, isPaid: false,
-        });
+        await addDoc(collection(db, "courses"), { title: title.trim(), description: description.trim(), price: coursePrice, thumbnailURL, category: "playlist", type: "Playlist", lessons: uploadedLessons, lessonCount: uploadedLessons.length, createdAt: Date.now(), status: "Published", locked: coursePrice > 0, isPaid: false });
       } else {
         const folder = category === "single_pdf" ? "pdfs" : "videos";
         setProgressLabel(`📤 ${category === "single_pdf" ? "PDF" : "Video"} uploading…`);
         const fRef = ref(storage, `${folder}/${Date.now()}_${singleFile.name}`);
         const fileURL = await uploadWithProgress(fRef, singleFile, (p) => setProgress(Math.round(p * 0.85)));
         setProgressLabel("💾 Saving…"); setProgress(90);
-        await addDoc(collection(db, "courses"), {
-          title: title.trim(), description: description.trim(), price: coursePrice, thumbnailURL, fileURL,
-          category: category === "single_pdf" ? "single_pdf" : "single_video",
-          type: category === "single_pdf" ? "PDF" : "Video",
-          createdAt: Date.now(), status: "Published", locked: coursePrice > 0, isPaid: false,
-        });
+        await addDoc(collection(db, "courses"), { title: title.trim(), description: description.trim(), price: coursePrice, thumbnailURL, fileURL, category: category === "single_pdf" ? "single_pdf" : "single_video", type: category === "single_pdf" ? "PDF" : "Video", createdAt: Date.now(), status: "Published", locked: coursePrice > 0, isPaid: false });
       }
       setProgress(100); setProgressLabel("✅ Done!");
       setMsg("✅ Course si guul leh ayaa loo upload garey!");
-      setTimeout(() => {
-        setTitle(""); setDescription(""); setPrice(""); setThumbnail(null); setThumbnailPreview(null);
-        setSingleFile(null); setLessons([]); setStep(1); setCategory(""); setProgress(0); setProgressLabel("");
-      }, 2000);
-    } catch (err) {
-      setMsg("❌ " + (err.message || "Upload failed."));
-    } finally { setUploading(false); }
+      setTimeout(() => { setTitle(""); setDescription(""); setPrice(""); setThumbnail(null); setThumbnailPreview(null); setSingleFile(null); setLessons([]); setStep(1); setCategory(""); setProgress(0); setProgressLabel(""); }, 2000);
+    } catch (err) { setMsg("❌ " + (err.message || "Upload failed.")); }
+    finally { setUploading(false); }
   };
 
   const iS = { width: "100%", padding: "11px 14px", borderRadius: 10, background: C.bgDeep, border: `1px solid ${C.border}`, color: C.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" };
@@ -1049,9 +864,9 @@ function UploadContentPage() {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
           {[
-            { id: "single_video", icon: "🎬", label: "Single Video Lesson", sub: "Cashar keliya oo muuqaal ah — hal video ayaa la soo geliyaa", color: C.amber, colorDim: C.amberDim },
-            { id: "single_pdf",   icon: "📄", label: "Single PDF Lesson",   sub: "Cashar keliya oo PDF ah — hal buug ama warqad ayaa la soo geliyaa", color: C.errorRed, colorDim: C.errorDim },
-            { id: "playlist",     icon: "🎓", label: "Full Course (Playlist)", sub: "Cashar badan oo is-xiga — lessons ka kooban video iyo PDF labadaba", color: C.blue, colorDim: C.blueDim },
+            { id: "single_video", icon: "🎬", label: "Single Video Lesson", sub: "Cashar keliya oo muuqaal ah", color: C.amber, colorDim: C.amberDim },
+            { id: "single_pdf",   icon: "📄", label: "Single PDF Lesson",   sub: "Cashar keliya oo PDF ah", color: C.errorRed, colorDim: C.errorDim },
+            { id: "playlist",     icon: "🎓", label: "Full Course (Playlist)", sub: "Cashar badan oo is-xiga", color: C.blue, colorDim: C.blueDim },
           ].map(opt => (
             <button key={opt.id} onClick={() => { setCategory(opt.id); setStep(2); }}
               style={{ textAlign: "left", cursor: "pointer", background: C.surfaceCard, border: `2px solid ${category === opt.id ? opt.color : C.border}`, borderRadius: 18, padding: 24, transition: "all .2s", display: "flex", flexDirection: "column", gap: 14 }}
@@ -1070,11 +885,7 @@ function UploadContentPage() {
     );
   }
 
-  const catInfo = {
-    single_video: { icon: "🎬", label: "Single Video Lesson", color: C.amber },
-    single_pdf:   { icon: "📄", label: "Single PDF Lesson",   color: C.errorRed },
-    playlist:     { icon: "🎓", label: "Full Course (Playlist)", color: C.blue },
-  }[category];
+  const catInfo = { single_video: { icon: "🎬", label: "Single Video Lesson", color: C.amber }, single_pdf: { icon: "📄", label: "Single PDF Lesson", color: C.errorRed }, playlist: { icon: "🎓", label: "Full Course (Playlist)", color: C.blue } }[category];
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
@@ -1084,7 +895,6 @@ function UploadContentPage() {
         <span style={{ fontSize: 20 }}>{catInfo.icon}</span>
         <span style={{ color: catInfo.color, fontWeight: 700, fontSize: 15 }}>{catInfo.label}</span>
       </div>
-
       <div style={{ display: "grid", gridTemplateColumns: category === "playlist" ? "1fr" : "1fr 1fr", gap: 22 }}>
         <div style={{ ...CARD }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
@@ -1093,49 +903,37 @@ function UploadContentPage() {
           </div>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Course Title *</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Basic Forex Somali" style={iS}
-              onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
+            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Basic Forex Somali" style={iS} onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
           </div>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Description</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)}
-              placeholder="Maxaa ardaygu ka baran doonaa course-kan?…" rows={3} style={{ ...iS, resize: "vertical" }}
-              onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
+            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Maxaa ardaygu ka baran doonaa course-kan?" rows={3} style={{ ...iS, resize: "vertical" }} onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
           </div>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Price (USD) — 0 = bilaash</label>
-            <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" style={iS}
-              onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
+            <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" style={iS} onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
           </div>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Thumbnail (optional)</label>
             <div onClick={() => thumbRef.current?.click()}
               style={{ border: `2px dashed ${thumbnail ? C.green : C.border}`, borderRadius: 12, padding: 16, cursor: "pointer", background: C.bgDeep, display: "flex", alignItems: "center", gap: 12, transition: "all .2s" }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = thumbnail ? C.green : C.border)}>
+              onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)} onMouseLeave={e => (e.currentTarget.style.borderColor = thumbnail ? C.green : C.border)}>
               {thumbnailPreview
                 ? <><img src={thumbnailPreview} alt="" style={{ width: 60, height: 60, borderRadius: 8, objectFit: "cover" }} /><div><p style={{ color: C.green, fontWeight: 600, fontSize: 13 }}>✓ {thumbnail.name}</p><p style={{ color: C.textMuted, fontSize: 11 }}>{(thumbnail.size / 1048576).toFixed(1)} MB</p></div></>
                 : <><div style={{ fontSize: 28 }}>🖼️</div><span style={{ color: C.textMuted, fontSize: 13 }}>Click to upload thumbnail image</span></>}
             </div>
-            <input ref={thumbRef} type="file" accept="image/*" style={{ display: "none" }}
-              onChange={e => { const f = e.target.files[0]; if (f) { setThumbnail(f); setThumbnailPreview(URL.createObjectURL(f)); } }} />
+            <input ref={thumbRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (f) { setThumbnail(f); setThumbnailPreview(URL.createObjectURL(f)); } }} />
           </div>
           {category !== "playlist" && (
             <div>
-              <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>
-                {category === "single_pdf" ? "PDF File *" : "Video File *"}
-              </label>
+              <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>{category === "single_pdf" ? "PDF File *" : "Video File *"}</label>
               <div onClick={() => singleFileRef.current?.click()}
                 style={{ border: `2px dashed ${singleFile ? C.green : C.borderRed}`, borderRadius: 12, padding: "24px 20px", cursor: "pointer", background: C.redFaint, textAlign: "center", transition: "all .2s" }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = singleFile ? C.green : C.borderRed)}>
+                onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)} onMouseLeave={e => (e.currentTarget.style.borderColor = singleFile ? C.green : C.borderRed)}>
                 {singleFile ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
                     <div style={{ fontSize: 28 }}>{category === "single_pdf" ? "📄" : "🎬"}</div>
-                    <div>
-                      <p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {singleFile.name}</p>
-                      <p style={{ color: C.textMuted, fontSize: 11 }}>{(singleFile.size / 1048576).toFixed(1)} MB</p>
-                    </div>
+                    <div><p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {singleFile.name}</p><p style={{ color: C.textMuted, fontSize: 11 }}>{(singleFile.size / 1048576).toFixed(1)} MB</p></div>
                     <button onClick={e => { e.stopPropagation(); setSingleFile(null); }} style={{ marginLeft: "auto", background: C.errorDim, color: C.errorRed, border: "none", borderRadius: 8, padding: "6px 8px", cursor: "pointer" }}><Icon.Trash /></button>
                   </div>
                 ) : (
@@ -1146,35 +944,26 @@ function UploadContentPage() {
                   </>
                 )}
               </div>
-              <input ref={singleFileRef} type="file" accept={category === "single_pdf" ? ".pdf" : "video/*"} style={{ display: "none" }}
-                onChange={e => { if (e.target.files[0]) setSingleFile(e.target.files[0]); }} />
+              <input ref={singleFileRef} type="file" accept={category === "single_pdf" ? ".pdf" : "video/*"} style={{ display: "none" }} onChange={e => { if (e.target.files[0]) setSingleFile(e.target.files[0]); }} />
             </div>
           )}
         </div>
-
         {category === "playlist" && (
           <div style={{ ...CARD }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ width: 3, height: 18, background: C.blue, borderRadius: 2 }} />
                 <span style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>Course Lessons</span>
-                <span style={{ background: C.blueDim, color: C.blue, padding: "3px 10px", borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-                  {lessons.length} lesson{lessons.length !== 1 ? "s" : ""}
-                </span>
+                <span style={{ background: C.blueDim, color: C.blue, padding: "3px 10px", borderRadius: 8, fontSize: 12, fontWeight: 700 }}>{lessons.length} lesson{lessons.length !== 1 ? "s" : ""}</span>
               </div>
-              <button onClick={() => setAddingLesson(true)}
-                style={{ display: "flex", alignItems: "center", gap: 6, background: C.blue, color: "#fff", border: "none", borderRadius: 10, padding: "8px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                <Icon.Plus /> Add Lesson
-              </button>
+              <button onClick={() => setAddingLesson(true)} style={{ display: "flex", alignItems: "center", gap: 6, background: C.blue, color: "#fff", border: "none", borderRadius: 10, padding: "8px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}><Icon.Plus /> Add Lesson</button>
             </div>
-
             {addingLesson && (
               <div style={{ background: C.bgDeep, border: `1px solid ${C.blue}40`, borderRadius: 14, padding: 20, marginBottom: 16 }}>
                 <p style={{ color: C.blue, fontWeight: 700, fontSize: 13, marginBottom: 14 }}>✚ New Lesson</p>
                 <div style={{ marginBottom: 12 }}>
                   <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>Lesson Title *</label>
-                  <input value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} placeholder="e.g. Introduction to Forex"
-                    style={iS} onFocus={e => (e.target.style.borderColor = C.blue)} onBlur={e => (e.target.style.borderColor = C.border)} />
+                  <input value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} placeholder="e.g. Introduction to Forex" style={iS} onFocus={e => (e.target.style.borderColor = C.blue)} onBlur={e => (e.target.style.borderColor = C.border)} />
                 </div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                   {["video", "pdf"].map(t => (
@@ -1186,27 +975,17 @@ function UploadContentPage() {
                 </div>
                 <div onClick={() => lessonFileRef.current?.click()}
                   style={{ border: `2px dashed ${lessonFile ? C.green : C.border}`, borderRadius: 10, padding: 14, cursor: "pointer", textAlign: "center", background: C.surface, marginBottom: 14, transition: "all .2s" }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = C.blue)}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = lessonFile ? C.green : C.border)}>
-                  {lessonFile
-                    ? <p style={{ color: C.green, fontWeight: 600, fontSize: 13 }}>✓ {lessonFile.name} ({(lessonFile.size / 1048576).toFixed(1)} MB)</p>
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = C.blue)} onMouseLeave={e => (e.currentTarget.style.borderColor = lessonFile ? C.green : C.border)}>
+                  {lessonFile ? <p style={{ color: C.green, fontWeight: 600, fontSize: 13 }}>✓ {lessonFile.name} ({(lessonFile.size / 1048576).toFixed(1)} MB)</p>
                     : <p style={{ color: C.textMuted, fontSize: 13 }}>{lessonFileType === "video" ? "Click to select video file" : "Click to select PDF file"}</p>}
                 </div>
-                <input ref={lessonFileRef} type="file" accept={lessonFileType === "pdf" ? ".pdf" : "video/*"} style={{ display: "none" }}
-                  onChange={e => { if (e.target.files[0]) setLessonFile(e.target.files[0]); }} />
+                <input ref={lessonFileRef} type="file" accept={lessonFileType === "pdf" ? ".pdf" : "video/*"} style={{ display: "none" }} onChange={e => { if (e.target.files[0]) setLessonFile(e.target.files[0]); }} />
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={addLesson}
-                    style={{ flex: 1, padding: "10px 0", background: C.blue, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                    ✓ Add Lesson
-                  </button>
-                  <button onClick={() => { setAddingLesson(false); setLessonTitle(""); setLessonFile(null); }}
-                    style={{ padding: "10px 16px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-                    Cancel
-                  </button>
+                  <button onClick={addLesson} style={{ flex: 1, padding: "10px 0", background: C.blue, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>✓ Add Lesson</button>
+                  <button onClick={() => { setAddingLesson(false); setLessonTitle(""); setLessonFile(null); }} style={{ padding: "10px 16px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancel</button>
                 </div>
               </div>
             )}
-
             {lessons.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px 0", color: C.textSub }}>
                 <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
@@ -1215,29 +994,17 @@ function UploadContentPage() {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {lessons.map((lesson, idx) => (
-                  <div key={lesson.id} className="lesson-row"
-                    style={{ background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", display: "flex", alignItems: "center", gap: 12, transition: "background .15s" }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: C.blueDim, color: C.blue, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 13, flexShrink: 0 }}>
-                      {lesson.order}
-                    </div>
+                  <div key={lesson.id} className="lesson-row" style={{ background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", display: "flex", alignItems: "center", gap: 12, transition: "background .15s" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: C.blueDim, color: C.blue, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 13, flexShrink: 0 }}>{lesson.order}</div>
                     <div style={{ fontSize: 18, flexShrink: 0 }}>{lesson.fileType === "pdf" ? "📄" : "🎬"}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ color: C.text, fontWeight: 700, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{lesson.title}</p>
                       <p style={{ color: C.textSub, fontSize: 11, marginTop: 2 }}>{lesson.file.name} • {(lesson.file.size / 1048576).toFixed(1)} MB</p>
                     </div>
                     <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                      <button onClick={() => moveLessonUp(idx)} disabled={idx === 0}
-                        style={{ background: "none", border: `1px solid ${C.border}`, color: idx === 0 ? C.textSub : C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === 0 ? "not-allowed" : "pointer", opacity: idx === 0 ? 0.4 : 1 }}>
-                        <Icon.ChevronUp />
-                      </button>
-                      <button onClick={() => moveLessonDown(idx)} disabled={idx === lessons.length - 1}
-                        style={{ background: "none", border: `1px solid ${C.border}`, color: idx === lessons.length - 1 ? C.textSub : C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === lessons.length - 1 ? "not-allowed" : "pointer", opacity: idx === lessons.length - 1 ? 0.4 : 1 }}>
-                        <Icon.ChevronDown />
-                      </button>
-                      <button onClick={() => removeLesson(lesson.id)}
-                        style={{ background: C.errorDim, border: "none", color: C.errorRed, borderRadius: 7, padding: "5px 7px", cursor: "pointer" }}>
-                        <Icon.Trash />
-                      </button>
+                      <button onClick={() => moveLessonUp(idx)} disabled={idx === 0} style={{ background: "none", border: `1px solid ${C.border}`, color: idx === 0 ? C.textSub : C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === 0 ? "not-allowed" : "pointer", opacity: idx === 0 ? 0.4 : 1 }}><Icon.ChevronUp /></button>
+                      <button onClick={() => moveLessonDown(idx)} disabled={idx === lessons.length - 1} style={{ background: "none", border: `1px solid ${C.border}`, color: idx === lessons.length-1 ? C.textSub : C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === lessons.length-1 ? "not-allowed" : "pointer", opacity: idx === lessons.length-1 ? 0.4 : 1 }}><Icon.ChevronDown /></button>
+                      <button onClick={() => removeLesson(lesson.id)} style={{ background: C.errorDim, border: "none", color: C.errorRed, borderRadius: 7, padding: "5px 7px", cursor: "pointer" }}><Icon.Trash /></button>
                     </div>
                   </div>
                 ))}
@@ -1246,42 +1013,172 @@ function UploadContentPage() {
           </div>
         )}
       </div>
-
       <div style={{ ...CARD, marginTop: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: C.redFaint, border: `1px solid ${C.borderRed}`, fontSize: 12, color: C.textMuted }}>
           <span style={{ color: C.redLight }}><Icon.Lock /></span>
-          Haddii price-ku ka weyn yahay 0, course-ku wuxuu noqonayaa <strong style={{ color: C.redLight }}>locked</strong> illaa ardaygu lacagta bixiyo. Hadduu 0 yahay → instantly furan.
+          Haddii price-ku ka weyn yahay 0, course-ku wuxuu noqonayaa <strong style={{ color: C.redLight }}>locked</strong> illaa ardaygu lacagta bixiyo.
         </div>
         {uploading && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ background: "#1e1e1e", borderRadius: 99, height: 8, overflow: "hidden", marginBottom: 8 }}>
               <div style={{ width: `${progress}%`, height: "100%", background: `linear-gradient(90deg, ${catInfo.color}, ${catInfo.color}cc)`, borderRadius: 99, transition: "width .3s" }} />
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.textMuted }}>
-              <span>{progressLabel}</span><span>{progress}%</span>
-            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.textMuted }}><span>{progressLabel}</span><span>{progress}%</span></div>
           </div>
         )}
-        {msg && (
-          <div style={{ marginBottom: 16, padding: "11px 16px", borderRadius: 10, fontSize: 13, background: msg.startsWith("✅") ? "#0a2a18" : "#2a0a0a", border: `1px solid ${msg.startsWith("✅") ? C.green + "40" : C.errorRed + "40"}`, color: msg.startsWith("✅") ? C.green : C.errorRed }}>
-            {msg}
-          </div>
-        )}
+        {msg && <div style={{ marginBottom: 16, padding: "11px 16px", borderRadius: 10, fontSize: 13, background: msg.startsWith("✅") ? "#0a2a18" : "#2a0a0a", border: `1px solid ${msg.startsWith("✅") ? C.green + "40" : C.errorRed + "40"}`, color: msg.startsWith("✅") ? C.green : C.errorRed }}>{msg}</div>}
         <div style={{ display: "flex", gap: 12 }}>
-          <button onClick={handleUpload} disabled={uploading}
-            style={{ flex: 1, padding: "14px 0", background: catInfo.color, color: category === "playlist" ? "#fff" : "#000", border: "none", borderRadius: 12, fontWeight: 900, fontSize: 15, cursor: uploading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 9, opacity: uploading ? 0.65 : 1 }}>
-            {uploading
-              ? <><div style={{ width: 20, height: 20, border: "2px solid rgba(0,0,0,0.3)", borderTopColor: "#000", borderRadius: "50%", animation: "spin 1s linear infinite" }} />{progressLabel || "Uploading…"}</>
-              : <><Icon.Upload /> {catInfo.icon} Upload {catInfo.label}</>}
+          <button onClick={handleUpload} disabled={uploading} style={{ flex: 1, padding: "14px 0", background: catInfo.color, color: category === "playlist" ? "#fff" : "#000", border: "none", borderRadius: 12, fontWeight: 900, fontSize: 15, cursor: uploading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 9, opacity: uploading ? 0.65 : 1 }}>
+            {uploading ? <><div style={{ width: 20, height: 20, border: "2px solid rgba(0,0,0,0.3)", borderTopColor: "#000", borderRadius: "50%", animation: "spin 1s linear infinite" }} />{progressLabel || "Uploading…"}</> : <><Icon.Upload /> {catInfo.icon} Upload {catInfo.label}</>}
           </button>
-          {!uploading && (
-            <button onClick={() => { setStep(1); setCategory(""); setMsg(""); }}
-              style={{ padding: "14px 20px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-              Cancel
-            </button>
-          )}
+          {!uploading && <button onClick={() => { setStep(1); setCategory(""); setMsg(""); }} style={{ padding: "14px 20px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Cancel</button>}
         </div>
       </div>
+    </div>
+  );
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COURSE ACCESS PAGE — Approve / Unapprove ardayda course gatay
+// ═══════════════════════════════════════════════════════════════════════════════
+function CourseAccessPage() {
+  const { docs: accessDocs, loading, error } = useCollectionData("courseAccess");
+  const [busy, setBusy] = useState({});
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all"); // all | pending | approved
+
+  const approve = async (docId, value) => {
+    setBusy(b => ({ ...b, [docId]: true }));
+    try {
+      await updateDoc(doc(db, "courseAccess", docId), {
+        approved: value,
+        approvedAt: value ? Date.now() : null,
+      });
+    } catch (err) { window.alert(err.message); }
+    finally { setBusy(b => ({ ...b, [docId]: false })); }
+  };
+
+  const q = search.trim().toLowerCase();
+  const filtered = accessDocs
+    .filter(d => {
+      if (filterStatus === "pending" && d.approved) return false;
+      if (filterStatus === "approved" && !d.approved) return false;
+      return true;
+    })
+    .filter(d => !q || JSON.stringify(d).toLowerCase().includes(q))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  const pendingCount  = accessDocs.filter(d => !d.approved).length;
+  const approvedCount = accessDocs.filter(d => d.approved).length;
+
+  return (
+    <div>
+      {/* Stats */}
+      <div style={{ display: "flex", gap: 14, marginBottom: 24, flexWrap: "wrap" }}>
+        {[
+          { label: "Dhammaan", value: accessDocs.length, color: C.redLight,  filter: "all" },
+          { label: "Sugaya Approve", value: pendingCount,  color: C.amber,    filter: "pending" },
+          { label: "Approved",       value: approvedCount, color: C.green,    filter: "approved" },
+        ].map(s => (
+          <div key={s.label} onClick={() => setFilterStatus(s.filter)}
+            style={{
+              flex: "1 1 160px", background: filterStatus === s.filter ? C.redDim : C.surfaceCard,
+              border: `1px solid ${filterStatus === s.filter ? C.red : C.border}`,
+              borderRadius: 16, padding: "18px 22px", cursor: "pointer", transition: "all .2s",
+            }}>
+            <div style={{ color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>{s.label}</div>
+            <div style={{ color: s.color, fontSize: 32, fontWeight: 900 }}>{loading ? "…" : s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Hint */}
+      <div style={{ ...CARD, padding: "12px 16px", marginBottom: 18, display: "flex", alignItems: "center", gap: 10, background: C.redFaint, border: `1px solid ${C.borderRed}` }}>
+        <span style={{ color: C.redLight }}><Icon.LockOpen /></span>
+        <span style={{ color: C.textMuted, fontSize: 13 }}>
+          Marka aad <strong style={{ color: C.redLight }}>Approve</strong> gujiso, ardaygu si toos ah ayuu u helayaa course-ka.
+          Firestore: <strong style={{ color: C.redLight }}>courseAccess/&#123;id&#125;.approved = true</strong>
+        </span>
+      </div>
+
+      {/* Search + filter */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
+        <SearchBox value={search} onChange={setSearch} placeholder="Search email, course, phone…" />
+        <span style={{ color: C.textMuted, fontSize: 13 }}>{filtered.length} record{filtered.length !== 1 ? "s" : ""}</span>
+      </div>
+
+      {error && <ErrorBox msg={error} />}
+      {loading ? <LoadingBox /> : filtered.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "54px 0" }}>
+          <div style={{ fontSize: 40, marginBottom: 10 }}>📭</div>
+          <div style={{ color: C.textMuted, fontSize: 14 }}>
+            {filterStatus === "pending" ? "Weli arday sugaya approve ma jiro." : filterStatus === "approved" ? "Weli approved arday ma jiro." : "Weli lacag bixin ma jiro."}
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {filtered.map(d => {
+            const approved = !!d.approved;
+            const sc = approved
+              ? { bg: C.greenDim, fg: C.green, label: "✅ Approved" }
+              : { bg: C.amberDim, fg: C.amber,  label: "⏳ Pending" };
+            return (
+              <div key={d.id} style={{
+                ...CARD, padding: "18px 20px",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                gap: 16, flexWrap: "wrap",
+                borderLeft: `3px solid ${approved ? C.green : C.amber}`,
+              }}>
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: "50%", background: approved ? C.greenDim : C.amberDim, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 16, color: approved ? C.green : C.amber, flexShrink: 0 }}>
+                      {(d.email || d.courseName || "?")[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{d.email || "—"}</div>
+                      <div style={{ color: C.textMuted, fontSize: 12, marginTop: 2 }}>📱 {d.phone || "—"}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    <span style={{ background: C.redDim, color: C.redLight, padding: "4px 10px", borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
+                      🎓 {d.courseName || d.courseId || "—"}
+                    </span>
+                    {d.createdAt && (
+                      <span style={{ background: C.surfaceHover, color: C.textMuted, padding: "4px 10px", borderRadius: 8, fontSize: 11 }}>
+                        📅 {new Date(d.createdAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    )}
+                    {d.approvedAt && approved && (
+                      <span style={{ background: C.greenDim, color: C.green, padding: "4px 10px", borderRadius: 8, fontSize: 11 }}>
+                        ✅ {new Date(d.approvedAt).toLocaleDateString("en-US", { day: "numeric", month: "short" })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status + Action */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                  <span style={{ background: sc.bg, color: sc.fg, padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
+                    {sc.label}
+                  </span>
+                  <button onClick={() => approve(d.id, !approved)} disabled={!!busy[d.id]}
+                    style={{
+                      padding: "10px 20px", borderRadius: 10, fontWeight: 800, fontSize: 13,
+                      cursor: busy[d.id] ? "not-allowed" : "pointer", border: "none",
+                      background: approved ? C.errorDim : C.green,
+                      color: approved ? C.errorRed : "#000",
+                      transition: "all .2s", minWidth: 110,
+                    }}>
+                    {busy[d.id] ? "…" : approved ? "❌ Unapprove" : "✅ Approve"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1291,9 +1188,7 @@ function UploadContentPage() {
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function Admin() {
-  // ── Auth state — check sessionStorage first so refresh doesn't log out ──
   const [authed, setAuthed] = useState(() => sessionStorage.getItem("admin_auth") === "1");
-
   const [activePage, setActivePage] = useState("dashboard");
   const [uploadTab, setUploadTab] = useState("pdf");
   const [title, setTitle] = useState("");
@@ -1307,41 +1202,23 @@ export default function Admin() {
   const [uploadMsg, setUploadMsg] = useState("");
   const [uploads, setUploads] = useState(MOCK_UPLOADS);
 
-  // ── If not authed, show login page ──
   if (!authed) {
-    return (
-      <>
-        <GlobalStyle />
-        <AdminLogin onLogin={() => setAuthed(true)} />
-      </>
-    );
+    return (<><GlobalStyle /><AdminLogin onLogin={() => setAuthed(true)} /></>);
   }
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("admin_auth");
-    setAuthed(false);
-  };
-
+  const handleLogout = () => { sessionStorage.removeItem("admin_auth"); setAuthed(false); };
   const uploadFileWithProgress = (storageRef, file, onProgress) =>
     new Promise((resolve, reject) => {
       const task = uploadBytesResumable(storageRef, file);
-      task.on("state_changed",
-        (snap) => onProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-        reject,
-        () => getDownloadURL(task.snapshot.ref).then(resolve).catch(reject)
-      );
+      task.on("state_changed", (snap) => onProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)), reject, () => getDownloadURL(task.snapshot.ref).then(resolve).catch(reject));
     });
-
   const handleDelete = (id) => setUploads((prev) => prev.filter((u) => u.id !== id));
+  const handleDrop = (e, setter) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file) setter(file); };
 
-  const handleDrop = (e, setter) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) setter(file);
-  };
-
+  // ── PATCH 2: PAGE_TITLES with courseAccess ──────────────────────────────────
   const PAGE_TITLES = {
     enrollments: "Enrollments",
+    courseAccess: "Course Access — Approve Students",
     dashboard: "Dashboard",
     upload: "Upload Content",
     uploads: "All Uploads",
@@ -1355,31 +1232,20 @@ export default function Admin() {
     settings: "Settings",
   };
 
-  const card = {
-    background: C.surfaceCard,
-    border: `1px solid ${C.border}`,
-    borderRadius: 16, padding: 24,
-    boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
-  };
+  const card = { background: C.surfaceCard, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, boxShadow: "0 4px 24px rgba(0,0,0,0.3)" };
 
   const UploadZone = ({ tab, pdfFile, videoFile, setPdfFile, setVideoFile, inputId }) => {
     const file = tab === "pdf" ? pdfFile : videoFile;
     const setter = tab === "pdf" ? setPdfFile : setVideoFile;
     return (
-      <div className="upload-zone" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, setter)}
-        onClick={() => document.getElementById(inputId).click()}
+      <div className="upload-zone" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, setter)} onClick={() => document.getElementById(inputId).click()}
         style={{ border: `2px dashed ${C.borderRed}`, borderRadius: 12, padding: "28px 20px", textAlign: "center", cursor: "pointer", background: C.redFaint, transition: "all .2s" }}>
         <div style={{ color: file ? C.green : C.red, marginBottom: 10 }}><Icon.UploadCloud /></div>
-        <div style={{ color: file ? C.green : C.textMuted, fontSize: 13, marginBottom: 6, fontWeight: file ? 600 : 400 }}>
-          {file ? `✓ ${file.name}` : (tab === "pdf" ? "Drag & drop your PDF file here" : "Drag & drop your video file here")}
-        </div>
+        <div style={{ color: file ? C.green : C.textMuted, fontSize: 13, marginBottom: 6, fontWeight: file ? 600 : 400 }}>{file ? `✓ ${file.name}` : (tab === "pdf" ? "Drag & drop your PDF file here" : "Drag & drop your video file here")}</div>
         <div style={{ color: C.textSub, fontSize: 12, marginBottom: 14 }}>or</div>
         <RedBtn><Icon.Upload /> Browse File</RedBtn>
-        <input id={inputId} type="file" accept={tab === "pdf" ? ".pdf" : "video/*"} style={{ display: "none" }}
-          onChange={(e) => setter(e.target.files[0])} />
-        <div style={{ color: C.textSub, fontSize: 11, marginTop: 12 }}>
-          {tab === "pdf" ? "Supported formats: PDF only (Max 50MB)" : "Supported: mp4, mov, avi | Max 2GB"}
-        </div>
+        <input id={inputId} type="file" accept={tab === "pdf" ? ".pdf" : "video/*"} style={{ display: "none" }} onChange={(e) => setter(e.target.files[0])} />
+        <div style={{ color: C.textSub, fontSize: 11, marginTop: 12 }}>{tab === "pdf" ? "Supported formats: PDF only (Max 50MB)" : "Supported: mp4, mov, avi | Max 2GB"}</div>
       </div>
     );
   };
@@ -1402,7 +1268,7 @@ export default function Admin() {
       <GlobalStyle />
       <div style={{ display: "flex", minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "'Inter', system-ui, sans-serif" }}>
 
-        {/* ════ SIDEBAR ════ */}
+        {/* SIDEBAR */}
         <aside style={{ width: 240, flexShrink: 0, background: C.bgDeep, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh", overflow: "hidden" }}>
           <div style={{ padding: "20px 18px 16px", borderBottom: `1px solid ${C.border}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -1437,14 +1303,13 @@ export default function Admin() {
               <span style={{ fontSize: 12, color: C.redLight, fontWeight: 600 }}>Premium Instructor</span>
             </div>
             <button onClick={handleLogout} style={{ width: "100%", marginTop: 10, display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8, border: "none", background: "transparent", color: C.textMuted, cursor: "pointer", fontSize: 14, transition: "color .15s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = C.errorRed)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = C.textMuted)}>
+              onMouseEnter={(e) => (e.currentTarget.style.color = C.errorRed)} onMouseLeave={(e) => (e.currentTarget.style.color = C.textMuted)}>
               <Icon.Logout /> Logout
             </button>
           </div>
         </aside>
 
-        {/* ════ MAIN ════ */}
+        {/* MAIN */}
         <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", minWidth: 0 }}>
           <header style={{ background: `${C.bgDeep}ee`, backdropFilter: "blur(12px)", borderBottom: `1px solid ${C.border}`, padding: "14px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
             <div>
@@ -1466,16 +1331,15 @@ export default function Admin() {
 
           <div style={{ padding: 28, flex: 1 }}>
 
-            {/* ════ DASHBOARD ════ */}
+            {/* DASHBOARD */}
             {activePage === "dashboard" && (
               <div>
                 <div style={{ display: "flex", gap: 14, marginBottom: 24, flexWrap: "wrap" }}>
-                  <StatCard icon={<Icon.Courses />} label="Total Courses" value={1} delta="15% this month" sparkData={[20, 30, 25, 40, 35, 55, 50, 60, 58, 70]} />
-                  <StatCard icon={<Icon.Upload />} label="Total Uploads" value={1} delta="12% this month" sparkData={[40, 50, 45, 65, 55, 75, 70, 82, 78, 90]} />
-                  <StatCard icon={<Icon.Students />} label="Total Students" value={1} delta="36% this month" sparkData={[50, 55, 60, 58, 70, 72, 78, 82, 88, 95]} />
-                  <StatCard icon={<Icon.Dollar />} label="Total Income" value="$0.00" delta="18% this month" redFill sparkData={[30, 45, 38, 60, 52, 70, 65, 85, 78, 100]} />
+                  <StatCard icon={<Icon.Courses />} label="Total Courses" value={1} delta="15% this month" sparkData={[20,30,25,40,35,55,50,60,58,70]} />
+                  <StatCard icon={<Icon.Upload />} label="Total Uploads" value={1} delta="12% this month" sparkData={[40,50,45,65,55,75,70,82,78,90]} />
+                  <StatCard icon={<Icon.Students />} label="Total Students" value={1} delta="36% this month" sparkData={[50,55,60,58,70,72,78,82,88,95]} />
+                  <StatCard icon={<Icon.Dollar />} label="Total Income" value="$0.00" delta="18% this month" redFill sparkData={[30,45,38,60,52,70,65,85,78,100]} />
                 </div>
-
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 24 }}>
                   <div style={card}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
@@ -1484,10 +1348,8 @@ export default function Admin() {
                     </div>
                     <TabSwitcher value={uploadTab} onChange={setUploadTab} compact />
                     <UploadZone tab={uploadTab} pdfFile={pdfFile} videoFile={videoFile} setPdfFile={setPdfFile} setVideoFile={setVideoFile} inputId={`dash-file-${uploadTab}`} />
-                    <button onClick={() => setActivePage("upload")}
-                      style={{ marginTop: 12, width: "100%", padding: "10px 0", borderRadius: 10, border: `1px solid ${C.borderRed}`, background: "transparent", color: C.redLight, cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "all .15s" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = C.redFaint)}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+                    <button onClick={() => setActivePage("upload")} style={{ marginTop: 12, width: "100%", padding: "10px 0", borderRadius: 10, border: `1px solid ${C.borderRed}`, background: "transparent", color: C.redLight, cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "all .15s" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = C.redFaint)} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                       Fill in course details →
                     </button>
                   </div>
@@ -1500,13 +1362,8 @@ export default function Admin() {
                       <span style={{ color: C.red }}><Icon.Lightning /></span>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                      {[
-                        { icon: "📄", title: "PDF", sub: "Single PDF lesson", color: C.errorRed },
-                        { icon: "🎬", title: "Video", sub: "Single video lesson", color: C.amber },
-                        { icon: "🎓", title: "Playlist", sub: "Full course", color: C.blue },
-                      ].map(({ icon, title, sub, color }) => (
-                        <div key={title} onClick={() => setActivePage("upload")}
-                          style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, textAlign: "center", cursor: "pointer", transition: "border-color .2s, box-shadow .2s" }}
+                      {[{icon:"📄",title:"PDF",sub:"Single PDF lesson",color:C.errorRed},{icon:"🎬",title:"Video",sub:"Single video lesson",color:C.amber},{icon:"🎓",title:"Playlist",sub:"Full course",color:C.blue}].map(({icon,title,sub,color}) => (
+                        <div key={title} onClick={() => setActivePage("upload")} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, textAlign: "center", cursor: "pointer", transition: "border-color .2s, box-shadow .2s" }}
                           onMouseEnter={(e) => { e.currentTarget.style.borderColor = color; e.currentTarget.style.boxShadow = `0 4px 20px ${color}40`; }}
                           onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = "none"; }}>
                           <div style={{ fontSize: 32, marginBottom: 8 }}>{icon}</div>
@@ -1517,7 +1374,6 @@ export default function Admin() {
                     </div>
                   </div>
                 </div>
-
                 <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 18 }}>
                   <UploadsTable uploads={uploads.slice(0, 5)} onDelete={handleDelete} />
                   <div style={card}>
@@ -1531,7 +1387,7 @@ export default function Admin() {
                     <div style={{ color: C.textMuted, fontSize: 12, marginBottom: 14 }}>vs last month</div>
                     <IncomeSparkline />
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 16 }}>
-                      {[{ label: "This Month", val: "$1,240", delta: "+12%" }, { label: "Last Month", val: "$1,105", delta: "+8%" }, { label: "Withdrawn", val: "$2,350", delta: null }].map(({ label, val, delta }) => (
+                      {[{label:"This Month",val:"$1,240",delta:"+12%"},{label:"Last Month",val:"$1,105",delta:"+8%"},{label:"Withdrawn",val:"$2,350",delta:null}].map(({label,val,delta}) => (
                         <div key={label} style={{ background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 8px", textAlign: "center" }}>
                           <div style={{ color: C.textMuted, fontSize: 10, fontWeight: 600, letterSpacing: ".4px", textTransform: "uppercase", marginBottom: 5 }}>{label}</div>
                           <div style={{ color: C.text, fontWeight: 800, fontSize: 14 }}>{val}</div>
@@ -1540,9 +1396,7 @@ export default function Admin() {
                       ))}
                     </div>
                     <button style={{ marginTop: 16, width: "100%", padding: "10px 0", borderRadius: 10, border: `1px solid ${C.borderRed}`, background: "transparent", color: C.redLight, cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "all .15s" }}
-                      onClick={() => setActivePage("income")}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = C.redFaint)}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+                      onClick={() => setActivePage("income")} onMouseEnter={(e) => (e.currentTarget.style.background = C.redFaint)} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                       View Income Details →
                     </button>
                   </div>
@@ -1550,7 +1404,7 @@ export default function Admin() {
               </div>
             )}
 
-            {activePage === "upload" && <UploadContentPage />}
+            {activePage === "upload"  && <UploadContentPage />}
             {activePage === "uploads" && <UploadsTable uploads={uploads} onDelete={handleDelete} full />}
 
             {activePage === "income" && (
@@ -1572,10 +1426,12 @@ export default function Admin() {
               </div>
             )}
 
-            {activePage === "courses" && <CoursesPage />}
-            {activePage === "traders" && <PlaceholderPage label="traders" />}
-            {activePage === "data" && <DataExplorer />}
-            {activePage === "psychology" && <CollectionPanel name="psychology" />}
+            {activePage === "courses"     && <CoursesPage />}
+            {/* ── PATCH 4: courseAccess route ── */}
+            {activePage === "courseAccess" && <CourseAccessPage />}
+            {activePage === "traders"     && <PlaceholderPage label="traders" />}
+            {activePage === "data"        && <DataExplorer />}
+            {activePage === "psychology"  && <CollectionPanel name="psychology" />}
             {activePage === "enrollments" && <EnrollmentsPage />}
             {["students", "messages", "settings"].includes(activePage) && <PlaceholderPage label={activePage} />}
           </div>
