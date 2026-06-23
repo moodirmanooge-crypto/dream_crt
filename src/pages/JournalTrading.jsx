@@ -677,10 +677,10 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                   <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Session</label>
                   <select value={tradeData.session} onChange={e => setTradeData({ ...tradeData, session: e.target.value })} style={iS}>
                     <option value="">Select</option>
-                    <option value="Asian">🌏 Asian</option>
+                    <option value="Asian"> Asian</option>
                     <option value="London">🇬🇧 London</option>
-                    <option value="New York">🗽 New York</option>
-                    <option value="Overlap">🔄 Overlap</option>
+                    <option value="New York"> New York</option>
+                    
                   </select>
                 </div>
               </div>
