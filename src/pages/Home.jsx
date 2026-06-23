@@ -40,19 +40,13 @@ export default function Home() {
       setUser(currentUser);
       if (currentUser) {
         setEmail(currentUser.email || "");
-        if (currentUser) {
-  setEmail(currentUser.email || "");
-  setPayEmail(currentUser.email || "");
-  // Check approved courses
-  try {
-    const accessSnap = await getDocs(collection(db, "courseAccess"));
-    const approved = accessSnap.docs
-      .filter(d => d.data().email === currentUser.email && d.data().approved === true)
-      .map(d => d.data().courseId);
-    setUserApprovedCourses(approved);
-  } catch (e) { console.log(e); }
-}
         setPayEmail(currentUser.email || "");
+        getDocs(collection(db, "courseAccess")).then((accessSnap) => {
+          const approved = accessSnap.docs
+            .filter(d => d.data().email === currentUser.email && d.data().approved === true)
+            .map(d => d.data().courseId);
+          setUserApprovedCourses(approved);
+        }).catch(e => console.log(e));
       }
     });
     return () => unsubscribe();
@@ -397,7 +391,7 @@ const openPayModal = (courseId, courseName, coursePrice) => {
               <a href="#services" className="flex items-center gap-3 px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-sm md:text-base"
                 style={{ border: "1px solid rgba(245,197,24,0.4)", color: "#f5c518", background: "rgba(245,197,24,0.05)" }}>▶ Our Services</a>
               <a href="/archives" className="flex items-center gap-3 px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-sm md:text-base"
-                style={{ border: "1px solid rgba(167,139,250,0.4)", color: "#a78bfa", background: "rgba(167,139,250,0.05)" }}>🏆 Archives</a>
+                style={{ border: "1px solid rgba(167,139,250,0.4)", color: "#a78bfa", background: "rgba(167,139,250,0.05)" }}>🏆 Achievements</a>
             </div>
           </div>
         </div>
