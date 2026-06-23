@@ -27,7 +27,7 @@ export default function Home() {
   const [payCourseId, setPayCourseId] = useState("");
   const [payCoursePrice, setPayCoursePrice] = useState("");
   const [paying, setPaying] = useState(false);
-  const [payDone, setPayDone] = useState(false);
+  const [userApprovedCourses, setUserApprovedCourses] = useState([]);
 
   const [showAdminPortal, setShowAdminPortal] = useState(false);
   const [adminPin, setAdminPin] = useState("");
@@ -40,6 +40,18 @@ export default function Home() {
       setUser(currentUser);
       if (currentUser) {
         setEmail(currentUser.email || "");
+        if (currentUser) {
+  setEmail(currentUser.email || "");
+  setPayEmail(currentUser.email || "");
+  // Check approved courses
+  try {
+    const accessSnap = await getDocs(collection(db, "courseAccess"));
+    const approved = accessSnap.docs
+      .filter(d => d.data().email === currentUser.email && d.data().approved === true)
+      .map(d => d.data().courseId);
+    setUserApprovedCourses(approved);
+  } catch (e) { console.log(e); }
+}
         setPayEmail(currentUser.email || "");
       }
     });
@@ -110,16 +122,20 @@ export default function Home() {
     }
   };
 
-  const openPayModal = (courseId, courseName, coursePrice) => {
-    setPayCourseId(courseId);
-    setPayCourseName(courseName);
-    setPayCoursePrice(coursePrice);
-    setPayDone(false);
-    setPayPhone("");
-    if (user) setPayEmail(user.email || "");
-    setShowPayModal(true);
-  };
-
+const openPayModal = (courseId, courseName, coursePrice) => {
+  // Haddii approved yahay → toos course page
+  if (userApprovedCourses.includes(courseId)) {
+    window.location.href = `/course/${courseId}`;
+    return;
+  }
+  setPayCourseId(courseId);
+  setPayCourseName(courseName);
+  setPayCoursePrice(coursePrice);
+  setPayDone(false);
+  setPayPhone("");
+  if (user) setPayEmail(user.email || "");
+  setShowPayModal(true);
+};
   const handlePay = async () => {
     if (!payPhone || !payEmail) { alert("Fadlan buuxi dhammaan meelaha"); return; }
     setPaying(true);
@@ -468,11 +484,22 @@ export default function Home() {
                 <p className="text-sm leading-relaxed" style={{ color: "#94a3b8" }}>{svc.benefit}</p>
               </div>
               <button
-                onClick={() => openPayModal(svc.payId, svc.title, svc.payPrice)}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm w-fit"
-                style={{ background: svc.color, color: "#000000", border: "none", cursor: "pointer" }}>
-                Iibso/BUY →
-              </button>
+  onClick={() => {
+    if (userApprovedCourses.includes(svc.payId)) {
+      // Scroll to courses section
+      document.getElementById("courses")?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      openPayModal(svc.payId, svc.title, svc.payPrice);
+    }
+  }}
+  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm w-fit"
+  style={{
+    background: userApprovedCourses.includes(svc.payId) ? "#22c55e" : svc.color,
+    color: "#000000", border: "none", cursor: "pointer"
+  }}>
+  {userApprovedCourses.includes(svc.payId) ? "✅ Bought — Access Courses" : "Iibso/BUY →"}
+</button>
+              
             </div>
           ))}
         </div>
@@ -549,18 +576,21 @@ export default function Home() {
                     <span className="text-2xl md:text-3xl font-black" style={{ color: "#f5c518" }}>
                       {Number(course.price) === 0 ? "FREE" : `$${course.price}`}
                     </span>
-                    <button
-                      onClick={() => {
-                        if (Number(course.price) === 0) {
-                          window.location.href = `/course/${course.id}`;
-                        } else {
-                          openPayModal(course.id, course.title, course.price);
-                        }
-                      }}
-                      className="px-5 md:px-6 py-2.5 md:py-3 rounded-xl font-black text-sm transition-all"
-                      style={{ background: "#f5c518", color: "#000000" }}>
-                      {Number(course.price) === 0 ? "Access Free" : "Buy Course"}
-                    </button>
+                   <button
+  onClick={() => {
+    if (Number(course.price) === 0 || userApprovedCourses.includes(course.id)) {
+      window.location.href = `/course/${course.id}`;
+    } else {
+      openPayModal(course.id, course.title, course.price);
+    }
+  }}
+
+  style={{
+    background: userApprovedCourses.includes(course.id) ? "#22c55e" : "#f5c518",
+    color: "#000000"
+  }}>
+  {userApprovedCourses.includes(course.id) ? "✅ Access Course" : Number(course.price) === 0 ? "Access Free" : "Buy Course"}
+</button>
                   </div>
                 </div>
               </div>
