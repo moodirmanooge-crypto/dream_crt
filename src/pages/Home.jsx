@@ -197,6 +197,27 @@ export default function Home() {
 
   const displayCourse = courses.length > 0 ? [courses[0]] : [];
 
+  // ── NAV LINKS (desktop) ──────────────────────────────────────────────
+  const desktopLinks = [
+    { label: "Home", href: "#home", active: true },
+    { label: "Courses", href: "#courses" },
+    { label: "Services", href: "#services" },
+    { label: "Archives", href: "/archives" },
+    { label: "About", href: "/about" },
+    { label: "Contact", href: "/contact" },
+    { label: "Community", href: "/community" },
+  ];
+
+  const mobileLinks = [
+    { label: "Home", href: "#home" },
+    { label: "Courses", href: "#courses" },
+    { label: "Services", href: "#services" },
+    { label: "Archives", href: "/archives" },
+    { label: "About", href: "/about" },
+    { label: "Contact", href: "/contact" },
+    { label: "Community", href: "/community" },
+  ];
+
   return (
     <div className="text-white min-h-screen overflow-x-hidden" style={{ background: "#0d0d0d" }}>
 
@@ -213,6 +234,7 @@ export default function Home() {
         .dot-btn:hover span { background: #f5c518 !important; }
       `}</style>
 
+      {/* ── NAV ── */}
       <nav className="flex items-center justify-between px-5 md:px-10 py-4 sticky top-0 z-50"
         style={{ background: "rgba(13,13,13,0.97)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
 
@@ -222,44 +244,35 @@ export default function Home() {
             onClick={openAdminPortal}
             title="Admin Portal"
             style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: "4px",
-              width: "32px",
-              height: "32px",
-              borderRadius: "8px",
-              border: "1px solid rgba(245,197,24,0.2)",
-              background: "rgba(245,197,24,0.05)",
-              cursor: "pointer",
-              padding: "0",
-              marginRight: "4px",
-              transition: "background 0.2s",
+              display: "flex", flexDirection: "column", justifyContent: "center",
+              alignItems: "center", gap: "4px", width: "32px", height: "32px",
+              borderRadius: "8px", border: "1px solid rgba(245,197,24,0.2)",
+              background: "rgba(245,197,24,0.05)", cursor: "pointer", padding: "0",
+              marginRight: "4px", transition: "background 0.2s",
             }}
           >
             <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "rgba(245,197,24,0.5)", display: "block", transition: "background 0.2s" }} />
             <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "rgba(245,197,24,0.5)", display: "block", transition: "background 0.2s" }} />
             <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "rgba(245,197,24,0.5)", display: "block", transition: "background 0.2s" }} />
           </button>
-
           <span className="font-black text-xl md:text-2xl tracking-tight" style={{ color: "#f5c518" }}>DREAM CRT</span>
         </div>
 
-        <div className="hidden md:flex gap-6 lg:gap-8 text-sm font-semibold">
-          {[
-            { label: "Home", href: "#home", active: true },
-            { label: "Courses", href: "#courses" },
-            { label: "Services", href: "#services" },
-            { label: "About", href: "/about" },
-            { label: "Contact", href: "/contact" },
-            { label: "Community", href: "/community" },
-          ].map((link) => (
-            <a key={link.label} href={link.href} className="transition"
-              style={link.active ? { color: "#f5c518", borderBottom: "2px solid #f5c518", paddingBottom: "2px" } : { color: "#d1d5db" }}
+        {/* Desktop links */}
+        <div className="hidden md:flex gap-5 lg:gap-7 text-sm font-semibold">
+          {desktopLinks.map((link) => (
+            <a key={link.label} href={link.href}
+              className="transition"
+              style={link.active
+                ? { color: "#f5c518", borderBottom: "2px solid #f5c518", paddingBottom: "2px" }
+                : link.label === "Archives"
+                  ? { color: "#f5c518", opacity: 0.8 }
+                  : { color: "#d1d5db" }
+              }
               onMouseEnter={(e) => { if (!link.active) e.target.style.color = "#f5c518"; }}
-              onMouseLeave={(e) => { if (!link.active) e.target.style.color = "#d1d5db"; }}>
-              {link.label}
+              onMouseLeave={(e) => { if (!link.active && link.label !== "Archives") e.target.style.color = "#d1d5db"; }}
+            >
+              {link.label === "Archives" ? "🏆 " + link.label : link.label}
             </a>
           ))}
           <button onClick={handleJournalNav} className="transition"
@@ -293,6 +306,7 @@ export default function Home() {
               </>
             )}
           </div>
+          {/* Hamburger */}
           <button className="md:hidden flex flex-col justify-center items-center w-9 h-9 rounded-lg gap-1.5"
             style={{ border: "1px solid rgba(245,197,24,0.3)", background: "rgba(245,197,24,0.05)" }}
             onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
@@ -303,21 +317,18 @@ export default function Home() {
         </div>
       </nav>
 
+      {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden fixed top-[65px] left-0 right-0 z-40 px-5 py-6 flex flex-col gap-4"
           style={{ background: "rgba(13,13,13,0.98)", borderBottom: "1px solid rgba(245,197,24,0.15)" }}>
-          {[
-            { label: "Home", href: "#home" },
-            { label: "Courses", href: "#courses" },
-            { label: "Services", href: "#services" },
-            { label: "About", href: "/about" },
-            { label: "Contact", href: "/contact" },
-            { label: "Community", href: "/community" },
-          ].map((link) => (
+          {mobileLinks.map((link) => (
             <a key={link.label} href={link.href} onClick={() => setMenuOpen(false)}
               className="text-base font-semibold py-2"
-              style={{ color: "#d1d5db", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-              {link.label}
+              style={{
+                color: link.label === "Archives" ? "#f5c518" : "#d1d5db",
+                borderBottom: "1px solid rgba(255,255,255,0.05)",
+              }}>
+              {link.label === "Archives" ? "🏆 " + link.label : link.label}
             </a>
           ))}
           <button onClick={handleJournalNav} className="text-base font-semibold py-2 text-left"
@@ -349,6 +360,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* ── HERO ── */}
       <section id="home" className="relative flex flex-col overflow-hidden"
         style={{ minHeight: "calc(100vh - 65px)", background: "linear-gradient(135deg, #0d0d0d 0%, #1a1200 50%, #0d0d0d 100%)" }}>
         <div className="absolute inset-0 pointer-events-none" style={{ overflow: "hidden" }}>
@@ -368,6 +380,8 @@ export default function Home() {
                 style={{ background: "#f5c518", color: "#000000" }}>🎓 Start Learning</a>
               <a href="#services" className="flex items-center gap-3 px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-sm md:text-base"
                 style={{ border: "1px solid rgba(245,197,24,0.4)", color: "#f5c518", background: "rgba(245,197,24,0.05)" }}>▶ Our Services</a>
+              <a href="/archives" className="flex items-center gap-3 px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-sm md:text-base"
+                style={{ border: "1px solid rgba(167,139,250,0.4)", color: "#a78bfa", background: "rgba(167,139,250,0.05)" }}>🏆 Archives</a>
             </div>
           </div>
         </div>
@@ -394,7 +408,35 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+        {/* ── ARCHIVES PROMO BANNER ── */}
+        <div className="relative z-10 mx-5 md:mx-16 mb-8">
+          <a href="/archives" style={{ textDecoration: "none" }}>
+            <div className="flex items-center justify-between px-6 py-4 rounded-2xl"
+              style={{
+                background: "linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(245,197,24,0.08) 100%)",
+                border: "1px solid rgba(167,139,250,0.3)",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(167,139,250,0.6)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; e.currentTarget.style.transform = "none"; }}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                  style={{ background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.3)" }}>
+                  🏆
+                </div>
+                <div>
+                  <p className="font-black text-sm md:text-base" style={{ color: "#a78bfa", margin: 0 }}>Archives — Shahaadooyinka & Sawirrada</p>
+                  <p className="text-xs md:text-sm" style={{ color: "#64748b", margin: "2px 0 0" }}>Ardayda guulaysatay ee shahaadooyinkooda wadaagay</p>
+                </div>
+              </div>
+              <span className="font-black text-sm flex-shrink-0" style={{ color: "#a78bfa" }}>Arag →</span>
+            </div>
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 px-5 md:px-16 pb-16">
           {services.map((svc, i) => (
             <div key={i} className="rounded-3xl p-7 md:p-9 flex flex-col gap-6 transition-all duration-300"
               style={{ background: svc.colorDim, border: `1px solid ${svc.colorBorder}`, position: "relative", overflow: "hidden" }}
@@ -451,6 +493,7 @@ export default function Home() {
         ))}
       </div>
 
+      {/* ── COURSES ── */}
       <section id="courses" className="px-5 md:px-20 py-16 md:py-24">
         <div className="text-center mb-12 md:mb-20">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-5"
@@ -461,7 +504,6 @@ export default function Home() {
             Latest<span style={{ color: "#f5c518" }}> Courses</span>
           </h2>
         </div>
-
         {courses.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-5xl mb-4">📚</div>
@@ -527,6 +569,7 @@ export default function Home() {
         )}
       </section>
 
+      {/* ── ABOUT ── */}
       <section id="about" className="px-5 md:px-20 py-20 md:py-32 text-center"
         style={{ borderTop: "1px solid rgba(245,197,24,0.08)" }}>
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-6"
@@ -535,10 +578,11 @@ export default function Home() {
         </div>
         <h2 className="text-3xl md:text-5xl font-black mb-6">About <span style={{ color: "#f5c518" }}>DREAM CRT</span></h2>
         <p className="text-base md:text-xl max-w-4xl mx-auto leading-loose" style={{ color: "#f7f8fa" }}>
-          Dream CRT ACADEMY Waa  ACADEMY _dii ugu horreeysay ee bulshada Soomaaliyeed u soo bandhigta CRT Strategy. Ka dib markii aan si guul leh u tababarnay 500+ arday oo aan siiyey koorsooyin bilaash ah, waxaan ogaanay  caqabadda ugu weyn ee haysata dadka Forex-ka: ka barta baraha bulshada (Self-study) waxay leedahay jahwareer iyo safar aad u dheer. Koorsooyinkayaga  gaarka ah (Premium Courses) waxay kuu soo gaabinayayaan  safarkaas dheer. Uma baahnid inaad keligaa ku dhex wareerto suuqan baaxadda leh; halkan waxaad ka heleysaa hagid toos ah, nidaam saxan oo diyaarsan, iyo caawin joogto ah oo kugu hagta guusha
+          Dream CRT ACADEMY Waa ACADEMY _dii ugu horreeysay ee bulshada Soomaaliyeed u soo bandhigta CRT Strategy. Ka dib markii aan si guul leh u tababarnay 500+ arday oo aan siiyey koorsooyin bilaash ah, waxaan ogaanay caqabadda ugu weyn ee haysata dadka Forex-ka: ka barta baraha bulshada (Self-study) waxay leedahay jahwareer iyo safar aad u dheer. Koorsooyinkayaga gaarka ah (Premium Courses) waxay kuu soo gaabinayayaan safarkaas dheer. Uma baahnid inaad keligaa ku dhex wareerto suuqan baaxadda leh; halkan waxaad ka heleysaa hagid toos ah, nidaam saxan oo diyaarsan, iyo caawin joogto ah oo kugu hagta guusha
         </p>
       </section>
 
+      {/* ── CONTACT ── */}
       <section id="contact" className="px-5 md:px-20 py-16 md:py-24 text-center"
         style={{ borderTop: "1px solid rgba(245,197,24,0.12)" }}>
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-6"
@@ -560,6 +604,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── JOURNAL MODAL ── */}
       {showJournalForm && (
         <div className="fixed inset-0 flex items-center justify-center z-50 px-4" style={{ background: "rgba(0,0,0,0.85)" }}>
           <div className="w-full max-w-2xl p-6 md:p-10 rounded-3xl relative max-h-[90vh] overflow-y-auto"
@@ -591,6 +636,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* ── PAY MODAL ── */}
       {showPayModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 px-4"
           style={{ background: "rgba(0,0,0,0.88)" }}
@@ -619,12 +665,11 @@ export default function Home() {
                   </div>
                   <div className="rounded-2xl p-4 mb-6"
                     style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.25)" }}>
-                    <p className="font-black text-sm mb-2" style={{ color: "#f5c518" }}>📋  QAABKA LACAG BIXINTA:</p>
+                    <p className="font-black text-sm mb-2" style={{ color: "#f5c518" }}>📋 QAABKA LACAG BIXINTA:</p>
                     <p className="text-gray-300 text-sm leading-relaxed">
                       KUDIR LACAGTA COURSE KA NUMBARKAAN{" "}
                       <span className="font-black" style={{ color: "#f5c518" }}>252613887399</span>{" "}
-                      KASOO QAAD SCREENSHORT KADIBNA KU SOODIR WhatsApp NUMBARKEENA.
-                      252613887399
+                      KASOO QAAD SCREENSHORT KADIBNA KU SOODIR WhatsApp NUMBARKEENA. 252613887399
                     </p>
                   </div>
                   <div className="mb-4">
@@ -653,9 +698,7 @@ export default function Home() {
                     <span className="text-4xl">⏳</span>
                   </div>
                   <h3 className="text-white text-2xl font-black mb-2">Order <span style={{ color: "#f5c518" }}>Received!</span></h3>
-                  <p className="text-gray-400 text-sm mb-5">
-                    Order-kaagu waa la helay. Admin-ku wuu fiirin doonaa oo course-ka wuu kuu furi doonaa.
-                  </p>
+                  <p className="text-gray-400 text-sm mb-5">Order-kaagu waa la helay. Admin-ku wuu fiirin doonaa oo course-ka wuu kuu furi doonaa.</p>
                   <div className="rounded-2xl p-5 text-left mb-5" style={{ background: "#111111", border: "1px solid rgba(245,197,24,0.2)" }}>
                     {[
                       { label: "Course", value: payCourseName },
@@ -676,8 +719,7 @@ export default function Home() {
                     style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.2)" }}>
                     <p className="font-bold mb-1" style={{ color: "#f5c518" }}>⚠️ Xasuusin:</p>
                     <p className="text-gray-400 text-xs leading-relaxed">
-                      Marka la approve gareeyo, course-ka isla markiiba wuu kuu furmayaa.
-                      Fadlan dib u soo gal account-kaaga si aad u aragto.
+                      Marka la approve gareeyo, course-ka isla markiiba wuu kuu furmayaa. Fadlan dib u soo gal account-kaaga si aad u aragto.
                     </p>
                   </div>
                   <button onClick={() => { setShowPayModal(false); setPayDone(false); }}
@@ -692,155 +734,39 @@ export default function Home() {
         </div>
       )}
 
+      {/* ── ADMIN PORTAL ── */}
       {showAdminPortal && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-[100] px-4"
+        <div className="fixed inset-0 flex items-center justify-center z-[100] px-4"
           style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(8px)" }}
-          onClick={(e) => { if (e.target === e.currentTarget) { setShowAdminPortal(false); setAdminPin(""); setAdminError(""); } }}
-        >
-          <div
-            className={adminShaking ? "shake" : ""}
-            style={{
-              width: "100%",
-              maxWidth: "380px",
-              background: "#080808",
-              border: "1px solid rgba(245,197,24,0.3)",
-              borderRadius: "24px",
-              overflow: "hidden",
-            }}
-          >
-            <div style={{
-              background: "linear-gradient(135deg, #1a1000 0%, #0d0d0d 100%)",
-              padding: "28px 28px 20px",
-              borderBottom: "1px solid rgba(245,197,24,0.1)",
-              textAlign: "center",
-            }}>
-              <div style={{
-                width: "56px",
-                height: "56px",
-                borderRadius: "16px",
-                background: "rgba(245,197,24,0.1)",
-                border: "1px solid rgba(245,197,24,0.3)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 14px",
-                fontSize: "26px",
-              }}>
-                🛡️
-              </div>
-              <h2 style={{ color: "#ffffff", fontWeight: 900, fontSize: "18px", marginBottom: "4px" }}>
-                Admin Portal
-              </h2>
-              <p style={{ color: "#64748b", fontSize: "12px", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase" }}>
-                DREAM CRT · Secure Access
-              </p>
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowAdminPortal(false); setAdminPin(""); setAdminError(""); } }}>
+          <div className={adminShaking ? "shake" : ""}
+            style={{ width: "100%", maxWidth: "380px", background: "#080808", border: "1px solid rgba(245,197,24,0.3)", borderRadius: "24px", overflow: "hidden" }}>
+            <div style={{ background: "linear-gradient(135deg, #1a1000 0%, #0d0d0d 100%)", padding: "28px 28px 20px", borderBottom: "1px solid rgba(245,197,24,0.1)", textAlign: "center" }}>
+              <div style={{ width: "56px", height: "56px", borderRadius: "16px", background: "rgba(245,197,24,0.1)", border: "1px solid rgba(245,197,24,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", fontSize: "26px" }}>🛡️</div>
+              <h2 style={{ color: "#ffffff", fontWeight: 900, fontSize: "18px", marginBottom: "4px" }}>Admin Portal</h2>
+              <p style={{ color: "#64748b", fontSize: "12px", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase" }}>DREAM CRT · Secure Access</p>
             </div>
-
             <div style={{ padding: "24px 28px 28px" }}>
-              <label style={{
-                display: "block",
-                color: "#94a3b8",
-                fontSize: "11px",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.8px",
-                marginBottom: "8px",
-              }}>
-                Admin Password
-              </label>
-              <input
-                type="password"
-                value={adminPin}
-                onChange={(e) => { setAdminPin(e.target.value); setAdminError(""); }}
+              <label style={{ display: "block", color: "#94a3b8", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "8px" }}>Admin Password</label>
+              <input type="password" value={adminPin} onChange={(e) => { setAdminPin(e.target.value); setAdminError(""); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleAdminLogin(); }}
-                placeholder="••••••••••••"
-                autoFocus
-                style={{
-                  width: "100%",
-                  padding: "14px 16px",
-                  borderRadius: "12px",
-                  background: "#000000",
-                  border: `1px solid ${adminError ? "rgba(255,71,87,0.5)" : "rgba(245,197,24,0.2)"}`,
-                  color: "#ffffff",
-                  fontSize: "16px",
-                  outline: "none",
-                  letterSpacing: "4px",
-                  fontFamily: "monospace",
-                  boxSizing: "border-box",
-                  transition: "border-color 0.2s",
-                }}
-                onFocus={(e) => { if (!adminError) e.target.style.borderColor = "rgba(245,197,24,0.5)"; }}
-                onBlur={(e) => { if (!adminError) e.target.style.borderColor = "rgba(245,197,24,0.2)"; }}
+                placeholder="••••••••••••" autoFocus
+                style={{ width: "100%", padding: "14px 16px", borderRadius: "12px", background: "#000000", border: `1px solid ${adminError ? "rgba(255,71,87,0.5)" : "rgba(245,197,24,0.2)"}`, color: "#ffffff", fontSize: "16px", outline: "none", letterSpacing: "4px", fontFamily: "monospace", boxSizing: "border-box" }}
               />
-
               {adminError && (
-                <div style={{
-                  marginTop: "10px",
-                  padding: "10px 14px",
-                  borderRadius: "10px",
-                  background: "rgba(255,71,87,0.08)",
-                  border: "1px solid rgba(255,71,87,0.3)",
-                  color: "#ff4757",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}>
+                <div style={{ marginTop: "10px", padding: "10px 14px", borderRadius: "10px", background: "rgba(255,71,87,0.08)", border: "1px solid rgba(255,71,87,0.3)", color: "#ff4757", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
                   ⚠️ {adminError}
                 </div>
               )}
-
-              <button
-                onClick={handleAdminLogin}
-                style={{
-                  width: "100%",
-                  marginTop: "16px",
-                  padding: "14px 0",
-                  borderRadius: "12px",
-                  background: "#f5c518",
-                  color: "#000000",
-                  fontWeight: 900,
-                  fontSize: "15px",
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  transition: "opacity 0.2s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-              >
+              <button onClick={handleAdminLogin}
+                style={{ width: "100%", marginTop: "16px", padding: "14px 0", borderRadius: "12px", background: "#f5c518", color: "#000000", fontWeight: 900, fontSize: "15px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                 🔐 Enter Admin Dashboard
               </button>
-
-              <button
-                onClick={() => { setShowAdminPortal(false); setAdminPin(""); setAdminError(""); }}
-                style={{
-                  width: "100%",
-                  marginTop: "10px",
-                  padding: "12px 0",
-                  borderRadius: "12px",
-                  background: "transparent",
-                  color: "#64748b",
-                  fontWeight: 600,
-                  fontSize: "13px",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  cursor: "pointer",
-                  transition: "color 0.2s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#94a3b8")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "#64748b")}
-              >
+              <button onClick={() => { setShowAdminPortal(false); setAdminPin(""); setAdminError(""); }}
+                style={{ width: "100%", marginTop: "10px", padding: "12px 0", borderRadius: "12px", background: "transparent", color: "#64748b", fontWeight: 600, fontSize: "13px", border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer" }}>
                 Xir / Cancel
               </button>
-
-              <p style={{ textAlign: "center", color: "#2d3748", fontSize: "11px", marginTop: "16px" }}>
-                🔒 Secured · Authorized Access Only
-              </p>
+              <p style={{ textAlign: "center", color: "#2d3748", fontSize: "11px", marginTop: "16px" }}>🔒 Secured · Authorized Access Only</p>
             </div>
           </div>
         </div>
