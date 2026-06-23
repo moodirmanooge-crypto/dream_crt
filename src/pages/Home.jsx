@@ -160,7 +160,7 @@ export default function Home() {
         "🎯 Sixid & Hagid Joogto ah",
         "✅ Khaladaadkaaga waa lagaa saxayaa",
       ],
-      benefit: "⏱️ Uma baahnid bilooyin badan oo jahwareer ah; mudo kooban gudaheed waxaad ku baranaysaa CRT Strategy",
+      benefit: "⏱️ Copy Trading-kayga wuxuu kuu saamaxayaa inaad si toos ah u koobiyeysato entry-yadayda. Xataa haddii aad suuqa ku cusub tahay ama aad tahay qof aad u busy ah, waxaad ka faa'iidaysan kartaa khibraddayda adoo waqti iyo dadaalba badbaadinaya",
       color: "#a78bfa", colorDim: "rgba(167,139,250,0.12)", colorBorder: "rgba(167,139,250,0.25)",
       payId: "crt-course-60", payPrice: "60",
     },
