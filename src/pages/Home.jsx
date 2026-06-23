@@ -165,7 +165,7 @@ export default function Home() {
       payId: "crt-course-60", payPrice: "60",
     },
     {
-      title: "Premium Mentorship 120$",
+      title: "Premium Mentorship 125$",
       subtitle: "Hagidda Shakhsiyadeed & Maareynta",
       items: [
         "Waxa ku dhex jira",
@@ -535,7 +535,7 @@ export default function Home() {
         </div>
         <h2 className="text-3xl md:text-5xl font-black mb-6">About <span style={{ color: "#f5c518" }}>DREAM CRT</span></h2>
         <p className="text-base md:text-xl max-w-4xl mx-auto leading-loose" style={{ color: "#f7f8fa" }}>
-          Dream CRT ACADEMY Waa  ACADEMY _dii ugu horreeysay ee bulshada Soomaaliyeed u soo bandhigta CRT Strategy. Ka dib markii aan si guul leh u tababaray 500+ arday oo aan siiyey koorsooyin bilaash ah, waxaan ogaanay  caqabadda ugu weyn ee haysata dadka Forex-ka: ka barta baraha bulshada (Self-study) waxay leedahay jahwareer iyo safar aad u dheer. Koorsooyinkayaga  gaarka ah (Premium Courses) waxay kuu soo gaabinayayaan  safarkaas dheer. Uma baahnid inaad keligaa ku dhex wareerto suuqan baaxadda leh; halkan waxaad ka heleysaa hagid toos ah, nidaam saxan oo diyaarsan, iyo caawin joogto ah oo kugu hagta guusha
+          Dream CRT ACADEMY Waa  ACADEMY _dii ugu horreeysay ee bulshada Soomaaliyeed u soo bandhigta CRT Strategy. Ka dib markii aan si guul leh u tababarnay 500+ arday oo aan siiyey koorsooyin bilaash ah, waxaan ogaanay  caqabadda ugu weyn ee haysata dadka Forex-ka: ka barta baraha bulshada (Self-study) waxay leedahay jahwareer iyo safar aad u dheer. Koorsooyinkayaga  gaarka ah (Premium Courses) waxay kuu soo gaabinayayaan  safarkaas dheer. Uma baahnid inaad keligaa ku dhex wareerto suuqan baaxadda leh; halkan waxaad ka heleysaa hagid toos ah, nidaam saxan oo diyaarsan, iyo caawin joogto ah oo kugu hagta guusha
         </p>
       </section>
 
