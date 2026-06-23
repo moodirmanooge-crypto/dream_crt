@@ -1387,7 +1387,6 @@ export default function JournalTrading() {
   const [riskSLPips, setRiskSLPips] = useState("");
   const [riskPipValue, setRiskPipValue] = useState("10");
   const [riskResult, setRiskResult] = useState(null);
-  const [goals, setGoals] = useState([]);
   const [newGoal, setNewGoal] = useState({ title: "", target: "", current: "", type: "monthly", deadline: "" });
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [filterPair, setFilterPair] = useState("All");
@@ -1427,7 +1426,6 @@ export default function JournalTrading() {
         const snap = await getDoc(docRef);
         if (snap.exists()) { const data = snap.data(); setProfileData(data); if (!data.setupDone) setShowSetup(true); }
         else setShowSetup(true);
-        onSnapshot(query(collection(db, "goals"), where("userId", "==", user.uid)), s => setGoals(s.docs.map(d => ({ id: d.id, ...d.data() }))));
         onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), s => setCommunityPosts(s.docs.map(d => ({ id: d.id, ...d.data(), likes: Array.isArray(d.data().likes) ? d.data().likes : [], followers: Array.isArray(d.data().followers) ? d.data().followers : [] }))));
       } catch (err) { console.log(err); }
     });
@@ -1466,11 +1464,8 @@ export default function JournalTrading() {
   const handleSaveGoal = async () => {
     if (!currentUser) return;
     if (!newGoal.title || !newGoal.target) { alert("Title iyo target buuxi"); return; }
-    await addDoc(collection(db, "goals"), { ...newGoal, userId: currentUser.uid, createdAt: Date.now(), completed: false });
     setNewGoal({ title: "", target: "", current: "", type: "monthly", deadline: "" }); setShowGoalForm(false);
   };
-  const handleDeleteGoal = async (id) => { if (!window.confirm("Delete?")) return; await deleteDoc(doc(db, "goals", id)); };
-  const handleToggleGoal = async (g) => { await updateDoc(doc(db, "goals", g.id), { completed: !g.completed }); };
 
   // ── Stats ──────────────────────────────────────────────────────────
   const totalTrades = trades.length, closedTrades = trades.filter(t => t.status !== "Open");
@@ -1575,7 +1570,6 @@ export default function JournalTrading() {
     { id: "analytics", label: "Analytics", icon: "📊" },
     { id: "psychology", label: "Psychology", icon: "🧠" },
     { id: "risk", label: "Risk Calculator", icon: "🔢" },
-    { id: "goals", label: "Goals", icon: "🎯" },
     { id: "sessions", label: "Sessions", icon: "🕐" },
     { id: "community", label: "Community", icon: "👥" },
     { id: "profile", label: "My Profile", icon: "👤" },
