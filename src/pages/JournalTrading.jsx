@@ -395,88 +395,341 @@ function ProfileViewModal({ uid, onClose, currentUser }) {
 // ── NEW TRADE MODAL ────────────────────────────────────────────────────
 function NewTradeModal({ onClose, onSave, profileData }) {
   const [step, setStep] = useState(1);
-  const [tradeData, setTradeData] = useState({ pair: "XAUUSD", direction: "BUY", entryPrice: "", stopLoss: "", takeProfit: "", lotSize: "", status: "Open", pips: "", profit_loss: "", notes_psychology: "", emotion: "", strategy: "", session: "" });
+  const [tradeData, setTradeData] = useState({
+    // Step 1 - Trade Details
+    pair: "XAUUSD",
+    direction: "BUY",         // TYPE: LONG/SHORT => mapped to BUY/SELL
+    lotSize: "",              // LOTS
+    entryPrice: "",           // Entry
+    stopLoss: "",             // Stoploss
+    takeProfit: "",           // (calculated)
+    exitPrice: "",            // EXIT AVG
+    exitTape: "",             // Exit tape/loge
+    timeframe: "",            // TIME FRAME
+    setup: "",                // Setup
+    status: "Open",
+    pips: "",
+    profit_loss: "",          // Net P&L ($)
+    profitPercent: "",        // Net P&L%
+    rr: "",                   // RR
+    bullet: "",               // Bullet ✓/✗
+    money: "",                // Money ✓/✗
+    era: "",                  // ERA
+    session: "",
+    // Step 2 - Psychology
+    notes_psychology: "",
+    emotion: "",
+    strategy: "",
+    date: "",
+  });
   const [setupImage, setSetupImage] = useState(null);
   const [setupImagePreview, setSetupImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const imgRef = useRef(null);
-  const calcRRR = () => { const e = parseFloat(tradeData.entryPrice), sl = parseFloat(tradeData.stopLoss), tp = parseFloat(tradeData.takeProfit); if (!e || !sl || !tp) return null; const risk = Math.abs(e - sl), reward = Math.abs(tp - e); if (risk === 0) return null; return (reward / risk).toFixed(2); };
+
+  const calcRRR = () => {
+    const e = parseFloat(tradeData.entryPrice),
+      sl = parseFloat(tradeData.stopLoss),
+      tp = parseFloat(tradeData.takeProfit);
+    if (!e || !sl || !tp) return null;
+    const risk = Math.abs(e - sl), reward = Math.abs(tp - e);
+    if (risk === 0) return null;
+    return (reward / risk).toFixed(2);
+  };
   const rrr = calcRRR();
-  const handleImageSelect = (e) => { const f = e.target.files[0]; if (!f) return; setSetupImage(f); setSetupImagePreview(URL.createObjectURL(f)); };
+
+  const handleImageSelect = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setSetupImage(f);
+    setSetupImagePreview(URL.createObjectURL(f));
+  };
+
   const handleSave = async () => {
-    const user = auth.currentUser; if (!user) { alert("Please Login"); return; }
+    const user = auth.currentUser;
+    if (!user) { alert("Please Login"); return; }
     if (!tradeData.pair || !tradeData.entryPrice) { alert("Pair iyo Entry Price buuxi"); return; }
     setUploading(true);
     try {
       let setupImageURL = "";
-      if (setupImage) { const sRef = ref(storage, `trades/${user.uid}/setup_${Date.now()}`); await uploadBytes(sRef, setupImage); setupImageURL = await getDownloadURL(sRef); }
-      await onSave({ ...tradeData, setupImageURL, rrr: rrr || "", userId: user.uid, userEmail: user.email, userName: profileData?.displayName || user.email.split("@")[0], createdAt: Date.now() });
+      if (setupImage) {
+        const sRef = ref(storage, `trades/${user.uid}/setup_${Date.now()}`);
+        await uploadBytes(sRef, setupImage);
+        setupImageURL = await getDownloadURL(sRef);
+      }
+      await onSave({
+        ...tradeData,
+        setupImageURL,
+        rrr: rrr || tradeData.rr || "",
+        userId: user.uid,
+        userEmail: user.email,
+        userName: profileData?.displayName || user.email.split("@")[0],
+        createdAt: Date.now(),
+      });
       onClose();
     } catch (err) { alert(err.message); } finally { setUploading(false); }
   };
-  const iS = { width: "100%", background: CARD2, color: TEXT1, padding: "11px 13px", borderRadius: 10, outline: "none", border: BORDER, fontSize: 13, boxSizing: "border-box" };
+
+  const iS = {
+    width: "100%", background: CARD2, color: TEXT1,
+    padding: "11px 13px", borderRadius: 10, outline: "none",
+    border: BORDER, fontSize: 13, boxSizing: "border-box",
+  };
+
+  const TIMEFRAMES = ["1min", "2min", "3min", "5min", "10min", "15min", "30min", "1H", "2H", "4H", "Daily", "Weekly"];
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}>
-      <div style={{ width: "100%", maxWidth: 620, borderRadius: 22, overflow: "hidden", background: CARD_BG, border: BORDER_G, boxShadow: "0 0 60px rgba(245,197,24,0.12)" }}>
+      <div style={{ width: "100%", maxWidth: 680, borderRadius: 22, overflow: "hidden", background: CARD_BG, border: BORDER_G, boxShadow: "0 0 60px rgba(245,197,24,0.12)" }}>
+
+        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 26px 16px", borderBottom: BORDER }}>
           <div>
             <h2 style={{ color: TEXT1, fontWeight: 900, fontSize: 20, margin: 0 }}>New Trade Entry</h2>
-            <p style={{ color: TEXT2, fontSize: 11, margin: "3px 0 0" }}>Step {step} of 2 — {step === 1 ? "Trade Details" : "Psychology & Setup"}</p>
+            <p style={{ color: TEXT2, fontSize: 11, margin: "3px 0 0" }}>
+              Step {step} of 2 — {step === 1 ? "Trade Details" : "Psychology & Setup"}
+            </p>
           </div>
           <button onClick={onClose} style={{ color: TEXT2, background: "none", border: "none", cursor: "pointer", fontSize: 15 }}><FaTimes /></button>
         </div>
+
+        {/* Tabs */}
         <div style={{ display: "flex", gap: 0, padding: "0 26px", borderBottom: BORDER }}>
           {["Trade Details", "Psychology"].map((s, i) => (
-            <button key={s} onClick={() => i < step && setStep(i + 1)} style={{ flex: 1, padding: "11px 0", background: "none", border: "none", borderBottom: step === i + 1 ? `2px solid ${GOLD}` : "2px solid transparent", color: step === i + 1 ? GOLD : TEXT3, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s" }}>{i + 1}. {s}</button>
+            <button key={s} onClick={() => i < step && setStep(i + 1)}
+              style={{ flex: 1, padding: "11px 0", background: "none", border: "none", borderBottom: step === i + 1 ? `2px solid ${GOLD}` : "2px solid transparent", color: step === i + 1 ? GOLD : TEXT3, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s" }}>
+              {i + 1}. {s}
+            </button>
           ))}
         </div>
-        <div style={{ padding: 22, overflowY: "auto", maxHeight: "58vh" }}>
+
+        {/* Body */}
+        <div style={{ padding: 22, overflowY: "auto", maxHeight: "62vh" }}>
+
+          {/* ── STEP 1 ── */}
           {step === 1 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div><label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pair</label><select value={tradeData.pair} onChange={e => setTradeData({ ...tradeData, pair: e.target.value })} style={iS}>{CURRENCY_PAIRS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
-                <div><label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Direction</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+              {/* Row 1: Date | Pair | Direction */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Date</label>
+                  <input type="datetime-local" value={tradeData.date} onChange={e => setTradeData({ ...tradeData, date: e.target.value })} style={iS} />
+                </div>
+                <div>
+                  <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pair</label>
+                  <select value={tradeData.pair} onChange={e => setTradeData({ ...tradeData, pair: e.target.value })} style={iS}>
+                    {CURRENCY_PAIRS.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Direction (Type)</label>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                     {["BUY", "SELL"].map(d => (
-                      <button key={d} onClick={() => setTradeData({ ...tradeData, direction: d })} style={{ padding: "11px 0", borderRadius: 10, fontWeight: 900, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, background: tradeData.direction === d ? (d === "BUY" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)") : CARD2, border: tradeData.direction === d ? (d === "BUY" ? "1px solid #22c55e" : "1px solid #ef4444") : BORDER, color: tradeData.direction === d ? (d === "BUY" ? GREEN : RED_NEG) : TEXT3 }}>
-                        {d === "BUY" ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />} {d}
+                      <button key={d} onClick={() => setTradeData({ ...tradeData, direction: d })}
+                        style={{ padding: "11px 0", borderRadius: 10, fontWeight: 900, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, background: tradeData.direction === d ? (d === "BUY" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)") : CARD2, border: tradeData.direction === d ? (d === "BUY" ? "1px solid #22c55e" : "1px solid #ef4444") : BORDER, color: tradeData.direction === d ? (d === "BUY" ? GREEN : RED_NEG) : TEXT3 }}>
+                        {d === "BUY" ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />} {d === "BUY" ? "LONG" : "SHORT"}
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
+
+              {/* Row 2: Lots | Timeframe | Session */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                {[{ k: "entryPrice", l: "Entry", p: "1.0850" }, { k: "stopLoss", l: "Stop Loss", p: "1.0800" }, { k: "takeProfit", l: "Take Profit", p: "1.1000" }].map(({ k, l, p }) => (
-                  <div key={k}><label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>{l}</label><input type="number" step="any" placeholder={p} value={tradeData[k]} onChange={e => setTradeData({ ...tradeData, [k]: e.target.value })} style={iS} /></div>
+                <div>
+                  <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Lots</label>
+                  <input type="number" step="any" placeholder="0.10" value={tradeData.lotSize} onChange={e => setTradeData({ ...tradeData, lotSize: e.target.value })} style={iS} />
+                </div>
+                <div>
+                  <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Timeframe</label>
+                  <select value={tradeData.timeframe} onChange={e => setTradeData({ ...tradeData, timeframe: e.target.value })} style={iS}>
+                    <option value="">Select</option>
+                    {TIMEFRAMES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Session</label>
+                  <select value={tradeData.session} onChange={e => setTradeData({ ...tradeData, session: e.target.value })} style={iS}>
+                    <option value="">Select</option>
+                    <option value="Asian">🌏 Asian</option>
+                    <option value="London">🇬🇧 London</option>
+                    <option value="New York">🗽 New York</option>
+                    <option value="Overlap">🔄 Overlap</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 3: Entry | Stoploss | Take Profit */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                {[{ k: "entryPrice", l: "Entry", p: "1928.18" }, { k: "stopLoss", l: "Stoploss", p: "1923.18" }, { k: "takeProfit", l: "Take Profit", p: "1938.18" }].map(({ k, l, p }) => (
+                  <div key={k}>
+                    <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>{l}</label>
+                    <input type="number" step="any" placeholder={p} value={tradeData[k]} onChange={e => setTradeData({ ...tradeData, [k]: e.target.value })} style={iS} />
+                  </div>
                 ))}
               </div>
-              {rrr && <div style={{ display: "flex", alignItems: "center", gap: 10, background: GOLD_DIM, border: BORDER_G, borderRadius: 10, padding: "9px 13px" }}><FaTrophy style={{ color: GOLD }} /><span style={{ color: TEXT1, fontWeight: 900 }}>RRR = 1:{rrr}</span><span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: parseFloat(rrr) >= 2 ? GREEN : parseFloat(rrr) >= 1 ? GOLD : RED_NEG }}>{parseFloat(rrr) >= 2 ? "✅ Great" : parseFloat(rrr) >= 1 ? "⚠️ OK" : "❌ Risky"}</span></div>}
+
+              {/* RRR Banner */}
+              {rrr && (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, background: GOLD_DIM, border: BORDER_G, borderRadius: 10, padding: "9px 13px" }}>
+                  <FaTrophy style={{ color: GOLD }} />
+                  <span style={{ color: TEXT1, fontWeight: 900 }}>RRR = 1:{rrr}</span>
+                  <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: parseFloat(rrr) >= 2 ? GREEN : parseFloat(rrr) >= 1 ? GOLD : RED_NEG }}>
+                    {parseFloat(rrr) >= 2 ? "✅ Great" : parseFloat(rrr) >= 1 ? "⚠️ OK" : "❌ Risky"}
+                  </span>
+                </div>
+              )}
+
+              {/* Row 4: Setup | Status */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <div><label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Lot Size</label><input type="number" step="any" placeholder="0.10" value={tradeData.lotSize} onChange={e => setTradeData({ ...tradeData, lotSize: e.target.value })} style={iS} /></div>
-                <div><label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Status</label><select value={tradeData.status} onChange={e => setTradeData({ ...tradeData, status: e.target.value })} style={iS}><option value="Open">Open 🟢</option><option value="Win">Win ✅</option><option value="Loss">Loss ❌</option><option value="Breakeven">Breakeven ➖</option></select></div>
+                <div>
+                  <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Setup</label>
+                  <input type="text" placeholder="Rejection from 5min, Breakout+Ref..." value={tradeData.setup} onChange={e => setTradeData({ ...tradeData, setup: e.target.value })} style={iS} />
+                </div>
+                <div>
+                  <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Strategy</label>
+                  <input type="text" placeholder="ICT, SMC, CRT..." value={tradeData.strategy} onChange={e => setTradeData({ ...tradeData, strategy: e.target.value })} style={iS} />
+                </div>
               </div>
-              {tradeData.status !== "Open" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}><div><label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pips</label><input type="number" step="any" placeholder="50" value={tradeData.pips} onChange={e => setTradeData({ ...tradeData, pips: e.target.value })} style={iS} /></div><div><label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>P&L ($)</label><input type="number" step="any" placeholder="150 or -50" value={tradeData.profit_loss} onChange={e => setTradeData({ ...tradeData, profit_loss: e.target.value })} style={iS} /></div></div>}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <div><label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Strategy</label><input type="text" placeholder="ICT, SMC, CRT..." value={tradeData.strategy} onChange={e => setTradeData({ ...tradeData, strategy: e.target.value })} style={iS} /></div>
-                <div><label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Session</label><select value={tradeData.session} onChange={e => setTradeData({ ...tradeData, session: e.target.value })} style={iS}><option value="">Select</option><option value="Asian">🌏 Asian</option><option value="London">🇬🇧 London</option><option value="New York">🗽 New York</option><option value="Overlap">🔄 Overlap</option></select></div>
+
+              {/* Row 5: Status */}
+              <div>
+                <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Status</label>
+                <select value={tradeData.status} onChange={e => setTradeData({ ...tradeData, status: e.target.value })} style={iS}>
+                  <option value="Open">Open 🟢</option>
+                  <option value="Win">Win ✅</option>
+                  <option value="Loss">Loss ❌</option>
+                  <option value="Breakeven">Breakeven ➖</option>
+                </select>
               </div>
+
+              {/* Row 6: Exit fields — only if not Open */}
+              {tradeData.status !== "Open" && (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Exit Avg</label>
+                      <input type="number" step="any" placeholder="1924.57" value={tradeData.exitPrice} onChange={e => setTradeData({ ...tradeData, exitPrice: e.target.value })} style={iS} />
+                    </div>
+                    <div>
+                      <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Exit Tape/Loge</label>
+                      <input type="text" placeholder="TP1, TP2..." value={tradeData.exitTape} onChange={e => setTradeData({ ...tradeData, exitTape: e.target.value })} style={iS} />
+                    </div>
+                    <div>
+                      <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pips</label>
+                      <input type="number" step="any" placeholder="50" value={tradeData.pips} onChange={e => setTradeData({ ...tradeData, pips: e.target.value })} style={iS} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Net P&L ($)</label>
+                      <input type="number" step="any" placeholder="150 or -50" value={tradeData.profit_loss} onChange={e => setTradeData({ ...tradeData, profit_loss: e.target.value })} style={iS} />
+                    </div>
+                    <div>
+                      <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Net P&L %</label>
+                      <input type="number" step="any" placeholder="+1%" value={tradeData.profitPercent} onChange={e => setTradeData({ ...tradeData, profitPercent: e.target.value })} style={iS} />
+                    </div>
+                    <div>
+                      <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>RR</label>
+                      <input type="number" step="any" placeholder="1.5" value={tradeData.rr} onChange={e => setTradeData({ ...tradeData, rr: e.target.value })} style={iS} />
+                    </div>
+                  </div>
+
+                  {/* Row: Bullet | Money | ERA */}
+                  <div>
+                    <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Bullet / Money / ERA</label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                      {/* Bullet */}
+                      <div>
+                        <label style={{ color: TEXT2, fontSize: 11, marginBottom: 5, display: "block" }}>Bullet</label>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                          {["YES", "NO"].map(v => (
+                            <button key={v} onClick={() => setTradeData({ ...tradeData, bullet: v })}
+                              style={{ padding: "9px 0", borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: "pointer", background: tradeData.bullet === v ? (v === "YES" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)") : CARD2, border: tradeData.bullet === v ? (v === "YES" ? "1px solid #22c55e" : "1px solid #ef4444") : BORDER, color: tradeData.bullet === v ? (v === "YES" ? GREEN : RED_NEG) : TEXT3 }}>
+                              {v === "YES" ? "✓" : "✗"} {v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Money */}
+                      <div>
+                        <label style={{ color: TEXT2, fontSize: 11, marginBottom: 5, display: "block" }}>Money</label>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                          {["YES", "NO"].map(v => (
+                            <button key={v} onClick={() => setTradeData({ ...tradeData, money: v })}
+                              style={{ padding: "9px 0", borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: "pointer", background: tradeData.money === v ? (v === "YES" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)") : CARD2, border: tradeData.money === v ? (v === "YES" ? "1px solid #22c55e" : "1px solid #ef4444") : BORDER, color: tradeData.money === v ? (v === "YES" ? GREEN : RED_NEG) : TEXT3 }}>
+                              {v === "YES" ? "✓" : "✗"} {v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* ERA */}
+                      <div>
+                        <label style={{ color: TEXT2, fontSize: 11, marginBottom: 5, display: "block" }}>ERA</label>
+                        <input type="text" placeholder="ERA value..." value={tradeData.era} onChange={e => setTradeData({ ...tradeData, era: e.target.value })} style={iS} />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
+
+          {/* ── STEP 2 ── */}
           {step === 2 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
-              <div><label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Emotion</label><div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>{["Calm 😌", "Confident 💪", "FOMO 😰", "Greedy 🤑", "Revenge 😡", "Tired 😴"].map(e => <button key={e} onClick={() => setTradeData({ ...tradeData, emotion: e })} style={{ padding: "9px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s", background: tradeData.emotion === e ? GOLD_DIM : CARD2, border: tradeData.emotion === e ? BORDER_G : BORDER, color: tradeData.emotion === e ? GOLD : TEXT2 }}>{e}</button>)}</div></div>
-              <div><label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Psychology Notes</label><textarea placeholder="Maxaad ka fikiraysay?" value={tradeData.notes_psychology} onChange={e => setTradeData({ ...tradeData, notes_psychology: e.target.value })} style={{ ...iS, height: 100, resize: "none" }} /></div>
-              <div><label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Chart Screenshot</label>
+              <div>
+                <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Emotion</label>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+                  {["Calm 😌", "Confident 💪", "FOMO 😰", "Greedy 🤑", "Revenge 😡", "Tired 😴"].map(e => (
+                    <button key={e} onClick={() => setTradeData({ ...tradeData, emotion: e })}
+                      style={{ padding: "9px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s", background: tradeData.emotion === e ? GOLD_DIM : CARD2, border: tradeData.emotion === e ? BORDER_G : BORDER, color: tradeData.emotion === e ? GOLD : TEXT2 }}>
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Psychology Notes</label>
+                <textarea placeholder="Maxaad ka fikiraysay?" value={tradeData.notes_psychology} onChange={e => setTradeData({ ...tradeData, notes_psychology: e.target.value })} style={{ ...iS, height: 100, resize: "none" }} />
+              </div>
+              <div>
+                <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Chart Screenshot</label>
                 <input ref={imgRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageSelect} />
-                {setupImagePreview ? <div style={{ position: "relative" }}><img src={setupImagePreview} alt="" style={{ width: "100%", maxHeight: 150, objectFit: "cover", borderRadius: 10 }} /><button onClick={() => { setSetupImage(null); setSetupImagePreview(null); }} style={{ position: "absolute", top: 6, right: 6, background: RED_NEG, color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer" }}><FaTimes size={8} /></button></div> : <div onClick={() => imgRef.current?.click()} style={{ border: `2px dashed rgba(245,197,24,0.2)`, borderRadius: 10, padding: 22, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", background: GOLD_DIM2 }}><FaUpload style={{ color: GOLD, fontSize: 18, marginBottom: 5 }} /><p style={{ color: TEXT1, fontWeight: 700, fontSize: 13, margin: 0 }}>Upload Screenshot</p><p style={{ color: TEXT3, fontSize: 11, marginTop: 2 }}>PNG, JPG</p></div>}
+                {setupImagePreview
+                  ? <div style={{ position: "relative" }}>
+                      <img src={setupImagePreview} alt="" style={{ width: "100%", maxHeight: 150, objectFit: "cover", borderRadius: 10 }} />
+                      <button onClick={() => { setSetupImage(null); setSetupImagePreview(null); }} style={{ position: "absolute", top: 6, right: 6, background: RED_NEG, color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer" }}><FaTimes size={8} /></button>
+                    </div>
+                  : <div onClick={() => imgRef.current?.click()} style={{ border: `2px dashed rgba(245,197,24,0.2)`, borderRadius: 10, padding: 22, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", background: GOLD_DIM2 }}>
+                      <FaUpload style={{ color: GOLD, fontSize: 18, marginBottom: 5 }} />
+                      <p style={{ color: TEXT1, fontWeight: 700, fontSize: 13, margin: 0 }}>Upload Screenshot</p>
+                      <p style={{ color: TEXT3, fontSize: 11, marginTop: 2 }}>PNG, JPG</p>
+                    </div>
+                }
               </div>
             </div>
           )}
         </div>
+
+        {/* Footer */}
         <div style={{ padding: "14px 22px 20px", borderTop: BORDER, display: "flex", justifyContent: "space-between" }}>
-          <button onClick={() => step === 1 ? onClose() : setStep(1)} style={{ padding: "9px 18px", borderRadius: 10, border: BORDER, background: "none", color: TEXT2, fontWeight: 700, cursor: "pointer" }}>{step === 1 ? "Cancel" : "← Back"}</button>
-          {step === 1 ? <button onClick={() => setStep(2)} style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", background: GOLD }}>Next: Psychology →</button> : <button onClick={handleSave} disabled={uploading} style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", display: "flex", alignItems: "center", gap: 6, background: GOLD, opacity: uploading ? 0.6 : 1 }}><FaSave />{uploading ? "Saving..." : "Save Trade"}</button>}
+          <button onClick={() => step === 1 ? onClose() : setStep(1)}
+            style={{ padding: "9px 18px", borderRadius: 10, border: BORDER, background: "none", color: TEXT2, fontWeight: 700, cursor: "pointer" }}>
+            {step === 1 ? "Cancel" : "← Back"}
+          </button>
+          {step === 1
+            ? <button onClick={() => setStep(2)} style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", background: GOLD }}>
+                Next: Psychology →
+              </button>
+            : <button onClick={handleSave} disabled={uploading} style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", display: "flex", alignItems: "center", gap: 6, background: GOLD, opacity: uploading ? 0.6 : 1 }}>
+                <FaSave />{uploading ? "Saving..." : "Save Trade"}
+              </button>
+          }
         </div>
+
       </div>
     </div>
   );
