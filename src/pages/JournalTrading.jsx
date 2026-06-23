@@ -1487,7 +1487,7 @@ export default function JournalTrading() {
   const profitFactor = gLoss > 0 ? (gProfit / gLoss).toFixed(2) : "–";
   const expectancy = closedPL.length ? ((winRate / 100) * parseFloat(avgWin || 0) - (1 - winRate / 100) * parseFloat(avgLoss || 0)).toFixed(2) : "–";
   const eqData = (() => { const s = [...trades].filter(t => t.profit_loss !== "" && t.profit_loss !== undefined).sort((a, b) => a.createdAt - b.createdAt); let r = 10000; return s.map((t, i) => { r += Number(t.profit_loss || 0); return { name: `T${i + 1}`, balance: parseFloat(r.toFixed(2)), v: parseFloat(r.toFixed(2)) }; }); })();
-  const sessStats = ["Asian", "London", "New York", "Overlap"].map(s => { const st = trades.filter(t => t.session === s), sc = st.filter(t => t.status !== "Open"), sw = st.filter(t => t.status === "Win").length, sp = st.reduce((a, b) => a + Number(b.profit_loss || 0), 0); return { session: s, trades: st.length, winRate: sc.length ? Math.round((sw / sc.length) * 100) : 0, pnl: sp.toFixed(2) }; });
+  const sessStats = ["Asian", "London", "New York"].map(s => { const st = trades.filter(t => t.session === s), sc = st.filter(t => t.status !== "Open"), sw = st.filter(t => t.status === "Win").length, sp = st.reduce((a, b) => a + Number(b.profit_loss || 0), 0); return { session: s, trades: st.length, winRate: sc.length ? Math.round((sw / sc.length) * 100) : 0, pnl: sp.toFixed(2) }; });
   const pairStats = CURRENCY_PAIRS.map(p => { const pt = trades.filter(t => t.pair === p); return { pair: p, trades: pt.length, pnl: pt.reduce((a, b) => a + Number(b.profit_loss || 0), 0) }; }).filter(p => p.trades > 0).sort((a, b) => b.pnl - a.pnl);
   const maxDD = (() => { let peak = 10000, maxD = 0, r = 10000; for (const t of [...trades].filter(t => t.profit_loss !== "").sort((a, b) => a.createdAt - b.createdAt)) { r += Number(t.profit_loss || 0); if (r > peak) peak = r; const d = peak - r; if (d > maxD) maxD = d; } return maxD.toFixed(2); })();
   const filteredTrades = trades.filter(t => {
@@ -1898,7 +1898,7 @@ export default function JournalTrading() {
                   {[
                     { label: "Pair", val: journalFilterPair, set: setJournalFilterPair, opts: [["All", "All Pairs"], ...CURRENCY_PAIRS.map(p => [p, p])] },
                     { label: "Status", val: journalFilterStatus, set: setJournalFilterStatus, opts: [["All", "All Status"], ["Open", "🟢 Open"], ["Win", "✅ Win"], ["Loss", "❌ Loss"], ["Breakeven", "➖ Breakeven"]] },
-                    { label: "Session", val: journalFilterSession, set: setJournalFilterSession, opts: [["All", "All Sessions"], ["Asian", "🌏 Asian"], ["London", "🇬🇧 London"], ["New York", "🗽 New York"], ["Overlap", "🔄 Overlap"]] },
+                    { label: "Session", val: journalFilterSession, set: setJournalFilterSession, opts: [["All", "All Sessions"], ["Asian", " Asian"], ["London", "🇬🇧 London"], ["New York", "🗽 New York"], ["Overlap", "🔄 Overlap"]] },
                     { label: "Direction", val: journalFilterDir, set: setJournalFilterDir, opts: [["All", "BUY & SELL"], ["BUY", "↑ BUY only"], ["SELL", "↓ SELL only"]] },
                   ].map(({ label, val, set, opts }) => (
                     <div key={label}>
@@ -2162,7 +2162,7 @@ export default function JournalTrading() {
               <p style={{ color: TEXT2, marginBottom: 18, fontSize: 12 }}>Session-ka aad ku fiicantahay ogaado</p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
                 {sessStats.map(s => {
-                  const em = s.session === "Asian" ? "🌏" : s.session === "London" ? "🇬🇧" : s.session === "New York" ? "🗽" : "🔄", pn = parseFloat(s.pnl);
+                  const em = s.session === "Asian" ? "🌏" : s.session === "London" ? "🇬🇧" : s.session === "New York" ? "" : "", pn = parseFloat(s.pnl);
                   return (
                     <div key={s.session} style={{ background: CARD2, borderRadius: 12, padding: "14px 16px", border: BORDER }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
