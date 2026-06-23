@@ -954,9 +954,6 @@ export default function JournalTrading() {
   const [filterStrategy, setFilterStrategy] = useState("");
   const [filterSession, setFilterSession] = useState("All");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [goals, setGoals] = useState([]);
-  const [newGoal, setNewGoal] = useState({ title: "", target: "", current: "", type: "monthly", deadline: "" });
-  const [showGoalForm, setShowGoalForm] = useState(false);
   const unsubRef = useRef(null);
 
   // ── JOURNAL STATE (new card UI) ──────────────────────────────────
