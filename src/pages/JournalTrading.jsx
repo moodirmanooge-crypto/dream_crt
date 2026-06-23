@@ -396,27 +396,25 @@ function ProfileViewModal({ uid, onClose, currentUser }) {
 function NewTradeModal({ onClose, onSave, profileData }) {
   const [step, setStep] = useState(1);
   const [tradeData, setTradeData] = useState({
-    // Step 1 - Trade Details
     pair: "XAUUSD",
-    direction: "BUY",         // TYPE: LONG/SHORT => mapped to BUY/SELL
-    lotSize: "",              // LOTS
-    entryPrice: "",           // Entry
-    stopLoss: "",             // Stoploss
-    takeProfit: "",           // (calculated)
-    exitPrice: "",            // EXIT AVG
-    exitTape: "",             // Exit tape/loge
-    timeframe: "",            // TIME FRAME
-    setup: "",                // Setup
+    direction: "BUY",
+    lotSize: "",
+    entryPrice: "",
+    stopLoss: "",
+    takeProfit: "",
+    exitPrice: "",
+    exitTape: "",
+    timeframe: "",
+    setup: "",
     status: "Open",
     pips: "",
-    profit_loss: "",          // Net P&L ($)
-    profitPercent: "",        // Net P&L%
-    rr: "",                   // RR
-    bullet: "",               // Bullet ✓/✗
-    money: "",                // Money ✓/✗
-    era: "",                  // ERA
+    profit_loss: "",
+    profitPercent: "",
+    rr: "",
+    bullet: "",
+    money: "",
+    era: "",
     session: "",
-    // Step 2 - Psychology
     notes_psychology: "",
     emotion: "",
     strategy: "",
@@ -478,11 +476,22 @@ function NewTradeModal({ onClose, onSave, profileData }) {
 
   const TIMEFRAMES = ["1min", "2min", "3min", "5min", "10min", "15min", "30min", "1H", "2H", "4H", "Daily", "Weekly"];
 
-  return (<div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 8px", background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}>
-      <div style={{ width: "100%", maxWidth: 920, borderRadius: 22, overflow: "hidden", background: CARD_BG, border: BORDER_G, boxShadow: "0 0 60px rgba(245,197,24,0.12)" }}>
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 50,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "4px", background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)"
+    }}>
+      <div style={{
+        width: "100%", maxWidth: "98vw", maxHeight: "98vh",
+        borderRadius: 22, overflow: "hidden",
+        background: CARD_BG, border: BORDER_G,
+        boxShadow: "0 0 60px rgba(245,197,24,0.12)",
+        display: "flex", flexDirection: "column",
+      }}>
 
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 26px 16px", borderBottom: BORDER }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 26px 12px", borderBottom: BORDER, flexShrink: 0 }}>
           <div>
             <h2 style={{ color: TEXT1, fontWeight: 900, fontSize: 20, margin: 0 }}>New Trade Entry</h2>
             <p style={{ color: TEXT2, fontSize: 11, margin: "3px 0 0" }}>
@@ -493,17 +502,22 @@ function NewTradeModal({ onClose, onSave, profileData }) {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 0, padding: "0 26px", borderBottom: BORDER }}>
+        <div style={{ display: "flex", padding: "0 26px", borderBottom: BORDER, flexShrink: 0 }}>
           {["Trade Details", "Psychology"].map((s, i) => (
             <button key={s} onClick={() => i < step && setStep(i + 1)}
-              style={{ flex: 1, padding: "11px 0", background: "none", border: "none", borderBottom: step === i + 1 ? `2px solid ${GOLD}` : "2px solid transparent", color: step === i + 1 ? GOLD : TEXT3, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s" }}>
+              style={{
+                flex: 1, padding: "11px 0", background: "none", border: "none",
+                borderBottom: step === i + 1 ? `2px solid ${GOLD}` : "2px solid transparent",
+                color: step === i + 1 ? GOLD : TEXT3,
+                fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s"
+              }}>
               {i + 1}. {s}
             </button>
           ))}
         </div>
 
-        {/* Body */}
-        <div style={{ padding: 22, overflowY: "auto", maxHeight: "72vh" }}>
+        {/* Body — scrollable */}
+        <div style={{ padding: "18px 22px", overflowY: "auto", flex: 1 }}>
 
           {/* ── STEP 1 ── */}
           {step === 1 && (
@@ -526,8 +540,15 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                     {["BUY", "SELL"].map(d => (
                       <button key={d} onClick={() => setTradeData({ ...tradeData, direction: d })}
-                        style={{ padding: "11px 0", borderRadius: 10, fontWeight: 900, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, background: tradeData.direction === d ? (d === "BUY" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)") : CARD2, border: tradeData.direction === d ? (d === "BUY" ? "1px solid #22c55e" : "1px solid #ef4444") : BORDER, color: tradeData.direction === d ? (d === "BUY" ? GREEN : RED_NEG) : TEXT3 }}>
-                        {d === "BUY" ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />} {d === "BUY" ? "LONG" : "SHORT"}
+                        style={{
+                          padding: "11px 0", borderRadius: 10, fontWeight: 900, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                          background: tradeData.direction === d ? (d === "BUY" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)") : CARD2,
+                          border: tradeData.direction === d ? (d === "BUY" ? "1px solid #22c55e" : "1px solid #ef4444") : BORDER,
+                          color: tradeData.direction === d ? (d === "BUY" ? GREEN : RED_NEG) : TEXT3
+                        }}>
+                        {d === "BUY" ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
+                        {d === "BUY" ? "LONG" : "SHORT"}
                       </button>
                     ))}
                   </div>
@@ -561,7 +582,11 @@ function NewTradeModal({ onClose, onSave, profileData }) {
 
               {/* Row 3: Entry | Stoploss | Take Profit */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                {[{ k: "entryPrice", l: "Entry", p: "1928.18" }, { k: "stopLoss", l: "Stoploss", p: "1923.18" }, { k: "takeProfit", l: "Take Profit", p: "1938.18" }].map(({ k, l, p }) => (
+                {[
+                  { k: "entryPrice", l: "Entry", p: "1928.18" },
+                  { k: "stopLoss", l: "Stoploss", p: "1923.18" },
+                  { k: "takeProfit", l: "Take Profit", p: "1938.18" }
+                ].map(({ k, l, p }) => (
                   <div key={k}>
                     <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>{l}</label>
                     <input type="number" step="any" placeholder={p} value={tradeData[k]} onChange={e => setTradeData({ ...tradeData, [k]: e.target.value })} style={iS} />
@@ -580,7 +605,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                 </div>
               )}
 
-              {/* Row 4: Setup | Status */}
+              {/* Row 4: Setup | Strategy */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
                   <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Setup</label>
@@ -636,35 +661,42 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                     </div>
                   </div>
 
-                  {/* Row: Bullet | Money | ERA */}
+                  {/* Bullet | Money | ERA */}
                   <div>
                     <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Bullet / Money / ERA</label>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                      {/* Bullet */}
                       <div>
                         <label style={{ color: TEXT2, fontSize: 11, marginBottom: 5, display: "block" }}>Bullet</label>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                           {["YES", "NO"].map(v => (
                             <button key={v} onClick={() => setTradeData({ ...tradeData, bullet: v })}
-                              style={{ padding: "9px 0", borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: "pointer", background: tradeData.bullet === v ? (v === "YES" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)") : CARD2, border: tradeData.bullet === v ? (v === "YES" ? "1px solid #22c55e" : "1px solid #ef4444") : BORDER, color: tradeData.bullet === v ? (v === "YES" ? GREEN : RED_NEG) : TEXT3 }}>
+                              style={{
+                                padding: "9px 0", borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: "pointer",
+                                background: tradeData.bullet === v ? (v === "YES" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)") : CARD2,
+                                border: tradeData.bullet === v ? (v === "YES" ? "1px solid #22c55e" : "1px solid #ef4444") : BORDER,
+                                color: tradeData.bullet === v ? (v === "YES" ? GREEN : RED_NEG) : TEXT3
+                              }}>
                               {v === "YES" ? "✓" : "✗"} {v}
                             </button>
                           ))}
                         </div>
                       </div>
-                      {/* Money */}
                       <div>
                         <label style={{ color: TEXT2, fontSize: 11, marginBottom: 5, display: "block" }}>Money</label>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                           {["YES", "NO"].map(v => (
                             <button key={v} onClick={() => setTradeData({ ...tradeData, money: v })}
-                              style={{ padding: "9px 0", borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: "pointer", background: tradeData.money === v ? (v === "YES" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)") : CARD2, border: tradeData.money === v ? (v === "YES" ? "1px solid #22c55e" : "1px solid #ef4444") : BORDER, color: tradeData.money === v ? (v === "YES" ? GREEN : RED_NEG) : TEXT3 }}>
+                              style={{
+                                padding: "9px 0", borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: "pointer",
+                                background: tradeData.money === v ? (v === "YES" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)") : CARD2,
+                                border: tradeData.money === v ? (v === "YES" ? "1px solid #22c55e" : "1px solid #ef4444") : BORDER,
+                                color: tradeData.money === v ? (v === "YES" ? GREEN : RED_NEG) : TEXT3
+                              }}>
                               {v === "YES" ? "✓" : "✗"} {v}
                             </button>
                           ))}
                         </div>
                       </div>
-                      {/* ERA */}
                       <div>
                         <label style={{ color: TEXT2, fontSize: 11, marginBottom: 5, display: "block" }}>ERA</label>
                         <input type="text" placeholder="ERA value..." value={tradeData.era} onChange={e => setTradeData({ ...tradeData, era: e.target.value })} style={iS} />
@@ -684,7 +716,13 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
                   {["Calm 😌", "Confident 💪", "FOMO 😰", "Greedy 🤑", "Revenge 😡", "Tired 😴"].map(e => (
                     <button key={e} onClick={() => setTradeData({ ...tradeData, emotion: e })}
-                      style={{ padding: "9px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s", background: tradeData.emotion === e ? GOLD_DIM : CARD2, border: tradeData.emotion === e ? BORDER_G : BORDER, color: tradeData.emotion === e ? GOLD : TEXT2 }}>
+                      style={{
+                        padding: "9px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700,
+                        cursor: "pointer", transition: "all .2s",
+                        background: tradeData.emotion === e ? GOLD_DIM : CARD2,
+                        border: tradeData.emotion === e ? BORDER_G : BORDER,
+                        color: tradeData.emotion === e ? GOLD : TEXT2
+                      }}>
                       {e}
                     </button>
                   ))}
@@ -692,17 +730,28 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
               <div>
                 <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Psychology Notes</label>
-                <textarea placeholder="Maxaad ka fikiraysay?" value={tradeData.notes_psychology} onChange={e => setTradeData({ ...tradeData, notes_psychology: e.target.value })} style={{ ...iS, height: 100, resize: "none" }} />
+                <textarea
+                  placeholder="Maxaad ka fikiraysay?"
+                  value={tradeData.notes_psychology}
+                  onChange={e => setTradeData({ ...tradeData, notes_psychology: e.target.value })}
+                  style={{ ...iS, height: 100, resize: "none" }}
+                />
               </div>
               <div>
                 <label style={{ color: TEXT2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Chart Screenshot</label>
                 <input ref={imgRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageSelect} />
                 {setupImagePreview
                   ? <div style={{ position: "relative" }}>
-                      <img src={setupImagePreview} alt="" style={{ width: "100%", maxHeight: 150, objectFit: "cover", borderRadius: 10 }} />
-                      <button onClick={() => { setSetupImage(null); setSetupImagePreview(null); }} style={{ position: "absolute", top: 6, right: 6, background: RED_NEG, color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer" }}><FaTimes size={8} /></button>
+                      <img src={setupImagePreview} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 10 }} />
+                      <button
+                        onClick={() => { setSetupImage(null); setSetupImagePreview(null); }}
+                        style={{ position: "absolute", top: 6, right: 6, background: RED_NEG, color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer" }}>
+                        <FaTimes size={8} />
+                      </button>
                     </div>
-                  : <div onClick={() => imgRef.current?.click()} style={{ border: `2px dashed rgba(245,197,24,0.2)`, borderRadius: 10, padding: 22, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", background: GOLD_DIM2 }}>
+                  : <div
+                      onClick={() => imgRef.current?.click()}
+                      style={{ border: `2px dashed rgba(245,197,24,0.2)`, borderRadius: 10, padding: 22, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", background: GOLD_DIM2 }}>
                       <FaUpload style={{ color: GOLD, fontSize: 18, marginBottom: 5 }} />
                       <p style={{ color: TEXT1, fontWeight: 700, fontSize: 13, margin: 0 }}>Upload Screenshot</p>
                       <p style={{ color: TEXT3, fontSize: 11, marginTop: 2 }}>PNG, JPG</p>
@@ -714,16 +763,22 @@ function NewTradeModal({ onClose, onSave, profileData }) {
         </div>
 
         {/* Footer */}
-        <div style={{ padding: "14px 22px 20px", borderTop: BORDER, display: "flex", justifyContent: "space-between" }}>
-          <button onClick={() => step === 1 ? onClose() : setStep(1)}
+        <div style={{ padding: "14px 22px 18px", borderTop: BORDER, display: "flex", justifyContent: "space-between", flexShrink: 0 }}>
+          <button
+            onClick={() => step === 1 ? onClose() : setStep(1)}
             style={{ padding: "9px 18px", borderRadius: 10, border: BORDER, background: "none", color: TEXT2, fontWeight: 700, cursor: "pointer" }}>
             {step === 1 ? "Cancel" : "← Back"}
           </button>
           {step === 1
-            ? <button onClick={() => setStep(2)} style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", background: GOLD }}>
+            ? <button
+                onClick={() => setStep(2)}
+                style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", background: GOLD }}>
                 Next: Psychology →
               </button>
-            : <button onClick={handleSave} disabled={uploading} style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", display: "flex", alignItems: "center", gap: 6, background: GOLD, opacity: uploading ? 0.6 : 1 }}>
+            : <button
+                onClick={handleSave}
+                disabled={uploading}
+                style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", display: "flex", alignItems: "center", gap: 6, background: GOLD, opacity: uploading ? 0.6 : 1 }}>
                 <FaSave />{uploading ? "Saving..." : "Save Trade"}
               </button>
           }
