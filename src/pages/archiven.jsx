@@ -139,7 +139,7 @@ export default function Archives() {
           Shahaadooyinka &amp; <span style={{ color: "#f5c518" }}>Sawirrada</span>
         </h1>
         <p className="text-sm md:text-base" style={{ color: "#64748b", maxWidth: 500, margin: "0 auto" }}>
-          Ardayda DREAM CRT ee shahaadooyinka iyo sawirrada guusha ka wadaaga bulshada.
+          Ardayda DREAM CRT ee shahaadooyinka iyo sawirrada guusha kula wadaaga bulshada.
         </p>
       </div>
 
