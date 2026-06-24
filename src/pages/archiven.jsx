@@ -8,12 +8,13 @@ import { onAuthStateChanged } from "firebase/auth";
 
 export default function Archives() {
   const [user, setUser]           = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [tab, setTab]             = useState("gallery");
   const [archives, setArchives]   = useState([]);
   const [loading, setLoading]     = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadDone, setUploadDone] = useState(false);
-  const [deleting, setDeleting]   = useState(null); // id being deleted
+  const [deleting, setDeleting]   = useState(null);
 
   const [upCaption, setUpCaption] = useState("");
   const [upType, setUpType]       = useState("Shahaado");
@@ -25,7 +26,10 @@ export default function Archives() {
 
   // ── Auth ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setAuthChecked(true);
+    });
     return () => unsub();
   }, []);
 
@@ -55,10 +59,10 @@ export default function Archives() {
     reader.readAsDataURL(file);
   };
 
-  // ── Upload ────────────────────────────────────────────────────────────
+  // ── Upload — only signed-in users ────────────────────────────────────
   const handleUpload = async () => {
-    if (!user)    { setUpError("Fadlan login samee."); return; }
-    if (!upFile)  { setUpError("Sawir soo dooro."); return; }
+    if (!user)   { setUpError("Fadlan login samee."); return; }
+    if (!upFile) { setUpError("Sawir soo dooro."); return; }
     setUpError("");
     setUploading(true);
     try {
@@ -87,8 +91,15 @@ export default function Archives() {
     setUploading(false);
   };
 
-  // ── Delete (owner only) ───────────────────────────────────────────────
+  // ── Delete — owner only ───────────────────────────────────────────────
   const handleDelete = async (id) => {
+    // Extra guard: only owner can delete
+    const item = archives.find((a) => a.id === id);
+    if (!item) return;
+    if (!user || user.uid !== item.uid) {
+      alert("Adigu kuma tirtiri kartid sawirka qof kale.");
+      return;
+    }
     if (!window.confirm("Sawirkaan tirtiraysaa?")) return;
     setDeleting(id);
     try {
@@ -112,6 +123,46 @@ export default function Archives() {
 
   const shahaadoList = archives.filter((a) => a.type === "Shahaado");
   const sawirList    = archives.filter((a) => a.type === "Sawir");
+
+  // ── Auth still loading ────────────────────────────────────────────────
+  if (!authChecked) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0d0d0d", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ color: "#64748b", fontSize: 16 }}>⏳ Loading...</p>
+      </div>
+    );
+  }
+
+  // ── NOT logged in — block entire page ────────────────────────────────
+  if (!user) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0d0d0d", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+        <div style={{ textAlign: "center", maxWidth: 400, background: "#0f0f0f", border: "1px solid rgba(245,197,24,0.2)", borderRadius: 24, padding: "48px 32px" }}>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>🔐</div>
+          <h2 style={{ color: "#f5c518", fontWeight: 900, fontSize: 24, marginBottom: 10 }}>
+            Login Ayaa Loo Baahan Yahay
+          </h2>
+          <p style={{ color: "#64748b", fontSize: 14, marginBottom: 28, lineHeight: 1.6 }}>
+            Archives-ka si aad u aragto ama sawir u soo geliso, waa inaad login sameyso ama account aad sameyso.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <a href="/login"
+              style={{ display: "block", padding: "14px 32px", borderRadius: 12, background: "#f5c518", color: "#000", fontWeight: 900, fontSize: 15, textDecoration: "none" }}>
+              🔑 Login
+            </a>
+            <a href="/register"
+              style={{ display: "block", padding: "14px 32px", borderRadius: 12, border: "1px solid rgba(245,197,24,0.35)", color: "#f5c518", fontWeight: 800, fontSize: 15, textDecoration: "none" }}>
+              📝 Account Samee
+            </a>
+            <a href="/"
+              style={{ display: "block", padding: "10px", color: "#64748b", fontSize: 13, textDecoration: "none" }}>
+              ← Home
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen text-white" style={{ background: "#0d0d0d" }}>
@@ -139,7 +190,7 @@ export default function Archives() {
           Shahaadooyinka &amp; <span style={{ color: "#f5c518" }}>Sawirrada</span>
         </h1>
         <p className="text-sm md:text-base" style={{ color: "#64748b", maxWidth: 500, margin: "0 auto" }}>
-          Ardayda DREAM CRT ee shahaadooyinka iyo sawirrada guusha kula wadaaga bulshada.
+          Ardayda DREAM CRT ee shahaadooyinkooda iyo sawirrada guusha kula wadaaga bulshada.
         </p>
       </div>
 
@@ -195,17 +246,7 @@ export default function Archives() {
           <div className="w-full max-w-lg rounded-3xl p-7 md:p-10"
             style={{ background: "#0f0f0f", border: "1px solid rgba(245,197,24,0.2)" }}>
 
-            {/* Not logged in */}
-            {!user ? (
-              <div className="text-center py-10">
-                <div className="text-5xl mb-4">🔐</div>
-                <p style={{ color: "#64748b", marginBottom: 16 }}>Sawir soo geliso, marka hore login samee.</p>
-                <a href="/login"
-                  style={{ padding: "12px 32px", borderRadius: 12, background: "#f5c518", color: "#000", fontWeight: 900, textDecoration: "none", display: "inline-block" }}>
-                  Login
-                </a>
-              </div>
-            ) : uploadDone ? (
+            {uploadDone ? (
               /* Success */
               <div className="text-center py-6">
                 <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 text-4xl"
@@ -311,7 +352,6 @@ export default function Archives() {
             <div style={{ padding: "16px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                 <p style={{ fontWeight: 800, fontSize: 16, color: "#fff", margin: 0 }}>{lightbox.name}</p>
-                {/* Views */}
                 <span style={{ fontSize: 12, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
                   👁️ {(lightbox.views || 0) + 1}
                 </span>
@@ -365,7 +405,7 @@ function Section({ title, color, items, onOpen, currentUid, onDelete, deleting }
             onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.borderColor = `${color}55`; e.currentTarget.style.boxShadow = `0 12px 32px ${color}18`; }}
             onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.boxShadow = "none"; }}>
 
-            {/* Delete button — owner only, top-right corner */}
+            {/* Delete button — owner only */}
             {currentUid === item.uid && (
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
@@ -391,7 +431,6 @@ function Section({ title, color, items, onOpen, currentUid, onDelete, deleting }
                     {item.caption}
                   </p>
                 )}
-                {/* Views */}
                 <p style={{ fontSize: 10, color: "#374151", marginTop: 4 }}>👁️ {item.views || 0} views</p>
               </div>
             </div>
