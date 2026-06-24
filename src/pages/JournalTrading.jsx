@@ -28,7 +28,6 @@ const CURRENCY_PAIRS = [
   "GBPJPY","EURJPY","EURGBP","XAUUSD","XAGUSD","US30","NAS100","SPX500","BTCUSD","ETHUSD",
 ];
 
-// ── GOLD / BLACK THEME ───────────────────────────────────────────────
 const GOLD    = "#f5c518";
 const GOLD2   = "#ffd84d";
 const GOLD3   = "#b8920f";
@@ -395,78 +394,29 @@ function ProfileViewModal({ uid, onClose, currentUser }) {
 // ── NEW TRADE MODAL ────────────────────────────────────────────────────
 function NewTradeModal({ onClose, onSave, profileData }) {
   const [step, setStep] = useState(1);
-  const [isDark, setIsDark] = useState(true); // dark/light mode toggle
+  const [isDark, setIsDark] = useState(true);
   const [tradeData, setTradeData] = useState({
-    pair: "XAUUSD",
-    direction: "BUY",
-    lotSize: "",
-    entryPrice: "",
-    stopLoss: "",
-    takeProfit: "",
-    exitPrice: "",
-    exitTape: "",
-    timeframe: "",
-    setup: "",
-    status: "Win",
-    pips: "",
-    profit_loss: "",
-    profitPercent: "",
-    rr: "",
-    bullet: "",
-    money: "",
-    era: "",
-    session: "",
-    notes_psychology: "",
-    emotion: "",
-    strategy: "",
-    date: "",
+    pair: "XAUUSD", direction: "BUY", lotSize: "", entryPrice: "", stopLoss: "",
+    takeProfit: "", exitPrice: "", exitTape: "", timeframe: "", setup: "",
+    status: "Win", pips: "", profit_loss: "", profitPercent: "", rr: "",
+    bullet: "", money: "", era: "", session: "", notes_psychology: "",
+    emotion: "", strategy: "", date: "",
   });
   const [setupImage, setSetupImage] = useState(null);
   const [setupImagePreview, setSetupImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const imgRef = useRef(null);
 
-  // ── THEME TOKENS (dynamic based on isDark) ──────────────────────────
   const T = isDark
-    ? {
-        bg: "#0d0d0d",
-        card: "#141414",
-        card2: "#1a1a1a",
-        text1: "#f5f5f5",
-        text2: "#a0a0a0",
-        text3: "#555",
-        border: "1px solid rgba(255,255,255,0.07)",
-        borderG: "1px solid rgba(245,197,24,0.35)",
-        goldDim: "rgba(245,197,24,0.08)",
-        goldDim2: "rgba(245,197,24,0.04)",
-        shadow: "0 0 60px rgba(245,197,24,0.12)",
-        inputBg: "#1a1a1a",
-        footerBg: "#0d0d0d",
-      }
-    : {
-        bg: "#ffffff",
-        card: "#f8f8f8",
-        card2: "#efefef",
-        text1: "#111111",
-        text2: "#555555",
-        text3: "#aaaaaa",
-        border: "1px solid rgba(0,0,0,0.10)",
-        borderG: "1px solid rgba(180,140,0,0.45)",
-        goldDim: "rgba(180,140,0,0.08)",
-        goldDim2: "rgba(180,140,0,0.04)",
-        shadow: "0 0 60px rgba(180,140,0,0.10)",
-        inputBg: "#efefef",
-        footerBg: "#f8f8f8",
-      };
+    ? { bg: "#0d0d0d", card: "#141414", card2: "#1a1a1a", text1: "#f5f5f5", text2: "#a0a0a0", text3: "#555", border: "1px solid rgba(255,255,255,0.07)", borderG: "1px solid rgba(245,197,24,0.35)", goldDim: "rgba(245,197,24,0.08)", goldDim2: "rgba(245,197,24,0.04)", shadow: "0 0 60px rgba(245,197,24,0.12)", inputBg: "#1a1a1a", footerBg: "#0d0d0d" }
+    : { bg: "#ffffff", card: "#f8f8f8", card2: "#efefef", text1: "#111111", text2: "#555555", text3: "#aaaaaa", border: "1px solid rgba(0,0,0,0.10)", borderG: "1px solid rgba(180,140,0,0.45)", goldDim: "rgba(180,140,0,0.08)", goldDim2: "rgba(180,140,0,0.04)", shadow: "0 0 60px rgba(180,140,0,0.10)", inputBg: "#efefef", footerBg: "#f8f8f8" };
 
   const GOLD_C = isDark ? "#f5c518" : "#b48c00";
   const GREEN_C = "#22c55e";
   const RED_C = "#ef4444";
 
   const calcRRR = () => {
-    const e = parseFloat(tradeData.entryPrice),
-      sl = parseFloat(tradeData.stopLoss),
-      tp = parseFloat(tradeData.takeProfit);
+    const e = parseFloat(tradeData.entryPrice), sl = parseFloat(tradeData.stopLoss), tp = parseFloat(tradeData.takeProfit);
     if (!e || !sl || !tp) return null;
     const risk = Math.abs(e - sl), reward = Math.abs(tp - e);
     if (risk === 0) return null;
@@ -474,41 +424,20 @@ function NewTradeModal({ onClose, onSave, profileData }) {
   };
   const rrr = calcRRR();
 
-  // ── AUTO-CALC PROFIT % when exitPrice or profit_loss changes ────────
   const autoCalcProfitPercent = (updated) => {
-    const entry = parseFloat(updated.entryPrice);
-    const exit = parseFloat(updated.exitPrice);
-    const lots = parseFloat(updated.lotSize);
+    const entry = parseFloat(updated.entryPrice), exit = parseFloat(updated.exitPrice), lots = parseFloat(updated.lotSize);
     if (entry && exit && lots) {
-      const pipValue = 10; // standard $10/pip per lot for most pairs
+      const pipValue = 10;
       const pips = updated.direction === "BUY" ? (exit - entry) : (entry - exit);
       const rawPL = pips * lots * pipValue;
       const pct = entry !== 0 ? ((exit - entry) / entry * 100).toFixed(2) : "";
-      return {
-        ...updated,
-        profit_loss: updated.profit_loss || rawPL.toFixed(2),
-        profitPercent: pct,
-      };
+      return { ...updated, profit_loss: updated.profit_loss || rawPL.toFixed(2), profitPercent: pct };
     }
     return updated;
   };
-
-  const handleExitPrice = (val) => {
-    const updated = { ...tradeData, exitPrice: val };
-    setTradeData(autoCalcProfitPercent(updated));
-  };
-
-  const handlePLChange = (val) => {
-    // manual override — clear auto
-    setTradeData({ ...tradeData, profit_loss: val });
-  };
-
-  const handleImageSelect = (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-    setSetupImage(f);
-    setSetupImagePreview(URL.createObjectURL(f));
-  };
+  const handleExitPrice = (val) => { setTradeData(autoCalcProfitPercent({ ...tradeData, exitPrice: val })); };
+  const handlePLChange = (val) => { setTradeData({ ...tradeData, profit_loss: val }); };
+  const handleImageSelect = (e) => { const f = e.target.files[0]; if (!f) return; setSetupImage(f); setSetupImagePreview(URL.createObjectURL(f)); };
 
   const handleSave = async () => {
     const user = auth.currentUser;
@@ -517,118 +446,45 @@ function NewTradeModal({ onClose, onSave, profileData }) {
     setUploading(true);
     try {
       let setupImageURL = "";
-      if (setupImage) {
-        const sRef = ref(storage, `trades/${user.uid}/setup_${Date.now()}`);
-        await uploadBytes(sRef, setupImage);
-        setupImageURL = await getDownloadURL(sRef);
-      }
-      await onSave({
-        ...tradeData,
-        setupImageURL,
-        rrr: rrr || tradeData.rr || "",
-        userId: user.uid,
-        userEmail: user.email,
-        userName: profileData?.displayName || user.email.split("@")[0],
-        createdAt: Date.now(),
-      });
+      if (setupImage) { const sRef = ref(storage, `trades/${user.uid}/setup_${Date.now()}`); await uploadBytes(sRef, setupImage); setupImageURL = await getDownloadURL(sRef); }
+      await onSave({ ...tradeData, setupImageURL, rrr: rrr || tradeData.rr || "", userId: user.uid, userEmail: user.email, userName: profileData?.displayName || user.email.split("@")[0], createdAt: Date.now() });
       onClose();
     } catch (err) { alert(err.message); } finally { setUploading(false); }
   };
 
-  const iS = {
-    width: "100%",
-    background: T.inputBg,
-    color: T.text1,
-    padding: "11px 13px",
-    borderRadius: 10,
-    outline: "none",
-    border: T.border,
-    fontSize: 13,
-    boxSizing: "border-box",
-  };
-
+  const iS = { width: "100%", background: T.inputBg, color: T.text1, padding: "11px 13px", borderRadius: 10, outline: "none", border: T.border, fontSize: 13, boxSizing: "border-box" };
   const TIMEFRAMES = ["1min", "2min", "3min", "5min", "10min", "15min", "30min", "1H", "2H", "4H", "Daily", "Weekly"];
-
-  // Status options — Open removed, replaced with Pending
   const STATUS_OPTIONS = [
-    { value: "Win", label: "Win ✅" },
-    { value: "Loss", label: "Loss ❌" },
-    { value: "Breakeven", label: "Breakeven ➖" },
-    { value: "Pending", label: "Pending ⏳" },
+    { value: "Win", label: "Win ✅" }, { value: "Loss", label: "Loss ❌" },
+    { value: "Breakeven", label: "Breakeven ➖" }, { value: "Pending", label: "Pending ⏳" },
     { value: "Cancelled", label: "Cancelled 🚫" },
   ];
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 50,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "4px", background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)"
-    }}>
-      <div style={{
-        width: "100%", maxWidth: "98vw", maxHeight: "98vh",
-        borderRadius: 22, overflow: "hidden",
-        background: T.card, border: T.borderG,
-        boxShadow: T.shadow,
-        display: "flex", flexDirection: "column",
-      }}>
-
-        {/* Header */}
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          padding: "16px 26px 12px", borderBottom: T.border, flexShrink: 0,
-          background: T.card,
-        }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "4px", background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}>
+      <div style={{ width: "100%", maxWidth: "98vw", maxHeight: "98vh", borderRadius: 22, overflow: "hidden", background: T.card, border: T.borderG, boxShadow: T.shadow, display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 26px 12px", borderBottom: T.border, flexShrink: 0, background: T.card }}>
           <div>
             <h2 style={{ color: T.text1, fontWeight: 900, fontSize: 20, margin: 0 }}>New Trade Entry</h2>
-            <p style={{ color: T.text2, fontSize: 11, margin: "3px 0 0" }}>
-              Step {step} of 2 — {step === 1 ? "Trade Details" : "Psychology & Setup"}
-            </p>
+            <p style={{ color: T.text2, fontSize: 11, margin: "3px 0 0" }}>Step {step} of 2 — {step === 1 ? "Trade Details" : "Psychology & Setup"}</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* ── DARK / LIGHT TOGGLE ── */}
-            <button
-              onClick={() => setIsDark(!isDark)}
-              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "6px 12px", borderRadius: 20,
-                border: T.borderG,
-                background: T.card2,
-                color: T.text2,
-                cursor: "pointer", fontSize: 12, fontWeight: 700,
-                transition: "all .2s",
-              }}>
+            <button onClick={() => setIsDark(!isDark)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 20, border: T.borderG, background: T.card2, color: T.text2, cursor: "pointer", fontSize: 12, fontWeight: 700, transition: "all .2s" }}>
               {isDark ? "☀️ Light" : "🌙 Dark"}
             </button>
-            <button onClick={onClose} style={{ color: T.text2, background: "none", border: "none", cursor: "pointer", fontSize: 15 }}>
-              <FaTimes />
-            </button>
+            <button onClick={onClose} style={{ color: T.text2, background: "none", border: "none", cursor: "pointer", fontSize: 15 }}><FaTimes /></button>
           </div>
         </div>
-
-        {/* Tabs */}
         <div style={{ display: "flex", padding: "0 26px", borderBottom: T.border, flexShrink: 0, background: T.card }}>
           {["Trade Details", "Psychology"].map((s, i) => (
-            <button key={s} onClick={() => i < step && setStep(i + 1)}
-              style={{
-                flex: 1, padding: "11px 0", background: "none", border: "none",
-                borderBottom: step === i + 1 ? `2px solid ${GOLD_C}` : "2px solid transparent",
-                color: step === i + 1 ? GOLD_C : T.text3,
-                fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s"
-              }}>
+            <button key={s} onClick={() => i < step && setStep(i + 1)} style={{ flex: 1, padding: "11px 0", background: "none", border: "none", borderBottom: step === i + 1 ? `2px solid ${GOLD_C}` : "2px solid transparent", color: step === i + 1 ? GOLD_C : T.text3, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s" }}>
               {i + 1}. {s}
             </button>
           ))}
         </div>
-
-        {/* Body — scrollable */}
         <div style={{ padding: "18px 22px", overflowY: "auto", flex: 1, background: T.bg }}>
-
-          {/* ── STEP 1 ── */}
           {step === 1 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-
-              {/* Row 1: Date | Pair | Direction */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                 <div>
                   <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Date</label>
@@ -644,14 +500,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                   <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Direction (Type)</label>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                     {["BUY", "SELL"].map(d => (
-                      <button key={d} onClick={() => setTradeData({ ...tradeData, direction: d })}
-                        style={{
-                          padding: "11px 0", borderRadius: 10, fontWeight: 900, cursor: "pointer",
-                          display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                          background: tradeData.direction === d ? (d === "BUY" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)") : T.card2,
-                          border: tradeData.direction === d ? (d === "BUY" ? "1px solid #22c55e" : "1px solid #ef4444") : T.border,
-                          color: tradeData.direction === d ? (d === "BUY" ? GREEN_C : RED_C) : T.text3
-                        }}>
+                      <button key={d} onClick={() => setTradeData({ ...tradeData, direction: d })} style={{ padding: "11px 0", borderRadius: 10, fontWeight: 900, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, background: tradeData.direction === d ? (d === "BUY" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)") : T.card2, border: tradeData.direction === d ? (d === "BUY" ? "1px solid #22c55e" : "1px solid #ef4444") : T.border, color: tradeData.direction === d ? (d === "BUY" ? GREEN_C : RED_C) : T.text3 }}>
                         {d === "BUY" ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
                         {d === "BUY" ? "LONG" : "SHORT"}
                       </button>
@@ -659,8 +508,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                   </div>
                 </div>
               </div>
-
-              {/* Row 2: Lots | Timeframe | Session */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                 <div>
                   <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Lots</label>
@@ -677,29 +524,20 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                   <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Session</label>
                   <select value={tradeData.session} onChange={e => setTradeData({ ...tradeData, session: e.target.value })} style={iS}>
                     <option value="">Select</option>
-                    <option value="Asian"> Asian</option>
+                    <option value="Asian">Asian</option>
                     <option value="London">🇬🇧 London</option>
-                    <option value="New York"> New York</option>
-                    
+                    <option value="New York">New York</option>
                   </select>
                 </div>
               </div>
-
-              {/* Row 3: Entry | Stoploss | Take Profit */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                {[
-                  { k: "entryPrice", l: "Entry", p: "1928.18" },
-                  { k: "stopLoss", l: "Stoploss", p: "1923.18" },
-                  { k: "takeProfit", l: "Take Profit", p: "1938.18" }
-                ].map(({ k, l, p }) => (
+                {[{ k: "entryPrice", l: "Entry", p: "1928.18" }, { k: "stopLoss", l: "Stoploss", p: "1923.18" }, { k: "takeProfit", l: "Take Profit", p: "1938.18" }].map(({ k, l, p }) => (
                   <div key={k}>
                     <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>{l}</label>
                     <input type="number" step="any" placeholder={p} value={tradeData[k]} onChange={e => setTradeData({ ...tradeData, [k]: e.target.value })} style={iS} />
                   </div>
                 ))}
               </div>
-
-              {/* RRR Banner */}
               {rrr && (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, background: T.goldDim, border: T.borderG, borderRadius: 10, padding: "9px 13px" }}>
                   <FaTrophy style={{ color: GOLD_C }} />
@@ -709,8 +547,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                   </span>
                 </div>
               )}
-
-              {/* Row 4: Setup | Strategy */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
                   <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Setup</label>
@@ -721,27 +557,16 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                   <input type="text" placeholder="ICT, SMC, CRT..." value={tradeData.strategy} onChange={e => setTradeData({ ...tradeData, strategy: e.target.value })} style={iS} />
                 </div>
               </div>
-
-              {/* Row 5: Status — Open removed */}
               <div>
                 <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Status</label>
                 <select value={tradeData.status} onChange={e => setTradeData({ ...tradeData, status: e.target.value })} style={iS}>
-                  {STATUS_OPTIONS.map(({ value, label }) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
+                  {STATUS_OPTIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </div>
-
-              {/* Row 6: Exit fields — always shown since Open is removed */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                 <div>
                   <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Exit Avg</label>
-                  <input
-                    type="number" step="any" placeholder="1924.57"
-                    value={tradeData.exitPrice}
-                    onChange={e => handleExitPrice(e.target.value)}
-                    style={iS}
-                  />
+                  <input type="number" step="any" placeholder="1924.57" value={tradeData.exitPrice} onChange={e => handleExitPrice(e.target.value)} style={iS} />
                 </div>
                 <div>
                   <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Exit Tape/Loge</label>
@@ -752,111 +577,55 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                   <input type="number" step="any" placeholder="50" value={tradeData.pips} onChange={e => setTradeData({ ...tradeData, pips: e.target.value })} style={iS} />
                 </div>
               </div>
-
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                 <div>
                   <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Net P&L ($)</label>
-                  <input
-                    type="number" step="any" placeholder="150 or -50"
-                    value={tradeData.profit_loss}
-                    onChange={e => handlePLChange(e.target.value)}
-                    style={iS}
-                  />
+                  <input type="number" step="any" placeholder="150 or -50" value={tradeData.profit_loss} onChange={e => handlePLChange(e.target.value)} style={iS} />
                 </div>
                 <div>
                   <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     Net P&L %
                     {tradeData.profitPercent && (
-                      <span style={{
-                        marginLeft: 6, fontSize: 10, fontWeight: 800,
-                        color: parseFloat(tradeData.profitPercent) >= 0 ? GREEN_C : RED_C,
-                        background: parseFloat(tradeData.profitPercent) >= 0 ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
-                        padding: "1px 6px", borderRadius: 6,
-                      }}>
-                        Auto
-                      </span>
+                      <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: parseFloat(tradeData.profitPercent) >= 0 ? GREEN_C : RED_C, background: parseFloat(tradeData.profitPercent) >= 0 ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)", padding: "1px 6px", borderRadius: 6 }}>Auto</span>
                     )}
                   </label>
-                  <input
-                    type="number" step="any" placeholder="+1%"
-                    value={tradeData.profitPercent}
-                    onChange={e => setTradeData({ ...tradeData, profitPercent: e.target.value })}
-                    style={{
-                      ...iS,
-                      color: tradeData.profitPercent
-                        ? (parseFloat(tradeData.profitPercent) >= 0 ? GREEN_C : RED_C)
-                        : T.text1,
-                      fontWeight: tradeData.profitPercent ? 800 : 400,
-                    }}
-                  />
+                  <input type="number" step="any" placeholder="+1%" value={tradeData.profitPercent} onChange={e => setTradeData({ ...tradeData, profitPercent: e.target.value })} style={{ ...iS, color: tradeData.profitPercent ? (parseFloat(tradeData.profitPercent) >= 0 ? GREEN_C : RED_C) : T.text1, fontWeight: tradeData.profitPercent ? 800 : 400 }} />
                 </div>
                 <div>
                   <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>RR</label>
                   <input type="number" step="any" placeholder="1.5" value={tradeData.rr} onChange={e => setTradeData({ ...tradeData, rr: e.target.value })} style={iS} />
                 </div>
               </div>
-
-              {/* Bullet | Money | ERA */}
               <div>
                 <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Bullet / Money / ERA</label>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                  <div>
-                    <label style={{ color: T.text2, fontSize: 11, marginBottom: 5, display: "block" }}>Bullet</label>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                      {["YES", "NO"].map(v => (
-                        <button key={v} onClick={() => setTradeData({ ...tradeData, bullet: v })}
-                          style={{
-                            padding: "9px 0", borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: "pointer",
-                            background: tradeData.bullet === v ? (v === "YES" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)") : T.card2,
-                            border: tradeData.bullet === v ? (v === "YES" ? "1px solid #22c55e" : "1px solid #ef4444") : T.border,
-                            color: tradeData.bullet === v ? (v === "YES" ? GREEN_C : RED_C) : T.text3
-                          }}>
-                          {v === "YES" ? "✓" : "✗"} {v}
-                        </button>
-                      ))}
+                  {[{ key: "bullet", label: "Bullet" }, { key: "money", label: "Money" }].map(({ key, label }) => (
+                    <div key={key}>
+                      <label style={{ color: T.text2, fontSize: 11, marginBottom: 5, display: "block" }}>{label}</label>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                        {["YES", "NO"].map(v => (
+                          <button key={v} onClick={() => setTradeData({ ...tradeData, [key]: v })} style={{ padding: "9px 0", borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: "pointer", background: tradeData[key] === v ? (v === "YES" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)") : T.card2, border: tradeData[key] === v ? (v === "YES" ? "1px solid #22c55e" : "1px solid #ef4444") : T.border, color: tradeData[key] === v ? (v === "YES" ? GREEN_C : RED_C) : T.text3 }}>
+                            {v === "YES" ? "✓" : "✗"} {v}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label style={{ color: T.text2, fontSize: 11, marginBottom: 5, display: "block" }}>Money</label>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                      {["YES", "NO"].map(v => (
-                        <button key={v} onClick={() => setTradeData({ ...tradeData, money: v })}
-                          style={{
-                            padding: "9px 0", borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: "pointer",
-                            background: tradeData.money === v ? (v === "YES" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)") : T.card2,
-                            border: tradeData.money === v ? (v === "YES" ? "1px solid #22c55e" : "1px solid #ef4444") : T.border,
-                            color: tradeData.money === v ? (v === "YES" ? GREEN_C : RED_C) : T.text3
-                          }}>
-                          {v === "YES" ? "✓" : "✗"} {v}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  ))}
                   <div>
                     <label style={{ color: T.text2, fontSize: 11, marginBottom: 5, display: "block" }}>ERA</label>
                     <input type="text" placeholder="ERA value..." value={tradeData.era} onChange={e => setTradeData({ ...tradeData, era: e.target.value })} style={iS} />
                   </div>
                 </div>
               </div>
-
             </div>
           )}
-
-          {/* ── STEP 2 ── */}
           {step === 2 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
               <div>
                 <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Emotion</label>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
                   {["Calm 😌", "Confident 💪", "FOMO 😰", "Greedy 🤑", "Revenge 😡", "Tired 😴"].map(e => (
-                    <button key={e} onClick={() => setTradeData({ ...tradeData, emotion: e })}
-                      style={{
-                        padding: "9px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700,
-                        cursor: "pointer", transition: "all .2s",
-                        background: tradeData.emotion === e ? T.goldDim : T.card2,
-                        border: tradeData.emotion === e ? T.borderG : T.border,
-                        color: tradeData.emotion === e ? GOLD_C : T.text2
-                      }}>
+                    <button key={e} onClick={() => setTradeData({ ...tradeData, emotion: e })} style={{ padding: "9px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s", background: tradeData.emotion === e ? T.goldDim : T.card2, border: tradeData.emotion === e ? T.borderG : T.border, color: tradeData.emotion === e ? GOLD_C : T.text2 }}>
                       {e}
                     </button>
                   ))}
@@ -864,12 +633,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
               <div>
                 <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Psychology Notes</label>
-                <textarea
-                  placeholder="Maxaad ka fikiraysay?"
-                  value={tradeData.notes_psychology}
-                  onChange={e => setTradeData({ ...tradeData, notes_psychology: e.target.value })}
-                  style={{ ...iS, height: 100, resize: "none" }}
-                />
+                <textarea placeholder="Maxaad ka fikiraysay?" value={tradeData.notes_psychology} onChange={e => setTradeData({ ...tradeData, notes_psychology: e.target.value })} style={{ ...iS, height: 100, resize: "none" }} />
               </div>
               <div>
                 <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Chart Screenshot</label>
@@ -877,15 +641,9 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                 {setupImagePreview
                   ? <div style={{ position: "relative" }}>
                       <img src={setupImagePreview} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 10 }} />
-                      <button
-                        onClick={() => { setSetupImage(null); setSetupImagePreview(null); }}
-                        style={{ position: "absolute", top: 6, right: 6, background: RED_C, color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer" }}>
-                        <FaTimes size={8} />
-                      </button>
+                      <button onClick={() => { setSetupImage(null); setSetupImagePreview(null); }} style={{ position: "absolute", top: 6, right: 6, background: RED_C, color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer" }}><FaTimes size={8} /></button>
                     </div>
-                  : <div
-                      onClick={() => imgRef.current?.click()}
-                      style={{ border: `2px dashed rgba(245,197,24,0.2)`, borderRadius: 10, padding: 22, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", background: T.goldDim2 }}>
+                  : <div onClick={() => imgRef.current?.click()} style={{ border: `2px dashed rgba(245,197,24,0.2)`, borderRadius: 10, padding: 22, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", background: T.goldDim2 }}>
                       <FaUpload style={{ color: GOLD_C, fontSize: 18, marginBottom: 5 }} />
                       <p style={{ color: T.text1, fontWeight: 700, fontSize: 13, margin: 0 }}>Upload Screenshot</p>
                       <p style={{ color: T.text3, fontSize: 11, marginTop: 2 }}>PNG, JPG</p>
@@ -895,29 +653,17 @@ function NewTradeModal({ onClose, onSave, profileData }) {
             </div>
           )}
         </div>
-
-        {/* Footer */}
         <div style={{ padding: "14px 22px 18px", borderTop: T.border, display: "flex", justifyContent: "space-between", flexShrink: 0, background: T.footerBg }}>
-          <button
-            onClick={() => step === 1 ? onClose() : setStep(1)}
-            style={{ padding: "9px 18px", borderRadius: 10, border: T.border, background: "none", color: T.text2, fontWeight: 700, cursor: "pointer" }}>
+          <button onClick={() => step === 1 ? onClose() : setStep(1)} style={{ padding: "9px 18px", borderRadius: 10, border: T.border, background: "none", color: T.text2, fontWeight: 700, cursor: "pointer" }}>
             {step === 1 ? "Cancel" : "← Back"}
           </button>
           {step === 1
-            ? <button
-                onClick={() => setStep(2)}
-                style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", background: GOLD_C }}>
-                Next: Psychology →
-              </button>
-            : <button
-                onClick={handleSave}
-                disabled={uploading}
-                style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", display: "flex", alignItems: "center", gap: 6, background: GOLD_C, opacity: uploading ? 0.6 : 1 }}>
+            ? <button onClick={() => setStep(2)} style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", background: GOLD_C }}>Next: Psychology →</button>
+            : <button onClick={handleSave} disabled={uploading} style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", display: "flex", alignItems: "center", gap: 6, background: GOLD_C, opacity: uploading ? 0.6 : 1 }}>
                 <FaSave />{uploading ? "Saving..." : "Save Trade"}
               </button>
           }
         </div>
-
       </div>
     </div>
   );
@@ -931,26 +677,9 @@ function JournalLightbox({ url, onClose }) {
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
   return (
-    <div onClick={onClose} style={{
-      position: "fixed", inset: 0, zIndex: 400,
-      background: "rgba(0,0,0,0.97)", display: "flex",
-      alignItems: "center", justifyContent: "center", padding: 24,
-    }}>
-      <button onClick={onClose} style={{
-        position: "absolute", top: 20, right: 20,
-        background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.06)",
-        color: "#ffffff", borderRadius: 10, width: 40, height: 40,
-        cursor: "pointer", fontSize: 16, display: "flex",
-        alignItems: "center", justifyContent: "center",
-      }}><FaTimes /></button>
-      <img src={url} alt="Chart" onClick={e => e.stopPropagation()}
-        style={{
-          maxWidth: "92vw", maxHeight: "88vh", borderRadius: 16,
-          border: "1px solid rgba(245,197,24,0.3)",
-          boxShadow: "0 0 80px rgba(245,197,24,0.25)",
-          objectFit: "contain",
-        }}
-      />
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.97)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <button onClick={onClose} style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.06)", color: "#ffffff", borderRadius: 10, width: 40, height: 40, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}><FaTimes /></button>
+      <img src={url} alt="Chart" onClick={e => e.stopPropagation()} style={{ maxWidth: "92vw", maxHeight: "88vh", borderRadius: 16, border: "1px solid rgba(245,197,24,0.3)", boxShadow: "0 0 80px rgba(245,197,24,0.25)", objectFit: "contain" }} />
     </div>
   );
 }
@@ -963,56 +692,27 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
   const [deleting, setDeleting] = useState(false);
   const [isDark, setIsDark] = useState(true);
 
-  // ── THEME (dark/light) ──────────────────────────────────────────────
   const T = isDark
-    ? {
-        bg: "#0d0d0d", card: "#0e0e0e", card2: "#141414",
-        text1: "#ffffff", text2: "#888888", text3: "#3a3a3a",
-        border: "1px solid rgba(255,255,255,0.06)",
-        borderG: "1px solid rgba(245,197,24,0.35)",
-        goldDim: "rgba(245,197,24,0.13)", goldDim2: "rgba(245,197,24,0.06)",
-        shadow: "0 0 0 1px rgba(245,197,24,0.1), 0 50px 100px rgba(0,0,0,0.9)",
-        headerGrad: "linear-gradient(180deg, rgba(245,197,24,0.06) 0%, rgba(0,0,0,0) 100%)",
-        overlayBg: "rgba(0,0,0,0.9)",
-      }
-    : {
-        bg: "#f5f5f5", card: "#ffffff", card2: "#efefef",
-        text1: "#111111", text2: "#555555", text3: "#aaaaaa",
-        border: "1px solid rgba(0,0,0,0.09)",
-        borderG: "1px solid rgba(180,140,0,0.45)",
-        goldDim: "rgba(180,140,0,0.12)", goldDim2: "rgba(180,140,0,0.05)",
-        shadow: "0 0 0 1px rgba(180,140,0,0.15), 0 50px 100px rgba(0,0,0,0.15)",
-        headerGrad: "linear-gradient(180deg, rgba(180,140,0,0.07) 0%, rgba(0,0,0,0) 100%)",
-        overlayBg: "rgba(0,0,0,0.7)",
-      };
+    ? { bg: "#0d0d0d", card: "#0e0e0e", card2: "#141414", text1: "#ffffff", text2: "#888888", text3: "#3a3a3a", border: "1px solid rgba(255,255,255,0.06)", borderG: "1px solid rgba(245,197,24,0.35)", goldDim: "rgba(245,197,24,0.13)", goldDim2: "rgba(245,197,24,0.06)", shadow: "0 0 0 1px rgba(245,197,24,0.1), 0 50px 100px rgba(0,0,0,0.9)", headerGrad: "linear-gradient(180deg, rgba(245,197,24,0.06) 0%, rgba(0,0,0,0) 100%)", overlayBg: "rgba(0,0,0,0.9)" }
+    : { bg: "#f5f5f5", card: "#ffffff", card2: "#efefef", text1: "#111111", text2: "#555555", text3: "#aaaaaa", border: "1px solid rgba(0,0,0,0.09)", borderG: "1px solid rgba(180,140,0,0.45)", goldDim: "rgba(180,140,0,0.12)", goldDim2: "rgba(180,140,0,0.05)", shadow: "0 0 0 1px rgba(180,140,0,0.15), 0 50px 100px rgba(0,0,0,0.15)", headerGrad: "linear-gradient(180deg, rgba(180,140,0,0.07) 0%, rgba(0,0,0,0) 100%)", overlayBg: "rgba(0,0,0,0.7)" };
 
-  const JGOLD   = isDark ? "#f5c518" : "#b48c00";
-  const JGREEN  = "#22c55e";
-  const JRED    = "#ef4444";
-  const JBLUE   = "#3b82f6";
-  const JPURPLE = "#a855f7";
-  const JORANGE = "#f97316";
+  const JGOLD = isDark ? "#f5c518" : "#b48c00";
+  const JGREEN = "#22c55e"; const JRED = "#ef4444"; const JBLUE = "#3b82f6"; const JPURPLE = "#a855f7"; const JORANGE = "#f97316";
 
   const JSTATUS_CFG = {
-    Win:       { color: JGREEN,  bg: "rgba(34,197,94,0.12)",  icon: "✅", label: "WIN" },
-    Loss:      { color: JRED,    bg: "rgba(239,68,68,0.12)",  icon: "❌", label: "LOSS" },
-    Breakeven: { color: JGOLD,   bg: "rgba(245,197,24,0.12)", icon: "➖", label: "B/E" },
-    Open:      { color: JBLUE,   bg: "rgba(59,130,246,0.12)", icon: "●",  label: "OPEN" },
+    Win: { color: JGREEN, bg: "rgba(34,197,94,0.12)", icon: "✅", label: "WIN" },
+    Loss: { color: JRED, bg: "rgba(239,68,68,0.12)", icon: "❌", label: "LOSS" },
+    Breakeven: { color: JGOLD, bg: "rgba(245,197,24,0.12)", icon: "➖", label: "B/E" },
+    Open: { color: JBLUE, bg: "rgba(59,130,246,0.12)", icon: "●", label: "OPEN" },
   };
-  const JEMO_COLOR = {
-    "Calm 😌": "#22c55e", "Confident 💪": "#3b82f6", "FOMO 😰": "#f97316",
-    "Greedy 🤑": "#eab308", "Revenge 😡": "#ef4444", "Tired 😴": "#8b5cf6",
-  };
+  const JEMO_COLOR = { "Calm 😌": "#22c55e", "Confident 💪": "#3b82f6", "FOMO 😰": "#f97316", "Greedy 🤑": "#eab308", "Revenge 😡": "#ef4444", "Tired 😴": "#8b5cf6" };
 
   const pl = Number(trade.profit_loss || 0);
   const sc = JSTATUS_CFG[trade.status] || JSTATUS_CFG.Open;
   const emoColor = JEMO_COLOR[trade.emotion] || JGOLD;
   const hasValidPL = trade.profit_loss !== "" && trade.profit_loss !== undefined && trade.profit_loss !== null;
 
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
+  useEffect(() => { document.body.style.overflow = "hidden"; return () => { document.body.style.overflow = ""; }; }, []);
 
   const handleDelete = async () => {
     if (!window.confirm("Trade permanently delete garaynaa?")) return;
@@ -1022,10 +722,7 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
   };
 
   const StatBox = ({ icon, label, value, color, iconBg }) => (
-    <div style={{
-      background: T.card2, borderRadius: 12, padding: "13px 14px",
-      border: T.border, display: "flex", flexDirection: "column", gap: 6,
-    }}>
+    <div style={{ background: T.card2, borderRadius: 12, padding: "13px 14px", border: T.border, display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
         <div style={{ width: 28, height: 28, borderRadius: 8, background: iconBg || "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>{icon}</div>
         <span style={{ color: T.text3, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</span>
@@ -1041,14 +738,10 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
         <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, marginTop: 1 }}>{icon}</div>
         <div style={{ flex: 1 }}>
           <p style={{ color: T.text3, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 2px" }}>{label}</p>
-          {link ? (
-            <a href={value} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-              style={{ color: JBLUE, fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 5, textDecoration: "none" }}>
-              View Image <FaExternalLinkAlt size={10} />
-            </a>
-          ) : (
-            <p style={{ color: color || T.text1, fontWeight: 700, fontSize: 13, margin: 0 }}>{value}</p>
-          )}
+          {link
+            ? <a href={value} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: JBLUE, fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 5, textDecoration: "none" }}>View Image <FaExternalLinkAlt size={10} /></a>
+            : <p style={{ color: color || T.text1, fontWeight: 700, fontSize: 13, margin: 0 }}>{value}</p>
+          }
         </div>
       </div>
     );
@@ -1057,35 +750,14 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
   return (
     <>
       {lightbox && trade.setupImageURL && <JournalLightbox url={trade.setupImageURL} onClose={() => setLightbox(false)} />}
-
-      {/* ── OVERLAY ── */}
-      <div onClick={onClose} style={{
-        position: "fixed", inset: 0, zIndex: 300,
-        background: T.overlayBg, backdropFilter: "blur(20px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "4px", animation: "fadeIn .2s ease",
-      }}>
-
-        {/* ── MODAL (full screen like NewTradeModal) ── */}
-        <div onClick={e => e.stopPropagation()} style={{
-          width: "100%", maxWidth: "98vw", maxHeight: "98vh",
-          borderRadius: 22, background: T.card,
-          border: T.borderG,
-          boxShadow: T.shadow,
-          display: "flex", flexDirection: "column",
-          overflow: "hidden", position: "relative",
-        }}>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 300, background: T.overlayBg, backdropFilter: "blur(20px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px", animation: "fadeIn .2s ease" }}>
+        <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "98vw", maxHeight: "98vh", borderRadius: 22, background: T.card, border: T.borderG, boxShadow: T.shadow, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
 
           {/* Gold top line */}
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #f5c518, transparent)", opacity: 0.6, zIndex: 1 }} />
 
-          {/* ── HEADER ── */}
-          <div style={{
-            padding: "18px 26px 14px", flexShrink: 0,
-            background: T.headerGrad, borderBottom: T.border,
-            display: "flex", flexDirection: "column", gap: 12,
-          }}>
-            {/* Top row: status + date + toggle + close */}
+          {/* HEADER */}
+          <div style={{ padding: "18px 26px 14px", flexShrink: 0, background: T.headerGrad, borderBottom: T.border, display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: sc.bg, border: `1px solid ${sc.color}30`, borderRadius: 8, padding: "5px 12px" }}>
@@ -1094,35 +766,18 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <FaCalendarAlt style={{ color: T.text3, fontSize: 10 }} />
-                  <span style={{ color: T.text2, fontSize: 11 }}>
-                    {new Date(trade.createdAt).toLocaleString("en-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                  </span>
+                  <span style={{ color: T.text2, fontSize: 11 }}>{new Date(trade.createdAt).toLocaleString("en-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {/* Dark/Light toggle */}
-                <button
-                  onClick={() => setIsDark(!isDark)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    padding: "6px 12px", borderRadius: 20,
-                    border: T.borderG, background: T.card2,
-                    color: T.text2, cursor: "pointer", fontSize: 12, fontWeight: 700,
-                  }}>
+                <button onClick={() => setIsDark(!isDark)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 20, border: T.borderG, background: T.card2, color: T.text2, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
                   {isDark ? "☀️ Light" : "🌙 Dark"}
                 </button>
-                {/* Close */}
-                <button onClick={onClose} style={{
-                  background: "rgba(255,255,255,0.06)", border: T.border,
-                  color: T.text2, borderRadius: 8, width: 30, height: 30,
-                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13,
-                }}>
+                <button onClick={onClose} style={{ background: "rgba(255,255,255,0.06)", border: T.border, color: T.text2, borderRadius: 8, width: 30, height: 30, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>
                   <FaTimes />
                 </button>
               </div>
             </div>
-
-            {/* Pair + direction + P&L */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
@@ -1130,11 +785,7 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
                   {trade.pair === "XAUUSD" && <span style={{ fontSize: 18 }}>⭐</span>}
                 </div>
                 <p style={{ color: T.text3, fontSize: 11, margin: 0 }}>
-                  {trade.pair === "XAUUSD" ? "Gold vs US Dollar"
-                    : trade.pair === "NAS100" ? "Nasdaq 100 Index"
-                    : trade.pair === "GBPUSD" ? "British Pound vs USD"
-                    : trade.pair === "EURUSD" ? "Euro vs US Dollar"
-                    : trade.pair}
+                  {trade.pair === "XAUUSD" ? "Gold vs US Dollar" : trade.pair === "NAS100" ? "Nasdaq 100 Index" : trade.pair === "GBPUSD" ? "British Pound vs USD" : trade.pair === "EURUSD" ? "Euro vs US Dollar" : trade.pair}
                 </p>
               </div>
               <div style={{ textAlign: "right" }}>
@@ -1142,97 +793,49 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
                   <span style={{ color: trade.direction === "BUY" ? JGREEN : JRED, fontWeight: 900, fontSize: 20 }}>{trade.direction}</span>
                   {trade.direction === "BUY" ? <FaArrowUp style={{ color: JGREEN, fontSize: 16 }} /> : <FaArrowDown style={{ color: JRED, fontSize: 16 }} />}
                 </div>
-                {hasValidPL && (
-                  <p style={{ color: pl >= 0 ? JGREEN : JRED, fontWeight: 900, fontSize: 26, margin: 0, letterSpacing: "-1px", lineHeight: 1 }}>
-                    {pl >= 0 ? "+" : ""}${pl}
-                  </p>
-                )}
+                {hasValidPL && <p style={{ color: pl >= 0 ? JGREEN : JRED, fontWeight: 900, fontSize: 26, margin: 0, letterSpacing: "-1px", lineHeight: 1 }}>{pl >= 0 ? "+" : ""}${pl}</p>}
               </div>
             </div>
-
-            {/* Badges */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-              {trade.emotion && (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: emoColor + "18", border: `1px solid ${emoColor}35`, borderRadius: 8, padding: "5px 12px" }}>
-                  <span style={{ color: emoColor, fontWeight: 700, fontSize: 12 }}>{trade.emotion}</span>
-                </div>
-              )}
-              {trade.notes_psychology && (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 8, padding: "5px 12px" }}>
-                  <FaBrain style={{ color: JPURPLE, fontSize: 10 }} />
-                  <span style={{ color: JPURPLE, fontWeight: 700, fontSize: 11 }}>PSYCHOLOGY</span>
-                  <span style={{ color: isDark ? "#ccc" : "#555", fontSize: 11 }}>{trade.notes_psychology}</span>
-                </div>
-              )}
-              {trade.strategy && (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: T.goldDim, border: `1px solid rgba(245,197,24,0.15)`, borderRadius: 8, padding: "5px 12px" }}>
-                  <span style={{ color: T.text2, fontSize: 10, fontWeight: 700 }}>STRATEGY</span>
-                  <span style={{ color: JGOLD, fontWeight: 900, fontSize: 13 }}>{trade.strategy}</span>
-                </div>
-              )}
+              {trade.emotion && <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: emoColor + "18", border: `1px solid ${emoColor}35`, borderRadius: 8, padding: "5px 12px" }}><span style={{ color: emoColor, fontWeight: 700, fontSize: 12 }}>{trade.emotion}</span></div>}
+              {trade.notes_psychology && <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 8, padding: "5px 12px" }}><FaBrain style={{ color: JPURPLE, fontSize: 10 }} /><span style={{ color: JPURPLE, fontWeight: 700, fontSize: 11 }}>PSYCHOLOGY</span><span style={{ color: isDark ? "#ccc" : "#555", fontSize: 11 }}>{trade.notes_psychology}</span></div>}
+              {trade.strategy && <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: T.goldDim, border: `1px solid rgba(245,197,24,0.15)`, borderRadius: 8, padding: "5px 12px" }}><span style={{ color: T.text2, fontSize: 10, fontWeight: 700 }}>STRATEGY</span><span style={{ color: JGOLD, fontWeight: 900, fontSize: 13 }}>{trade.strategy}</span></div>}
             </div>
           </div>
 
-          {/* ── SCROLLABLE BODY ── */}
+          {/* SCROLLABLE BODY */}
           <div style={{ overflowY: "auto", flex: 1, background: T.bg }}>
-
-            {/* Stats 2×4 grid */}
             <div style={{ padding: "16px 22px 0" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 8 }}>
-                <StatBox icon={<FaDollarSign style={{ color: JGREEN }} />} label="Entry"       value={trade.entryPrice}  color={T.text1}  iconBg="rgba(34,197,94,0.1)" />
-                <StatBox icon={<FaBoxOpen    style={{ color: JBLUE  }} />} label="Lot Size"    value={trade.lotSize}     color={T.text1}  iconBg="rgba(59,130,246,0.1)" />
-                <StatBox icon={<FaBullseye   style={{ color: JGREEN }} />} label="Take Profit" value={trade.takeProfit}  color={JGREEN}   iconBg="rgba(34,197,94,0.1)" />
-                <StatBox icon={<FaShieldAlt  style={{ color: JRED   }} />} label="Stop Loss"   value={trade.stopLoss}    color={JRED}     iconBg="rgba(239,68,68,0.1)" />
+                <StatBox icon={<FaDollarSign style={{ color: JGREEN }} />} label="Entry" value={trade.entryPrice} color={T.text1} iconBg="rgba(34,197,94,0.1)" />
+                <StatBox icon={<FaBoxOpen style={{ color: JBLUE }} />} label="Lot Size" value={trade.lotSize} color={T.text1} iconBg="rgba(59,130,246,0.1)" />
+                <StatBox icon={<FaBullseye style={{ color: JGREEN }} />} label="Take Profit" value={trade.takeProfit} color={JGREEN} iconBg="rgba(34,197,94,0.1)" />
+                <StatBox icon={<FaShieldAlt style={{ color: JRED }} />} label="Stop Loss" value={trade.stopLoss} color={JRED} iconBg="rgba(239,68,68,0.1)" />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 16 }}>
-                <StatBox icon={<FaBalanceScale style={{ color: JPURPLE }} />} label="RRR"      value={trade.rrr && trade.rrr !== "0" ? trade.rrr : null} color={JPURPLE} iconBg="rgba(168,85,247,0.1)" />
-                <StatBox icon={<FaChartBar    style={{ color: JORANGE }} />} label="Pips"      value={trade.pips || null}  color={JORANGE}  iconBg="rgba(249,115,22,0.1)" />
-                <StatBox icon={<FaChartLine   style={{ color: hasValidPL ? pl >= 0 ? JGREEN : JRED : T.text3 }} />} label="P/L"
-                  value={hasValidPL ? `${pl >= 0 ? "+" : ""}$${pl}` : null}
-                  color={hasValidPL ? pl >= 0 ? JGREEN : JRED : T.text3}
-                  iconBg={hasValidPL ? pl >= 0 ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.04)"} />
-                <StatBox icon={<FaPercentage  style={{ color: JGOLD  }} />} label="Profit %"  value={null}               color={JGOLD}    iconBg="rgba(245,197,24,0.1)" />
+                <StatBox icon={<FaBalanceScale style={{ color: JPURPLE }} />} label="RRR" value={trade.rrr && trade.rrr !== "0" ? trade.rrr : null} color={JPURPLE} iconBg="rgba(168,85,247,0.1)" />
+                <StatBox icon={<FaChartBar style={{ color: JORANGE }} />} label="Pips" value={trade.pips || null} color={JORANGE} iconBg="rgba(249,115,22,0.1)" />
+                <StatBox icon={<FaChartLine style={{ color: hasValidPL ? pl >= 0 ? JGREEN : JRED : T.text3 }} />} label="P/L" value={hasValidPL ? `${pl >= 0 ? "+" : ""}$${pl}` : null} color={hasValidPL ? pl >= 0 ? JGREEN : JRED : T.text3} iconBg={hasValidPL ? pl >= 0 ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.04)"} />
+                <StatBox icon={<FaPercentage style={{ color: JGOLD }} />} label="Profit %" value={null} color={JGOLD} iconBg="rgba(245,197,24,0.1)" />
               </div>
             </div>
-
-            {/* Details grid */}
             <div style={{ margin: "0 22px 14px", background: T.card2, borderRadius: 14, padding: "14px 16px", border: T.border }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
-                <InfoRow icon={<FaArrowUp  style={{ color: JGREEN  }} />} label="Direction"        value={trade.direction}           color={trade.direction === "BUY" ? JGREEN : JRED} />
-                <InfoRow icon={<FaGlobe    style={{ color: JBLUE   }} />} label="Session"           value={trade.session || null} />
-                <InfoRow icon={<FaBrain    style={{ color: JPURPLE }} />} label="Emotion"           value={trade.emotion || null}     color={emoColor} />
-                <InfoRow icon={<FaImage    style={{ color: JGOLD   }} />} label="Setup Image URL"   value={trade.setupImageURL || null} link={true} />
-                <InfoRow icon={<FaBrain    style={{ color: JPURPLE }} />} label="Psychology"        value={trade.notes_psychology || null} color={isDark ? "#d4d4d4" : "#333"} />
-                <InfoRow icon={<FaCalendarAlt style={{ color: T.text2 }} />} label="Created At"
-                  value={new Date(trade.createdAt).toLocaleString("en-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })} />
+                <InfoRow icon={<FaArrowUp style={{ color: JGREEN }} />} label="Direction" value={trade.direction} color={trade.direction === "BUY" ? JGREEN : JRED} />
+                <InfoRow icon={<FaGlobe style={{ color: JBLUE }} />} label="Session" value={trade.session || null} />
+                <InfoRow icon={<FaBrain style={{ color: JPURPLE }} />} label="Emotion" value={trade.emotion || null} color={emoColor} />
+                <InfoRow icon={<FaImage style={{ color: JGOLD }} />} label="Setup Image URL" value={trade.setupImageURL || null} link={true} />
+                <InfoRow icon={<FaBrain style={{ color: JPURPLE }} />} label="Psychology" value={trade.notes_psychology || null} color={isDark ? "#d4d4d4" : "#333"} />
+                <InfoRow icon={<FaCalendarAlt style={{ color: T.text2 }} />} label="Created At" value={new Date(trade.createdAt).toLocaleString("en-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })} />
               </div>
             </div>
-
-            {/* User info */}
             {(trade.userName || trade.userEmail || trade.userId) && (
               <div style={{ margin: "0 22px 14px", background: T.card2, borderRadius: 14, padding: "12px 16px", border: T.border, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                {trade.userName && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(34,197,94,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}><FaUser style={{ color: JGREEN, fontSize: 11 }} /></div>
-                    <div><p style={{ color: T.text3, fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 2px" }}>USER</p><p style={{ color: T.text1, fontWeight: 700, fontSize: 12, margin: 0 }}>{trade.userName}</p></div>
-                  </div>
-                )}
-                {trade.userEmail && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(59,130,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}><FaEnvelope style={{ color: JBLUE, fontSize: 11 }} /></div>
-                    <div><p style={{ color: T.text3, fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 2px" }}>EMAIL</p><p style={{ color: T.text1, fontWeight: 700, fontSize: 11, margin: 0 }}>{trade.userEmail}</p></div>
-                  </div>
-                )}
-                {trade.userId && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(168,85,247,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}><FaIdCard style={{ color: JPURPLE, fontSize: 11 }} /></div>
-                    <div><p style={{ color: T.text3, fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 2px" }}>USER ID</p><p style={{ color: T.text1, fontWeight: 700, fontSize: 9, margin: 0, wordBreak: "break-all", lineHeight: 1.4 }}>{trade.userId}</p></div>
-                  </div>
-                )}
+                {trade.userName && <div style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(34,197,94,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}><FaUser style={{ color: JGREEN, fontSize: 11 }} /></div><div><p style={{ color: T.text3, fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 2px" }}>USER</p><p style={{ color: T.text1, fontWeight: 700, fontSize: 12, margin: 0 }}>{trade.userName}</p></div></div>}
+                {trade.userEmail && <div style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(59,130,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}><FaEnvelope style={{ color: JBLUE, fontSize: 11 }} /></div><div><p style={{ color: T.text3, fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 2px" }}>EMAIL</p><p style={{ color: T.text1, fontWeight: 700, fontSize: 11, margin: 0 }}>{trade.userEmail}</p></div></div>}
+                {trade.userId && <div style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(168,85,247,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}><FaIdCard style={{ color: JPURPLE, fontSize: 11 }} /></div><div><p style={{ color: T.text3, fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 2px" }}>USER ID</p><p style={{ color: T.text1, fontWeight: 700, fontSize: 9, margin: 0, wordBreak: "break-all", lineHeight: 1.4 }}>{trade.userId}</p></div></div>}
               </div>
             )}
-
-            {/* Chart Image */}
             <div style={{ margin: "0 22px 18px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -1250,28 +853,13 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
                   <div style={{ background: T.card2, borderRadius: 14, border: T.border, padding: "30px 0", textAlign: "center" }}>
                     <FaImage style={{ color: T.text3, fontSize: 28, marginBottom: 8 }} />
                     <p style={{ color: T.text3, fontSize: 12, margin: "0 0 8px" }}>Image could not load</p>
-                    <a href={trade.setupImageURL} target="_blank" rel="noopener noreferrer" style={{ color: JBLUE, fontSize: 11, display: "flex", alignItems: "center", gap: 4, justifyContent: "center", textDecoration: "none" }}>
-                      Open in browser <FaExternalLinkAlt size={9} />
-                    </a>
+                    <a href={trade.setupImageURL} target="_blank" rel="noopener noreferrer" style={{ color: JBLUE, fontSize: 11, display: "flex", alignItems: "center", gap: 4, justifyContent: "center", textDecoration: "none" }}>Open in browser <FaExternalLinkAlt size={9} /></a>
                   </div>
                 ) : (
                   <div style={{ borderRadius: 14, overflow: "hidden", border: `1px solid rgba(245,197,24,0.15)`, cursor: "pointer", position: "relative", background: T.card2, minHeight: imgLoaded ? 0 : 120 }} onClick={() => setLightbox(true)}>
-                    {!imgLoaded && (
-                      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <div style={{ width: 24, height: 24, borderRadius: "50%", border: `2px solid ${JGOLD}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
-                      </div>
-                    )}
-                    <img src={trade.setupImageURL} alt="Chart Setup" referrerPolicy="no-referrer"
-                      onLoad={() => setImgLoaded(true)} onError={() => setImgErr(true)}
-                      style={{ width: "100%", display: "block", objectFit: "cover", maxHeight: 320, opacity: imgLoaded ? 1 : 0, transition: "opacity .3s" }}
-                    />
-                    {imgLoaded && (
-                      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0)", transition: "background .2s", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 14 }}
-                        onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.4)"}
-                        onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0)"}>
-                        <FaExpandAlt style={{ color: "#fff", fontSize: 24, filter: "drop-shadow(0 2px 6px #000)" }} />
-                      </div>
-                    )}
+                    {!imgLoaded && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ width: 24, height: 24, borderRadius: "50%", border: `2px solid ${JGOLD}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} /></div>}
+                    <img src={trade.setupImageURL} alt="Chart Setup" referrerPolicy="no-referrer" onLoad={() => setImgLoaded(true)} onError={() => setImgErr(true)} style={{ width: "100%", display: "block", objectFit: "cover", maxHeight: 320, opacity: imgLoaded ? 1 : 0, transition: "opacity .3s" }} />
+                    {imgLoaded && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0)", transition: "background .2s", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 14 }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.4)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0)"}><FaExpandAlt style={{ color: "#fff", fontSize: 24, filter: "drop-shadow(0 2px 6px #000)" }} /></div>}
                   </div>
                 )
               ) : (
@@ -1281,8 +869,6 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
                 </div>
               )}
             </div>
-
-            {/* Action Buttons */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, padding: "0 22px 22px" }}>
               <button style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "13px 0", borderRadius: 12, fontWeight: 800, fontSize: 12, cursor: "pointer", border: "none", letterSpacing: "0.04em", background: JBLUE, color: "#fff", boxShadow: "0 4px 16px rgba(59,130,246,0.3)" }}>
                 <FaArrowUp size={12} /> OPEN TRADE
@@ -1295,7 +881,6 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </>
@@ -1306,7 +891,6 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
 function JournalTradeCard({ trade, onDelete, onOpen }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgErr, setImgErr] = useState(false);
-
   const JGOLD = "#f5c518"; const JGOLD_DIM = "rgba(245,197,24,0.13)"; const JGOLD_DIM2 = "rgba(245,197,24,0.06)";
   const JCARD_BG = "#111111"; const JCARD2 = "#181818"; const JBORDER = "1px solid rgba(255,255,255,0.06)";
   const JTEXT1 = "#ffffff"; const JTEXT2 = "#888888"; const JTEXT3 = "#3a3a3a";
@@ -1318,18 +902,15 @@ function JournalTradeCard({ trade, onDelete, onOpen }) {
     Open: { color: JBLUE, bg: "rgba(59,130,246,0.12)", icon: "●", label: "OPEN" },
   };
   const JEMO_COLOR = { "Calm 😌": "#22c55e", "Confident 💪": "#3b82f6", "FOMO 😰": "#f97316", "Greedy 🤑": "#eab308", "Revenge 😡": "#ef4444", "Tired 😴": "#8b5cf6" };
-
   const pl = Number(trade.profit_loss || 0);
   const sc = JSTATUS_CFG[trade.status] || JSTATUS_CFG.Open;
   const emoColor = JEMO_COLOR[trade.emotion] || JGOLD;
   const hasValidPL = trade.profit_loss !== "" && trade.profit_loss !== undefined && trade.profit_loss !== null;
-
   return (
     <div style={{ background: JCARD_BG, border: JBORDER, borderRadius: 16, overflow: "hidden", cursor: "pointer", transition: "all .2s ease", position: "relative" }}
       onClick={() => onOpen(trade)}
       onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(245,197,24,0.3)"; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 36px rgba(0,0,0,0.7)"; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
-    >
+      onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: sc.color, opacity: 0.8 }} />
       <div style={{ padding: "15px 18px 14px 21px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
@@ -1369,10 +950,7 @@ function JournalTradeCard({ trade, onDelete, onOpen }) {
         {trade.setupImageURL && !imgErr && (
           <div style={{ borderRadius: 10, overflow: "hidden", marginBottom: 10, position: "relative", background: JCARD2, minHeight: imgLoaded ? 0 : 72 }}>
             {!imgLoaded && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: JCARD2 }}><div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${JGOLD}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} /></div>}
-            <img src={trade.setupImageURL} alt="Chart" referrerPolicy="no-referrer"
-              onLoad={() => setImgLoaded(true)} onError={() => setImgErr(true)}
-              style={{ width: "100%", maxHeight: 160, objectFit: "cover", display: "block", opacity: imgLoaded ? 1 : 0, transition: "opacity .3s" }}
-            />
+            <img src={trade.setupImageURL} alt="Chart" referrerPolicy="no-referrer" onLoad={() => setImgLoaded(true)} onError={() => setImgErr(true)} style={{ width: "100%", maxHeight: 160, objectFit: "cover", display: "block", opacity: imgLoaded ? 1 : 0, transition: "opacity .3s" }} />
             {imgLoaded && <div style={{ position: "absolute", bottom: 6, right: 6, background: "rgba(0,0,0,0.65)", borderRadius: 5, padding: "3px 7px", display: "flex", alignItems: "center", gap: 4 }}><FaImage style={{ color: JGOLD, fontSize: 8 }} /><span style={{ color: JTEXT2, fontSize: 9 }}>Chart Setup</span></div>}
           </div>
         )}
@@ -1427,7 +1005,6 @@ function JournalSummaryBar({ trades }) {
   );
 }
 
-
 // ── MAIN COMPONENT ─────────────────────────────────────────────────────
 export default function JournalTrading() {
   const [trades, setTrades] = useState([]);
@@ -1458,16 +1035,8 @@ export default function JournalTrading() {
   const [riskSLPips, setRiskSLPips] = useState("");
   const [riskPipValue, setRiskPipValue] = useState("10");
   const [riskResult, setRiskResult] = useState(null);
-  const [newGoal, setNewGoal] = useState({ title: "", target: "", current: "", type: "monthly", deadline: "" });
-  const [showGoalForm, setShowGoalForm] = useState(false);
-  const [filterPair, setFilterPair] = useState("All");
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [filterStrategy, setFilterStrategy] = useState("");
-  const [filterSession, setFilterSession] = useState("All");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const unsubRef = useRef(null);
-
-  // ── JOURNAL STATE (new card UI) ──────────────────────────────────
   const [journalSearch, setJournalSearch] = useState("");
   const [journalFilterPair, setJournalFilterPair] = useState("All");
   const [journalFilterStatus, setJournalFilterStatus] = useState("All");
@@ -1477,7 +1046,6 @@ export default function JournalTrading() {
   const [journalSortAsc, setJournalSortAsc] = useState(false);
   const [journalShowFilters, setJournalShowFilters] = useState(false);
   const [selectedJournalTrade, setSelectedJournalTrade] = useState(null);
-
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
@@ -1532,13 +1100,7 @@ export default function JournalTrading() {
     const dr = (b * r) / 100, ls = dr / (s * p);
     setRiskResult({ dollarRisk: dr.toFixed(2), lotSize: ls.toFixed(2), positionSize: (ls * 100000).toFixed(0) });
   };
-  const handleSaveGoal = async () => {
-    if (!currentUser) return;
-    if (!newGoal.title || !newGoal.target) { alert("Title iyo target buuxi"); return; }
-    setNewGoal({ title: "", target: "", current: "", type: "monthly", deadline: "" }); setShowGoalForm(false);
-  };
 
-  // ── Stats ──────────────────────────────────────────────────────────
   const totalTrades = trades.length, closedTrades = trades.filter(t => t.status !== "Open");
   const wins = trades.filter(t => t.status === "Win").length, losses = trades.filter(t => t.status === "Loss").length;
   const winRate = closedTrades.length ? Math.round((wins / closedTrades.length) * 100) : 0;
@@ -1553,16 +1115,9 @@ export default function JournalTrading() {
   const profitFactor = gLoss > 0 ? (gProfit / gLoss).toFixed(2) : "–";
   const expectancy = closedPL.length ? ((winRate / 100) * parseFloat(avgWin || 0) - (1 - winRate / 100) * parseFloat(avgLoss || 0)).toFixed(2) : "–";
   const eqData = (() => { const s = [...trades].filter(t => t.profit_loss !== "" && t.profit_loss !== undefined).sort((a, b) => a.createdAt - b.createdAt); let r = 10000; return s.map((t, i) => { r += Number(t.profit_loss || 0); return { name: `T${i + 1}`, balance: parseFloat(r.toFixed(2)), v: parseFloat(r.toFixed(2)) }; }); })();
-  const sessStats = ["Asian", "London", "New York"].map(s => { const st = trades.filter(t => t.session === s), sc = st.filter(t => t.status !== "Open"), sw = st.filter(t => t.status === "Win").length, sp = st.reduce((a, b) => a + Number(b.profit_loss || 0), 0); return { session: s, trades: st.length, winRate: sc.length ? Math.round((sw / sc.length) * 100) : 0, pnl: sp.toFixed(2) }; });
   const pairStats = CURRENCY_PAIRS.map(p => { const pt = trades.filter(t => t.pair === p); return { pair: p, trades: pt.length, pnl: pt.reduce((a, b) => a + Number(b.profit_loss || 0), 0) }; }).filter(p => p.trades > 0).sort((a, b) => b.pnl - a.pnl);
   const maxDD = (() => { let peak = 10000, maxD = 0, r = 10000; for (const t of [...trades].filter(t => t.profit_loss !== "").sort((a, b) => a.createdAt - b.createdAt)) { r += Number(t.profit_loss || 0); if (r > peak) peak = r; const d = peak - r; if (d > maxD) maxD = d; } return maxD.toFixed(2); })();
-  const filteredTrades = trades.filter(t => {
-    if (filterPair !== "All" && t.pair !== filterPair) return false;
-    if (filterStatus !== "All" && t.status !== filterStatus) return false;
-    if (filterStrategy && !t.strategy?.toLowerCase().includes(filterStrategy.toLowerCase())) return false;
-    if (filterSession !== "All" && t.session !== filterSession) return false;
-    return true;
-  });
+
   const traderName = profileData?.displayName || currentUser?.email?.split("@")[0] || "Trader";
   const avatarURL = profileData?.photoURL || `https://ui-avatars.com/api/?name=${traderName}&background=f5c518&color=000&bold=true`;
   const handleFileSelect = type => { setPostType(type); if (type === "image") photoRef.current?.click(); else videoRef.current?.click(); };
@@ -1579,9 +1134,6 @@ export default function JournalTrading() {
     setUploading(false);
   };
 
-  const iS = { background: CARD2, color: TEXT1, padding: "9px 11px", borderRadius: 9, outline: "none", border: BORDER, fontSize: 12, width: "100%", boxSizing: "border-box" };
-
-  // ── JOURNAL FILTERED + SORTED ─────────────────────────────────────
   const filteredJournal = trades
     .filter(t => {
       if (journalFilterPair !== "All" && t.pair !== journalFilterPair) return false;
@@ -1590,12 +1142,7 @@ export default function JournalTrading() {
       if (journalFilterDir !== "All" && t.direction !== journalFilterDir) return false;
       if (journalSearch) {
         const s = journalSearch.toLowerCase();
-        return (
-          t.pair?.toLowerCase().includes(s) ||
-          t.strategy?.toLowerCase().includes(s) ||
-          t.notes_psychology?.toLowerCase().includes(s) ||
-          t.emotion?.toLowerCase().includes(s)
-        );
+        return (t.pair?.toLowerCase().includes(s) || t.strategy?.toLowerCase().includes(s) || t.notes_psychology?.toLowerCase().includes(s) || t.emotion?.toLowerCase().includes(s));
       }
       return true;
     })
@@ -1609,7 +1156,6 @@ export default function JournalTrading() {
       return journalSortAsc ? va - vb : vb - va;
     });
   const journalHasFilters = journalFilterPair !== "All" || journalFilterStatus !== "All" || journalFilterSession !== "All" || journalFilterDir !== "All";
-
 
   if (authLoading) return (
     <div style={{ minHeight: "100vh", background: MAIN_BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1635,13 +1181,13 @@ export default function JournalTrading() {
     </div>
   );
 
+  // ── NAV ITEMS (Sessions removed) ──────────────────────────────────
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: "🏠" },
     { id: "journal", label: "Trade History", icon: "📋" },
     { id: "analytics", label: "Analytics", icon: "📊" },
     { id: "psychology", label: "Psychology", icon: "🧠" },
     { id: "risk", label: "Risk Calculator", icon: "🔢" },
-    { id: "sessions", label: "Sessions", icon: "🕐" },
     { id: "community", label: "Community", icon: "👥" },
     { id: "profile", label: "My Profile", icon: "👤" },
     { id: "settings", label: "Settings", icon: "⚙️" },
@@ -1681,8 +1227,8 @@ export default function JournalTrading() {
       {/* ── SIDEBAR ── */}
       <div style={{ width: sidebarOpen ? 220 : 64, background: SIDE_BG, borderRight: `1px solid rgba(255,255,255,0.05)`, padding: sidebarOpen ? "18px 10px" : "18px 8px", display: "flex", flexDirection: "column", flexShrink: 0, transition: "width .25s ease" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, paddingLeft: sidebarOpen ? 4 : 2, marginBottom: 24, overflow: "hidden" }}>
-          <div style={{ width: 34, height: 34, borderRadius: 9, background: GOLD, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <FaChartLine style={{ color: "#000", fontSize: 15 }} />
+          <div style={{ width: 34, height: 34, borderRadius: 9, overflow: "hidden", flexShrink: 0 }}>
+            <img src="/logo.png" alt="DREAM CRT" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
           {sidebarOpen && <div style={{ overflow: "hidden", whiteSpace: "nowrap" }}>
             <p style={{ color: TEXT1, fontWeight: 900, fontSize: 14, margin: 0 }}>Dream Crt</p>
@@ -1691,8 +1237,7 @@ export default function JournalTrading() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 1, flex: 1 }}>
           {navItems.map(item => (
-            <button key={item.id} onClick={() => setActiveTab(item.id)}
-              title={!sidebarOpen ? item.label : ""}
+            <button key={item.id} onClick={() => setActiveTab(item.id)} title={!sidebarOpen ? item.label : ""}
               style={{ display: "flex", alignItems: "center", gap: 9, width: "100%", padding: sidebarOpen ? "9px 10px" : "9px 0", justifyContent: sidebarOpen ? "flex-start" : "center", borderRadius: 9, fontWeight: 600, fontSize: 12, cursor: "pointer", border: "none", transition: "all .15s", background: activeTab === item.id ? GOLD_DIM : "transparent", color: activeTab === item.id ? GOLD : TEXT2 }}>
               <span style={{ fontSize: 14, width: 18, textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
               {sidebarOpen && <span style={{ whiteSpace: "nowrap", overflow: "hidden" }}>{item.label}</span>}
@@ -1728,18 +1273,12 @@ export default function JournalTrading() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 26px", borderBottom: `1px solid rgba(255,255,255,0.05)`, background: SIDE_BG, position: "sticky", top: 0, zIndex: 20, flexShrink: 0 }}>
           <div>
             <p style={{ color: TEXT2, fontSize: 11, margin: "0 0 1px" }}>Welcome back,</p>
-            <h1 style={{ color: TEXT1, fontWeight: 900, fontSize: 18, margin: 0 }}>
-              {navItems.find(n => n.id === activeTab)?.label || "Dashboard"}
-            </h1>
+            <h1 style={{ color: TEXT1, fontWeight: 900, fontSize: 18, margin: 0 }}>{navItems.find(n => n.id === activeTab)?.label || "Dashboard"}</h1>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <button onClick={() => setShowNewTradeModal(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, fontWeight: 700, color: "#000", fontSize: 12, cursor: "pointer", border: "none", background: GOLD }}>
               <FaPlus size={10} /> New Trade
             </button>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, background: CARD_BG, border: BORDER, borderRadius: 9, padding: "7px 12px" }}>
-              <FaSearch style={{ color: TEXT3, fontSize: 11 }} />
-              <span style={{ color: TEXT3, fontSize: 11 }}>Search...</span>
-            </div>
             <div style={{ width: 34, height: 34, borderRadius: 9, background: CARD_BG, border: BORDER, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
               <FaBell style={{ color: TEXT2, fontSize: 13 }} />
               <div style={{ position: "absolute", top: 6, right: 6, width: 6, height: 6, borderRadius: "50%", background: GOLD }} />
@@ -1788,11 +1327,7 @@ export default function JournalTrading() {
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
                   <svg width="120" height="120" viewBox="0 0 120 120">
                     <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
-                    <circle cx="60" cy="60" r="50" fill="none" stroke={scoreColor} strokeWidth="8"
-                      strokeDasharray={`${2 * Math.PI * 50}`}
-                      strokeDashoffset={`${2 * Math.PI * 50 * (1 - tradeScore / 100)}`}
-                      strokeLinecap="round" transform="rotate(-90 60 60)"
-                      style={{ transition: "stroke-dashoffset 1s ease" }} />
+                    <circle cx="60" cy="60" r="50" fill="none" stroke={scoreColor} strokeWidth="8" strokeDasharray={`${2 * Math.PI * 50}`} strokeDashoffset={`${2 * Math.PI * 50 * (1 - tradeScore / 100)}`} strokeLinecap="round" transform="rotate(-90 60 60)" style={{ transition: "stroke-dashoffset 1s ease" }} />
                     <text x="60" y="56" textAnchor="middle" fill={TEXT1} fontSize="28" fontWeight="900">{tradeScore}</text>
                     <text x="60" y="72" textAnchor="middle" fill={scoreColor} fontSize="11" fontWeight="700">{tradeScore >= 70 ? "Strong" : tradeScore >= 40 ? "Average" : "Weak"}</text>
                   </svg>
@@ -1818,9 +1353,6 @@ export default function JournalTrading() {
                     <p style={{ color: TEXT2, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 4px" }}>Equity Curve</p>
                     <p style={{ color: TEXT1, fontWeight: 900, fontSize: 26, margin: 0, letterSpacing: "-1px" }}>${balance.toFixed(2)}</p>
                     <p style={{ color: monthlyProfit >= 0 ? GREEN : RED_NEG, fontSize: 12, margin: "2px 0 0", fontWeight: 700 }}>{monthlyProfit >= 0 ? "+" : ""}${monthlyProfit.toFixed(2)} ({winRate}%)</p>
-                  </div>
-                  <div style={{ display: "flex", gap: 5 }}>
-                    {["R", "Trades", "%"].map(b => <button key={b} style={{ padding: "4px 10px", borderRadius: 6, background: b === "R" ? GOLD_DIM : "none", border: b === "R" ? BORDER_G : BORDER, color: b === "R" ? GOLD : TEXT3, fontSize: 10, fontWeight: 700, cursor: "pointer" }}>{b}</button>)}
                   </div>
                 </div>
                 {eqData.length > 1 ? (
@@ -1878,92 +1410,42 @@ export default function JournalTrading() {
             </div>
           </div>
         )}
-        {/* ── TRADE HISTORY (NEW CARD UI) ── */}
+
+        {/* ── TRADE HISTORY ── */}
         {activeTab === "journal" && (
           <div style={{ padding: "20px 26px", animation: "fadeIn .3s ease" }}>
-            {/* Summary Bar */}
             <JournalSummaryBar trades={filteredJournal} />
-
-            {/* Search + Filter bar */}
             <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "13px 15px", marginBottom: 14 }}>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <div style={{
-                  flex: 1, minWidth: 200, display: "flex", alignItems: "center",
-                  gap: 8, background: CARD2, border: BORDER, borderRadius: 9, padding: "8px 12px",
-                }}>
+                <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 8, background: CARD2, border: BORDER, borderRadius: 9, padding: "8px 12px" }}>
                   <FaSearch style={{ color: TEXT3, fontSize: 11, flexShrink: 0 }} />
-                  <input type="text"
-                    placeholder="Raadi pair, strategy, notes, emotion..."
-                    value={journalSearch} onChange={e => setJournalSearch(e.target.value)}
-                    style={{ flex: 1, background: "none", color: TEXT1, border: "none", outline: "none", fontSize: 12 }}
-                  />
-                  {journalSearch && (
-                    <button onClick={() => setJournalSearch("")}
-                      style={{ background: "none", border: "none", color: TEXT3, cursor: "pointer", padding: 0 }}>
-                      <FaTimes size={10} />
-                    </button>
-                  )}
+                  <input type="text" placeholder="Raadi pair, strategy, notes, emotion..." value={journalSearch} onChange={e => setJournalSearch(e.target.value)} style={{ flex: 1, background: "none", color: TEXT1, border: "none", outline: "none", fontSize: 12 }} />
+                  {journalSearch && <button onClick={() => setJournalSearch("")} style={{ background: "none", border: "none", color: TEXT3, cursor: "pointer", padding: 0 }}><FaTimes size={10} /></button>}
                 </div>
-                <button onClick={() => setJournalShowFilters(p => !p)} style={{
-                  background: journalShowFilters || journalHasFilters ? GOLD_DIM : CARD2,
-                  color: journalShowFilters || journalHasFilters ? GOLD : TEXT2,
-                  border: journalShowFilters || journalHasFilters ? "1px solid rgba(245,197,24,0.3)" : BORDER,
-                  padding: "8px 12px", borderRadius: 9, outline: "none", fontSize: 12, cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 5, fontWeight: 600, position: "relative",
-                }}>
+                <button onClick={() => setJournalShowFilters(p => !p)} style={{ background: journalShowFilters || journalHasFilters ? GOLD_DIM : CARD2, color: journalShowFilters || journalHasFilters ? GOLD : TEXT2, border: journalShowFilters || journalHasFilters ? "1px solid rgba(245,197,24,0.3)" : BORDER, padding: "8px 12px", borderRadius: 9, outline: "none", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontWeight: 600, position: "relative" }}>
                   <FaFilter size={10} /> Filters
-                  {journalHasFilters && (
-                    <span style={{
-                      position: "absolute", top: -4, right: -4,
-                      width: 8, height: 8, borderRadius: "50%", background: GOLD,
-                    }} />
-                  )}
+                  {journalHasFilters && <span style={{ position: "absolute", top: -4, right: -4, width: 8, height: 8, borderRadius: "50%", background: GOLD }} />}
                 </button>
                 {[{ label: "Date", key: "date" }, { label: "P&L", key: "pnl" }, { label: "Pair", key: "pair" }, { label: "RR", key: "rrr" }].map(({ label, key }) => (
-                  <button key={key} onClick={() => {
-                    if (journalSortBy === key) setJournalSortAsc(p => !p);
-                    else { setJournalSortBy(key); setJournalSortAsc(false); }
-                  }} style={{
-                    background: journalSortBy === key ? GOLD_DIM : CARD2,
-                    color: journalSortBy === key ? GOLD : TEXT2,
-                    border: journalSortBy === key ? "1px solid rgba(245,197,24,0.3)" : BORDER,
-                    padding: "8px 12px", borderRadius: 9, outline: "none", fontSize: 12, cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 5,
-                    fontWeight: journalSortBy === key ? 700 : 400,
-                  }}>
+                  <button key={key} onClick={() => { if (journalSortBy === key) setJournalSortAsc(p => !p); else { setJournalSortBy(key); setJournalSortAsc(false); } }} style={{ background: journalSortBy === key ? GOLD_DIM : CARD2, color: journalSortBy === key ? GOLD : TEXT2, border: journalSortBy === key ? "1px solid rgba(245,197,24,0.3)" : BORDER, padding: "8px 12px", borderRadius: 9, outline: "none", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontWeight: journalSortBy === key ? 700 : 400 }}>
                     {label}
-                    {journalSortBy === key
-                      ? (journalSortAsc ? <FaSortAmountUp size={9} /> : <FaSortAmountDown size={9} />)
-                      : <FaSortAmountDown size={9} style={{ opacity: 0.2 }} />}
+                    {journalSortBy === key ? (journalSortAsc ? <FaSortAmountUp size={9} /> : <FaSortAmountDown size={9} />) : <FaSortAmountDown size={9} style={{ opacity: 0.2 }} />}
                   </button>
                 ))}
-                <button onClick={() => setShowNewTradeModal(true)} style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "8px 16px", borderRadius: 9, fontWeight: 700,
-                  color: "#000", fontSize: 12, cursor: "pointer", border: "none", background: GOLD,
-                }}>
+                <button onClick={() => setShowNewTradeModal(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, fontWeight: 700, color: "#000", fontSize: 12, cursor: "pointer", border: "none", background: GOLD }}>
                   <FaPlus size={10} /> New Trade
                 </button>
-                <div style={{
-                  background: GOLD_DIM, border: "1px solid rgba(245,197,24,0.15)",
-                  borderRadius: 8, padding: "6px 12px", textAlign: "center",
-                }}>
+                <div style={{ background: GOLD_DIM, border: "1px solid rgba(245,197,24,0.15)", borderRadius: 8, padding: "6px 12px", textAlign: "center" }}>
                   <span style={{ color: GOLD, fontWeight: 900, fontSize: 14 }}>{filteredJournal.length}</span>
                   <span style={{ color: TEXT3, fontSize: 9, marginLeft: 4 }}>found</span>
                 </div>
               </div>
-
               {journalShowFilters && (
-                <div style={{
-                  display: "grid", gridTemplateColumns: "repeat(4,1fr)",
-                  gap: 9, marginTop: 12, paddingTop: 12,
-                  borderTop: "1px solid rgba(255,255,255,0.04)",
-                  animation: "fadeIn .2s ease",
-                }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 9, marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.04)", animation: "fadeIn .2s ease" }}>
                   {[
                     { label: "Pair", val: journalFilterPair, set: setJournalFilterPair, opts: [["All", "All Pairs"], ...CURRENCY_PAIRS.map(p => [p, p])] },
                     { label: "Status", val: journalFilterStatus, set: setJournalFilterStatus, opts: [["All", "All Status"], ["Open", "🟢 Open"], ["Win", "✅ Win"], ["Loss", "❌ Loss"], ["Breakeven", "➖ Breakeven"]] },
-                    { label: "Session", val: journalFilterSession, set: setJournalFilterSession, opts: [["All", "All Sessions"], ["Asian", " Asian"], ["London", "🇬🇧 London"], ["New York", "🗽 New York"], ["Overlap", "🔄 Overlap"]] },
+                    { label: "Session", val: journalFilterSession, set: setJournalFilterSession, opts: [["All", "All Sessions"], ["Asian", "Asian"], ["London", "🇬🇧 London"], ["New York", "New York"]] },
                     { label: "Direction", val: journalFilterDir, set: setJournalFilterDir, opts: [["All", "BUY & SELL"], ["BUY", "↑ BUY only"], ["SELL", "↓ SELL only"]] },
                   ].map(({ label, val, set, opts }) => (
                     <div key={label}>
@@ -1974,36 +1456,19 @@ export default function JournalTrading() {
                     </div>
                   ))}
                   {journalHasFilters && (
-                    <button onClick={() => { setJournalFilterPair("All"); setJournalFilterStatus("All"); setJournalFilterSession("All"); setJournalFilterDir("All"); }}
-                      style={{
-                        gridColumn: "span 4", padding: "7px 0", borderRadius: 8,
-                        background: "none", border: "1px solid rgba(239,68,68,0.2)",
-                        color: "#ef4444", fontSize: 11, fontWeight: 700, cursor: "pointer",
-                        display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-                      }}>
+                    <button onClick={() => { setJournalFilterPair("All"); setJournalFilterStatus("All"); setJournalFilterSession("All"); setJournalFilterDir("All"); }} style={{ gridColumn: "span 4", padding: "7px 0", borderRadius: 8, background: "none", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
                       <FaTimes size={9} /> Clear All Filters
                     </button>
                   )}
                 </div>
               )}
             </div>
-
-            {/* Trade Cards */}
             {filteredJournal.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 0", background: CARD_BG, border: BORDER, borderRadius: 16 }}>
                 <p style={{ fontSize: 38, margin: "0 0 12px" }}>📭</p>
-                <p style={{ color: TEXT1, fontWeight: 900, fontSize: 16, margin: "0 0 5px" }}>
-                  {trades.length === 0 ? "Wali trade lama galinin" : "Ma jiro natiijo ku haboon"}
-                </p>
-                <p style={{ color: TEXT3, fontSize: 12, marginBottom: 16 }}>
-                  {trades.length === 0 ? "New Trade si aad u bilowdo" : "Filters beddel ama nadiifi"}
-                </p>
-                {trades.length === 0 && (
-                  <button onClick={() => setShowNewTradeModal(true)} style={{
-                    background: GOLD, color: "#000", border: "none", borderRadius: 8,
-                    padding: "8px 18px", fontWeight: 900, fontSize: 12, cursor: "pointer",
-                  }}>+ New Trade</button>
-                )}
+                <p style={{ color: TEXT1, fontWeight: 900, fontSize: 16, margin: "0 0 5px" }}>{trades.length === 0 ? "Wali trade lama galinin" : "Ma jiro natiijo ku haboon"}</p>
+                <p style={{ color: TEXT3, fontSize: 12, marginBottom: 16 }}>{trades.length === 0 ? "New Trade si aad u bilowdo" : "Filters beddel ama nadiifi"}</p>
+                {trades.length === 0 && <button onClick={() => setShowNewTradeModal(true)} style={{ background: GOLD, color: "#000", border: "none", borderRadius: 8, padding: "8px 18px", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>+ New Trade</button>}
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -2156,53 +1621,6 @@ export default function JournalTrading() {
                   <div style={{ background: GOLD_DIM2, border: BORDER_G, borderRadius: 10, padding: "10px 13px", marginTop: 10 }}>
                     <p style={{ color: GOLD, fontSize: 11, fontWeight: 700, margin: 0 }}>💡 Haddaad {riskResult.lotSize} lot isticmaasho oo SL-kaagu yahay {riskSLPips} pips, waxaad khatarsan tahay ${riskResult.dollarRisk} ({riskPercent}%)</p>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        
-
-        {/* ── SESSIONS ── */}
-        {activeTab === "sessions" && (
-          <div style={{ padding: "20px 26px", animation: "fadeIn .3s ease" }}>
-            <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "20px 22px" }}>
-              <h1 style={{ color: TEXT1, fontWeight: 900, fontSize: 18, margin: "0 0 3px" }}>Session Tracker</h1>
-              <p style={{ color: TEXT2, marginBottom: 18, fontSize: 12 }}>Session-ka aad ku fiicantahay ogaado</p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
-                {sessStats.map(s => {
-                  const em = s.session === "Asian" ? "" : s.session === "London" ? "🇬🇧" : s.session === "New York" ? "" : "", pn = parseFloat(s.pnl);
-                  return (
-                    <div key={s.session} style={{ background: CARD2, borderRadius: 12, padding: "14px 16px", border: BORDER }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                        <span style={{ fontSize: 20 }}>{em}</span>
-                        <h2 style={{ color: TEXT1, fontWeight: 900, fontSize: 14, margin: 0 }}>{s.session}</h2>
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 7 }}>
-                        {[{ l: "Trades", v: s.trades, c: TEXT1 }, { l: "Win%", v: `${s.winRate}%`, c: GREEN }, { l: "P&L", v: `${pn >= 0 ? "+" : ""}$${s.pnl}`, c: pn >= 0 ? GREEN : RED_NEG }].map(({ l, v, c }) => (
-                          <div key={l} style={{ background: MAIN_BG, borderRadius: 8, padding: "7px 8px", textAlign: "center" }}>
-                            <p style={{ color: TEXT3, fontSize: 8, margin: 0, textTransform: "uppercase" }}>{l}</p>
-                            <p style={{ color: c, fontWeight: 900, fontSize: 13, margin: "3px 0 0" }}>{v}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {sessStats.some(s => s.trades > 0) && (
-                <div style={{ background: CARD2, borderRadius: 12, padding: "14px 16px", border: BORDER }}>
-                  <p style={{ color: TEXT1, fontWeight: 900, fontSize: 13, margin: "0 0 10px" }}>P&L by Session</p>
-                  <ResponsiveContainer width="100%" height={150}>
-                    <BarChart data={sessStats}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
-                      <XAxis dataKey="session" stroke="#222" tick={{ fill: TEXT3, fontSize: 9 }} />
-                      <YAxis stroke="#222" tick={{ fill: TEXT3, fontSize: 9 }} />
-                      <Tooltip contentStyle={{ background: CARD2, border: BORDER_G, borderRadius: 8 }} />
-                      <Bar dataKey="pnl" name="P&L ($)" radius={[4, 4, 0, 0]}>{sessStats.map((s, i) => <Cell key={i} fill={parseFloat(s.pnl) >= 0 ? GREEN : RED_NEG} />)}</Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
                 </div>
               )}
             </div>
