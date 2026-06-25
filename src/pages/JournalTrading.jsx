@@ -390,6 +390,8 @@ function ProfileViewModal({ uid, onClose, currentUser }) {
     </div>
   );
 }
+
+// ── NEW TRADE MODAL ────────────────────────────────────────────────────
 function NewTradeModal({ onClose, onSave, profileData }) {
   const [isDark, setIsDark] = useState(true);
   const [tradeData, setTradeData] = useState({
@@ -508,7 +510,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             </div>
 
-            {/* LOTS / SESSION / PIPS — 3 KOLOM */}
+            {/* LOTS / SESSION / PIPS */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               <div>
                 <label style={LBL}>Lots</label>
@@ -635,14 +637,14 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             </div>
 
-            {/* ── PSYCHOLOGY DIVIDER */}
+            {/* PSYCHOLOGY DIVIDER */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
               <div style={{ flex: 1, height: 1, background: "rgba(245,197,24,0.18)" }} />
               <span style={{ color: GOLD_C, fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>Psychology</span>
               <div style={{ flex: 1, height: 1, background: "rgba(245,197,24,0.18)" }} />
             </div>
 
-            {/* WIN BADGE — HAL MEEL KALIYA */}
+            {/* WIN BADGE */}
             {isWin && (
               <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.35)", borderRadius: 12, padding: "10px 16px" }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: GREEN_C, boxShadow: "0 0 6px #22c55e" }} />
@@ -685,7 +687,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                   </div>
               }
             </div>
-
           </div>
         </div>
 
@@ -698,7 +699,176 @@ function NewTradeModal({ onClose, onSave, profileData }) {
             <FaSave />{uploading ? "Saving..." : "Save Trade"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
 
+// ── JOURNAL TRADE DETAIL MODAL ─────────────────────────────────────────
+function JournalTradeDetailModal({ trade, onClose, onDelete }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgErr, setImgErr] = useState(false);
+
+  const STATUS_CFG = {
+    Win:       { color: GREEN,   bg: "rgba(34,197,94,0.12)",   border: "rgba(34,197,94,0.3)",   icon: "✅", label: "WIN" },
+    Loss:      { color: RED_NEG, bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.3)",   icon: "❌", label: "LOSS" },
+    Breakeven: { color: GOLD,    bg: "rgba(245,197,24,0.12)",  border: "rgba(245,197,24,0.3)",  icon: "➖", label: "B/E" },
+    Open:      { color: BLUE,    bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.3)",  icon: "●",  label: "OPEN" },
+  };
+  const EMO_COLOR = {
+    "Calm 😌": "#22c55e", "Confident 💪": "#3b82f6", "FOMO 😰": "#f97316",
+    "Greedy 🤑": "#eab308", "Revenge 😡": "#ef4444", "Tired 😴": "#8b5cf6",
+  };
+
+  const pl = Number(trade.profit_loss || 0);
+  const sc = STATUS_CFG[trade.status] || STATUS_CFG.Open;
+  const emoColor = EMO_COLOR[trade.emotion] || GOLD;
+  const hasValidPL = trade.profit_loss !== "" && trade.profit_loss !== undefined && trade.profit_loss !== null;
+
+  const KVBox = ({ label, value, color, full = false }) => (
+    <div style={{ background: CARD2, border: BORDER, borderRadius: 11, padding: "12px 14px", gridColumn: full ? "span 2" : "span 1" }}>
+      <p style={{ color: TEXT3, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 5px" }}>{label}</p>
+      <p style={{ color: color || TEXT1, fontWeight: 700, fontSize: 14, margin: 0 }}>{value || "—"}</p>
+    </div>
+  );
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.92)", backdropFilter: "blur(14px)", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: "92vh", borderRadius: 22, background: CARD_BG, border: BORDER_G, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 0 80px rgba(245,197,24,0.15)", animation: "fadeIn .25s ease" }}>
+
+        {/* ── HEADER ── */}
+        <div style={{ padding: "20px 22px 16px", borderBottom: BORDER, flexShrink: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {/* Direction Icon */}
+              <div style={{ width: 48, height: 48, borderRadius: 13, background: trade.direction === "BUY" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${trade.direction === "BUY" ? GREEN : RED_NEG}30`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, flexShrink: 0 }}>
+                {trade.direction === "BUY" ? <FaArrowUp style={{ color: GREEN, fontSize: 16 }} /> : <FaArrowDown style={{ color: RED_NEG, fontSize: 16 }} />}
+                <span style={{ fontSize: 8, fontWeight: 900, color: trade.direction === "BUY" ? GREEN : RED_NEG }}>{trade.direction}</span>
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <h2 style={{ color: TEXT1, fontWeight: 900, fontSize: 22, margin: 0 }}>{trade.pair}</h2>
+                  {trade.strategy && (
+                    <span style={{ background: GOLD_DIM, border: "1px solid rgba(245,197,24,0.2)", borderRadius: 6, color: GOLD, fontSize: 10, fontWeight: 800, padding: "2px 8px" }}>
+                      {trade.strategy}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 6, color: sc.color, fontSize: 11, fontWeight: 800, padding: "3px 10px" }}>
+                    {sc.icon} {sc.label}
+                  </span>
+                  {trade.session && <span style={{ background: CARD2, border: BORDER, borderRadius: 6, color: TEXT2, fontSize: 10, padding: "3px 8px" }}>🌐 {trade.session}</span>}
+                  {trade.timeframe && <span style={{ background: CARD2, border: BORDER, borderRadius: 6, color: TEXT2, fontSize: 10, padding: "3px 8px" }}>{trade.timeframe}</span>}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+              <button onClick={onClose} style={{ background: CARD2, border: BORDER, color: TEXT2, cursor: "pointer", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}><FaTimes /></button>
+              {hasValidPL && (
+                <p style={{ color: pl >= 0 ? GREEN : RED_NEG, fontWeight: 900, fontSize: 24, margin: 0, letterSpacing: "-0.5px" }}>
+                  {pl >= 0 ? "+" : ""}${pl}
+                </p>
+              )}
+              {trade.rrr && trade.rrr !== "0" && (
+                <p style={{ color: GOLD, fontSize: 11, fontWeight: 700, margin: 0 }}>RR 1:{trade.rrr}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── SCROLLABLE BODY ── */}
+        <div style={{ overflowY: "auto", flex: 1, padding: "16px 22px 22px" }}>
+
+          {/* KV GRID */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+            <KVBox label="Entry" value={trade.entryPrice} />
+            <KVBox label="Lot Size" value={trade.lotSize ? `${trade.lotSize} lot` : null} />
+            <KVBox label="Take Profit" value={trade.takeProfit} color={GREEN} />
+            <KVBox label="Stop Loss" value={trade.stopLoss} color={RED_NEG} />
+            <KVBox label="Pips" value={trade.pips ? `${trade.pips} pips` : null} color={GOLD} />
+            <KVBox label="Net P&L" value={hasValidPL ? `${pl >= 0 ? "+" : ""}$${pl}` : null} color={pl >= 0 ? GREEN : RED_NEG} />
+            {trade.exitPrice && <KVBox label="Exit Avg" value={trade.exitPrice} />}
+            {trade.profitPercent && <KVBox label="P&L %" value={`${trade.profitPercent}%`} color={parseFloat(trade.profitPercent) >= 0 ? GREEN : RED_NEG} />}
+            {trade.bullet && <KVBox label="Bullet" value={trade.bullet} color={trade.bullet === "YES" ? GREEN : RED_NEG} />}
+            {trade.money && <KVBox label="Money" value={trade.money} color={trade.money === "YES" ? GREEN : RED_NEG} />}
+            {trade.era && <KVBox label="ERA" value={trade.era} />}
+            {trade.exitTape && <KVBox label="Exit Tape" value={trade.exitTape} />}
+          </div>
+
+          {/* SETUP NOTE */}
+          {trade.setup && (
+            <div style={{ background: CARD2, border: BORDER, borderRadius: 11, padding: "12px 14px", marginBottom: 10 }}>
+              <p style={{ color: TEXT3, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 5px" }}>📋 Setup</p>
+              <p style={{ color: TEXT1, fontSize: 13, margin: 0, lineHeight: 1.6 }}>{trade.setup}</p>
+            </div>
+          )}
+
+          {/* PSYCHOLOGY NOTE */}
+          {trade.notes_psychology && (
+            <div style={{ background: GOLD_DIM2, borderLeft: `3px solid ${GOLD}50`, borderRadius: "0 11px 11px 0", padding: "12px 14px", marginBottom: 10 }}>
+              <p style={{ color: TEXT3, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 5px" }}>🧠 Psychology</p>
+              {trade.emotion && (
+                <span style={{ background: emoColor + "20", border: `1px solid ${emoColor}40`, borderRadius: 6, color: emoColor, fontSize: 10, fontWeight: 700, padding: "2px 8px", display: "inline-block", marginBottom: 7 }}>
+                  {trade.emotion}
+                </span>
+              )}
+              <p style={{ color: TEXT2, fontSize: 13, margin: 0, lineHeight: 1.6 }}>{trade.notes_psychology}</p>
+            </div>
+          )}
+
+          {/* CHART IMAGE */}
+          {trade.setupImageURL && !imgErr && (
+            <div style={{ borderRadius: 12, overflow: "hidden", marginBottom: 10, position: "relative", background: CARD2, minHeight: imgLoaded ? 0 : 80 }}>
+              {!imgLoaded && (
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${GOLD}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
+                </div>
+              )}
+              <img
+                src={trade.setupImageURL}
+                alt="Chart Setup"
+                referrerPolicy="no-referrer"
+                onLoad={() => setImgLoaded(true)}
+                onError={() => setImgErr(true)}
+                style={{ width: "100%", maxHeight: 280, objectFit: "cover", display: "block", opacity: imgLoaded ? 1 : 0, transition: "opacity .3s" }}
+              />
+              {imgLoaded && (
+                <div style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.7)", borderRadius: 6, padding: "4px 9px", display: "flex", alignItems: "center", gap: 5 }}>
+                  <FaImage style={{ color: GOLD, fontSize: 9 }} />
+                  <span style={{ color: TEXT2, fontSize: 10 }}>Chart Setup</span>
+                  <a href={trade.setupImageURL} target="_blank" rel="noopener noreferrer" style={{ color: GOLD, fontSize: 9, marginLeft: 4 }}>
+                    <FaExternalLinkAlt />
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* DATE */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, color: TEXT3, fontSize: 11 }}>
+            <FaCalendarAlt size={9} />
+            <span>{new Date(trade.createdAt).toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+          </div>
+        </div>
+
+        {/* ── FOOTER ── */}
+        <div style={{ padding: "12px 22px 16px", borderTop: BORDER, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+          <button
+            onClick={() => onDelete(trade.id)}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, background: "none", border: "1px solid rgba(239,68,68,0.25)", color: RED_NEG, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .15s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
+          >
+            <FaTrash size={10} /> Delete Trade
+          </button>
+          <button
+            onClick={onClose}
+            style={{ padding: "8px 20px", borderRadius: 9, background: GOLD, color: "#000", border: "none", fontWeight: 900, fontSize: 12, cursor: "pointer" }}
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -998,7 +1168,6 @@ export default function JournalTrading() {
     </div>
   );
 
-  // ── NAV ITEMS (Sessions removed) ──────────────────────────────────
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: "🏠" },
     { id: "journal", label: "Trade History", icon: "📋" },
