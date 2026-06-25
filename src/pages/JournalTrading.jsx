@@ -480,7 +480,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
           </div>
         </div>
 
-        {/* SINGLE SCROLLABLE BODY */}
+        {/* SCROLLABLE BODY */}
         <div style={{ padding: "18px 22px 24px", overflowY: "auto", flex: 1, background: T.bg }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
@@ -563,7 +563,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             </div>
 
-            {/* STATUS / TIMEFRAME — 2 COL (Win badge ka saaray halkan) */}
+            {/* STATUS / TIMEFRAME */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
                 <label style={LBL}>Status</label>
@@ -580,7 +580,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             </div>
 
-            {/* 🔥 ACCOUNT BURNED — shows only on Loss */}
+            {/* 🔥 LOSS BANNER */}
             {isLoss && (
               <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.40)", borderRadius: 12, padding: "12px 16px" }}>
                 <span style={{ fontSize: 24 }}>🔥</span>
@@ -654,7 +654,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               <div style={{ flex: 1, height: 1, background: "rgba(245,197,24,0.18)" }} />
             </div>
 
-            {/* WIN BADGE — Psychology korkiisa, Emotion ka hore */}
+            {/* WIN BADGE — HAL MEEL KALIYA, Psychology ka hoose */}
             {isWin && (
               <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.35)", borderRadius: 12, padding: "10px 16px" }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: GREEN_C, boxShadow: "0 0 6px #22c55e" }} />
