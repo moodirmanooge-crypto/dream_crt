@@ -509,18 +509,11 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             </div>
 
-            {/* LOTS / TIMEFRAME / SESSION */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            {/* LOTS / SESSION */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
                 <label style={LBL}>Lots</label>
                 <input type="number" step="any" placeholder="0.10" value={tradeData.lotSize} onChange={e => setTradeData({ ...tradeData, lotSize: e.target.value })} style={iS} />
-              </div>
-              <div>
-                <label style={LBL}>Timeframe</label>
-                <select value={tradeData.timeframe} onChange={e => setTradeData({ ...tradeData, timeframe: e.target.value })} style={iS}>
-                  <option value="">Select</option>
-                  {TIMEFRAMES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
               </div>
               <div>
                 <label style={LBL}>Session</label>
@@ -566,8 +559,8 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             </div>
 
-            {/* STATUS + PIPS — SIDE BY SIDE */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {/* STATUS | PIPS | TIMEFRAME — 3 COL */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               <div>
                 <label style={LBL}>Status</label>
                 <select value={tradeData.status} onChange={e => setTradeData({ ...tradeData, status: e.target.value })} style={iS}>
@@ -577,6 +570,13 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               <div>
                 <label style={LBL}>Pips</label>
                 <input type="number" step="any" placeholder="50" value={tradeData.pips} onChange={e => setTradeData({ ...tradeData, pips: e.target.value })} style={iS} />
+              </div>
+              <div>
+                <label style={LBL}>Timeframe</label>
+                <select value={tradeData.timeframe} onChange={e => setTradeData({ ...tradeData, timeframe: e.target.value })} style={iS}>
+                  <option value="">Select</option>
+                  {TIMEFRAMES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
               </div>
             </div>
 
