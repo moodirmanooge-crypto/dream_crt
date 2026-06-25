@@ -390,8 +390,7 @@ function ProfileViewModal({ uid, onClose, currentUser }) {
     </div>
   );
 }
-
-// ── NEW TRADE MODAL ────────────────────────────────────────────────────
+// ── NEW TRADE MODAL ─── HAL PAGE, NO STEPS ────────────────────────────
 function NewTradeModal({ onClose, onSave, profileData }) {
   const [isDark, setIsDark] = useState(true);
   const [tradeData, setTradeData] = useState({
@@ -453,6 +452,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
   };
 
   const iS = { width: "100%", background: T.inputBg, color: T.text1, padding: "11px 13px", borderRadius: 10, outline: "none", border: T.border, fontSize: 13, boxSizing: "border-box" };
+  const LBL = { color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" };
   const TIMEFRAMES = ["1min", "2min", "3min", "5min", "10min", "15min", "30min", "1H", "2H", "4H", "Daily", "Weekly"];
   const STATUS_OPTIONS = [
     { value: "Win", label: "Win ✅" }, { value: "Loss", label: "Loss ❌" },
@@ -460,18 +460,17 @@ function NewTradeModal({ onClose, onSave, profileData }) {
     { value: "Cancelled", label: "Cancelled 🚫" },
   ];
 
-  // Account burned warning — show when status is Loss
   const isLoss = tradeData.status === "Loss";
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "4px", background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}>
       <div style={{ width: "100%", maxWidth: "98vw", maxHeight: "98vh", borderRadius: 22, overflow: "hidden", background: T.card, border: T.borderG, boxShadow: T.shadow, display: "flex", flexDirection: "column" }}>
 
-        {/* ── HEADER */}
+        {/* HEADER */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 26px 12px", borderBottom: T.border, flexShrink: 0, background: T.card }}>
           <div>
             <h2 style={{ color: T.text1, fontWeight: 900, fontSize: 20, margin: 0 }}>New Trade Entry</h2>
-            <p style={{ color: T.text2, fontSize: 11, margin: "3px 0 0" }}>Trade Details & Psychology</p>
+            <p style={{ color: T.text2, fontSize: 11, margin: "3px 0 0" }}>Trade Details &amp; Psychology</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button onClick={() => setIsDark(!isDark)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 20, border: T.borderG, background: T.card2, color: T.text2, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
@@ -481,24 +480,24 @@ function NewTradeModal({ onClose, onSave, profileData }) {
           </div>
         </div>
 
-        {/* ── BODY — single scrollable page */}
-        <div style={{ padding: "18px 22px", overflowY: "auto", flex: 1, background: T.bg }}>
+        {/* SINGLE SCROLLABLE BODY */}
+        <div style={{ padding: "18px 22px 24px", overflowY: "auto", flex: 1, background: T.bg }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-            {/* ROW 1 — Date / Pair / Direction */}
+            {/* DATE / PAIR / DIRECTION */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Date</label>
+                <label style={LBL}>Date</label>
                 <input type="datetime-local" value={tradeData.date} onChange={e => setTradeData({ ...tradeData, date: e.target.value })} style={iS} />
               </div>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pair</label>
+                <label style={LBL}>Pair</label>
                 <select value={tradeData.pair} onChange={e => setTradeData({ ...tradeData, pair: e.target.value })} style={iS}>
                   {CURRENCY_PAIRS.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Direction (Type)</label>
+                <label style={LBL}>Direction (Type)</label>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                   {["BUY", "SELL"].map(d => (
                     <button key={d} onClick={() => setTradeData({ ...tradeData, direction: d })} style={{ padding: "11px 0", borderRadius: 10, fontWeight: 900, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, background: tradeData.direction === d ? (d === "BUY" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)") : T.card2, border: tradeData.direction === d ? (d === "BUY" ? "1px solid #22c55e" : "1px solid #ef4444") : T.border, color: tradeData.direction === d ? (d === "BUY" ? GREEN_C : RED_C) : T.text3 }}>
@@ -510,21 +509,21 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             </div>
 
-            {/* ROW 2 — Lots / Timeframe / Session */}
+            {/* LOTS / TIMEFRAME / SESSION */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Lots</label>
+                <label style={LBL}>Lots</label>
                 <input type="number" step="any" placeholder="0.10" value={tradeData.lotSize} onChange={e => setTradeData({ ...tradeData, lotSize: e.target.value })} style={iS} />
               </div>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Timeframe</label>
+                <label style={LBL}>Timeframe</label>
                 <select value={tradeData.timeframe} onChange={e => setTradeData({ ...tradeData, timeframe: e.target.value })} style={iS}>
                   <option value="">Select</option>
                   {TIMEFRAMES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Session</label>
+                <label style={LBL}>Session</label>
                 <select value={tradeData.session} onChange={e => setTradeData({ ...tradeData, session: e.target.value })} style={iS}>
                   <option value="">Select</option>
                   <option value="Asian">Asian</option>
@@ -534,17 +533,17 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             </div>
 
-            {/* ROW 3 — Entry / SL / TP */}
+            {/* ENTRY / SL / TP */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {[{ k: "entryPrice", l: "Entry", p: "1928.18" }, { k: "stopLoss", l: "Stoploss", p: "1923.18" }, { k: "takeProfit", l: "Take Profit", p: "1938.18" }].map(({ k, l, p }) => (
                 <div key={k}>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>{l}</label>
+                  <label style={LBL}>{l}</label>
                   <input type="number" step="any" placeholder={p} value={tradeData[k]} onChange={e => setTradeData({ ...tradeData, [k]: e.target.value })} style={iS} />
                 </div>
               ))}
             </div>
 
-            {/* RRR badge */}
+            {/* RRR BADGE */}
             {rrr && (
               <div style={{ display: "flex", alignItems: "center", gap: 10, background: T.goldDim, border: T.borderG, borderRadius: 10, padding: "9px 13px" }}>
                 <FaTrophy style={{ color: GOLD_C }} />
@@ -555,63 +554,63 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             )}
 
-            {/* ROW 4 — Setup / Strategy */}
+            {/* SETUP / STRATEGY */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Setup</label>
+                <label style={LBL}>Setup</label>
                 <input type="text" placeholder="Rejection from 5min, Breakout+Ref..." value={tradeData.setup} onChange={e => setTradeData({ ...tradeData, setup: e.target.value })} style={iS} />
               </div>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Strategy</label>
+                <label style={LBL}>Strategy</label>
                 <input type="text" placeholder="ICT, SMC, CRT..." value={tradeData.strategy} onChange={e => setTradeData({ ...tradeData, strategy: e.target.value })} style={iS} />
               </div>
             </div>
 
-            {/* ROW 5 — Status + Pips side by side */}
+            {/* STATUS + PIPS — SIDE BY SIDE */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Status</label>
+                <label style={LBL}>Status</label>
                 <select value={tradeData.status} onChange={e => setTradeData({ ...tradeData, status: e.target.value })} style={iS}>
                   {STATUS_OPTIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pips</label>
+                <label style={LBL}>Pips</label>
                 <input type="number" step="any" placeholder="50" value={tradeData.pips} onChange={e => setTradeData({ ...tradeData, pips: e.target.value })} style={iS} />
               </div>
             </div>
 
-            {/* 🔥 ACCOUNT BURNED WARNING — shows when Loss is selected */}
+            {/* 🔥 ACCOUNT BURNED — shows only on Loss */}
             {isLoss && (
               <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.40)", borderRadius: 12, padding: "12px 16px" }}>
-                <span style={{ fontSize: 22 }}>🔥</span>
+                <span style={{ fontSize: 24 }}>🔥</span>
                 <div>
                   <p style={{ color: RED_C, fontWeight: 900, fontSize: 13, margin: 0 }}>Account waa gubtay!</p>
-                  <p style={{ color: "#f87171", fontSize: 11, margin: "2px 0 0", fontWeight: 500 }}>Xukun xun — talo gal, nafsadaada xiri, manta jooji.</p>
+                  <p style={{ color: "#f87171", fontSize: 11, margin: "3px 0 0", fontWeight: 500 }}>Xukun xun — talo gal, nafsadaada xiri, manta jooji.</p>
                 </div>
               </div>
             )}
 
-            {/* ROW 6 — Exit Avg / Exit Tape / (pips moved up) */}
+            {/* EXIT AVG / EXIT TAPE */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Exit Avg</label>
+                <label style={LBL}>Exit Avg</label>
                 <input type="number" step="any" placeholder="1924.57" value={tradeData.exitPrice} onChange={e => handleExitPrice(e.target.value)} style={iS} />
               </div>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Exit Tape / Loge</label>
+                <label style={LBL}>Exit Tape / Loge</label>
                 <input type="text" placeholder="TP1, TP2..." value={tradeData.exitTape} onChange={e => setTradeData({ ...tradeData, exitTape: e.target.value })} style={iS} />
               </div>
             </div>
 
-            {/* ROW 7 — Net P&L / Net P&L % / RR */}
+            {/* NET P&L / P&L % / RR */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Net P&amp;L ($)</label>
+                <label style={LBL}>Net P&amp;L ($)</label>
                 <input type="number" step="any" placeholder="150 or -50" value={tradeData.profit_loss} onChange={e => handlePLChange(e.target.value)} style={iS} />
               </div>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <label style={LBL}>
                   Net P&amp;L %
                   {tradeData.profitPercent && (
                     <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: parseFloat(tradeData.profitPercent) >= 0 ? GREEN_C : RED_C, background: parseFloat(tradeData.profitPercent) >= 0 ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)", padding: "1px 6px", borderRadius: 6 }}>Auto</span>
@@ -620,14 +619,14 @@ function NewTradeModal({ onClose, onSave, profileData }) {
                 <input type="number" step="any" placeholder="+1%" value={tradeData.profitPercent} onChange={e => setTradeData({ ...tradeData, profitPercent: e.target.value })} style={{ ...iS, color: tradeData.profitPercent ? (parseFloat(tradeData.profitPercent) >= 0 ? GREEN_C : RED_C) : T.text1, fontWeight: tradeData.profitPercent ? 800 : 400 }} />
               </div>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>RR</label>
+                <label style={LBL}>RR</label>
                 <input type="number" step="any" placeholder="1.5" value={tradeData.rr} onChange={e => setTradeData({ ...tradeData, rr: e.target.value })} style={iS} />
               </div>
             </div>
 
-            {/* ROW 8 — Bullet / Money / ERA */}
+            {/* BULLET / MONEY / ERA */}
             <div>
-              <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Bullet / Money / ERA</label>
+              <label style={{ ...LBL, marginBottom: 8 }}>Bullet / Money / ERA</label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                 {[{ key: "bullet", label: "Bullet" }, { key: "money", label: "Money" }].map(({ key, label }) => (
                   <div key={key}>
@@ -648,41 +647,41 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             </div>
 
-            {/* ── DIVIDER: Psychology Section */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 2px" }}>
-              <div style={{ flex: 1, height: 1, background: `rgba(245,197,24,0.18)` }} />
-              <span style={{ color: GOLD_C, fontSize: 11, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase" }}>Psychology</span>
-              <div style={{ flex: 1, height: 1, background: `rgba(245,197,24,0.18)` }} />
+            {/* ── PSYCHOLOGY DIVIDER */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
+              <div style={{ flex: 1, height: 1, background: "rgba(245,197,24,0.18)" }} />
+              <span style={{ color: GOLD_C, fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>Psychology</span>
+              <div style={{ flex: 1, height: 1, background: "rgba(245,197,24,0.18)" }} />
             </div>
 
-            {/* Emotion */}
+            {/* EMOTION */}
             <div>
-              <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Emotion</label>
+              <label style={LBL}>Emotion</label>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
-                {["Calm 😌", "Confident 💪", "FOMO 😰", "Greedy 🤑", "Revenge 😡", "Tired 😴"].map(e => (
-                  <button key={e} onClick={() => setTradeData({ ...tradeData, emotion: e })} style={{ padding: "9px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s", background: tradeData.emotion === e ? T.goldDim : T.card2, border: tradeData.emotion === e ? T.borderG : T.border, color: tradeData.emotion === e ? GOLD_C : T.text2 }}>
-                    {e}
+                {["Calm 😌", "Confident 💪", "FOMO 😰", "Greedy 🤑", "Revenge 😡", "Tired 😴"].map(em => (
+                  <button key={em} onClick={() => setTradeData({ ...tradeData, emotion: em })} style={{ padding: "9px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s", background: tradeData.emotion === em ? T.goldDim : T.card2, border: tradeData.emotion === em ? T.borderG : T.border, color: tradeData.emotion === em ? GOLD_C : T.text2 }}>
+                    {em}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Psychology Notes */}
+            {/* PSYCHOLOGY NOTES */}
             <div>
-              <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Psychology Notes</label>
+              <label style={LBL}>Psychology Notes</label>
               <textarea placeholder="Maxaad ka fikiraysay?" value={tradeData.notes_psychology} onChange={e => setTradeData({ ...tradeData, notes_psychology: e.target.value })} style={{ ...iS, height: 100, resize: "none" }} />
             </div>
 
-            {/* Chart Screenshot */}
+            {/* CHART SCREENSHOT */}
             <div>
-              <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Chart Screenshot</label>
+              <label style={LBL}>Chart Screenshot</label>
               <input ref={imgRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageSelect} />
               {setupImagePreview
                 ? <div style={{ position: "relative" }}>
                     <img src={setupImagePreview} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 10 }} />
-                    <button onClick={() => { setSetupImage(null); setSetupImagePreview(null); }} style={{ position: "absolute", top: 6, right: 6, background: RED_C, color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer" }}><FaTimes size={8} /></button>
+                    <button onClick={() => { setSetupImage(null); setSetupImagePreview(null); }} style={{ position: "absolute", top: 6, right: 6, background: RED_C, color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FaTimes size={8} /></button>
                   </div>
-                : <div onClick={() => imgRef.current?.click()} style={{ border: `2px dashed rgba(245,197,24,0.2)`, borderRadius: 10, padding: 22, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", background: T.goldDim2 }}>
+                : <div onClick={() => imgRef.current?.click()} style={{ border: "2px dashed rgba(245,197,24,0.2)", borderRadius: 10, padding: 22, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", background: T.goldDim2 }}>
                     <FaUpload style={{ color: GOLD_C, fontSize: 18, marginBottom: 5 }} />
                     <p style={{ color: T.text1, fontWeight: 700, fontSize: 13, margin: 0 }}>Upload Screenshot</p>
                     <p style={{ color: T.text3, fontSize: 11, marginTop: 2 }}>PNG, JPG</p>
@@ -693,7 +692,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
           </div>
         </div>
 
-        {/* ── FOOTER */}
+        {/* FOOTER */}
         <div style={{ padding: "14px 22px 18px", borderTop: T.border, display: "flex", justifyContent: "space-between", flexShrink: 0, background: T.footerBg }}>
           <button onClick={onClose} style={{ padding: "9px 18px", borderRadius: 10, border: T.border, background: "none", color: T.text2, fontWeight: 700, cursor: "pointer" }}>
             Cancel
