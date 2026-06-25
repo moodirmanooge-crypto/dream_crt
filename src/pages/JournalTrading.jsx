@@ -1501,7 +1501,7 @@ export default function JournalTrading() {
           </div>
         </div>
 
-        {activeTab === "dashboard" && (
+       {activeTab === "dashboard" && (
   <div style={{ 
     flex: 1, 
     display: "flex", 
@@ -1510,7 +1510,7 @@ export default function JournalTrading() {
     animation: "fadeIn .3s ease" 
   }}>
     <img 
-      public="/image.png" 
+      src="/image.png"  
       alt="Dream CRT" 
       style={{ maxWidth: 400, width: "100%" }} 
     />
