@@ -393,7 +393,6 @@ function ProfileViewModal({ uid, onClose, currentUser }) {
 
 // ── NEW TRADE MODAL ────────────────────────────────────────────────────
 function NewTradeModal({ onClose, onSave, profileData }) {
-  const [step, setStep] = useState(1);
   const [isDark, setIsDark] = useState(true);
   const [tradeData, setTradeData] = useState({
     pair: "XAUUSD", direction: "BUY", lotSize: "", entryPrice: "", stopLoss: "",
@@ -435,6 +434,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
     }
     return updated;
   };
+
   const handleExitPrice = (val) => { setTradeData(autoCalcProfitPercent({ ...tradeData, exitPrice: val })); };
   const handlePLChange = (val) => { setTradeData({ ...tradeData, profit_loss: val }); };
   const handleImageSelect = (e) => { const f = e.target.files[0]; if (!f) return; setSetupImage(f); setSetupImagePreview(URL.createObjectURL(f)); };
@@ -460,210 +460,249 @@ function NewTradeModal({ onClose, onSave, profileData }) {
     { value: "Cancelled", label: "Cancelled 🚫" },
   ];
 
+  // Account burned warning — show when status is Loss
+  const isLoss = tradeData.status === "Loss";
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "4px", background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}>
       <div style={{ width: "100%", maxWidth: "98vw", maxHeight: "98vh", borderRadius: 22, overflow: "hidden", background: T.card, border: T.borderG, boxShadow: T.shadow, display: "flex", flexDirection: "column" }}>
+
+        {/* ── HEADER */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 26px 12px", borderBottom: T.border, flexShrink: 0, background: T.card }}>
           <div>
             <h2 style={{ color: T.text1, fontWeight: 900, fontSize: 20, margin: 0 }}>New Trade Entry</h2>
-            <p style={{ color: T.text2, fontSize: 11, margin: "3px 0 0" }}>Step {step} of 2 — {step === 1 ? "Trade Details" : "Psychology & Setup"}</p>
+            <p style={{ color: T.text2, fontSize: 11, margin: "3px 0 0" }}>Trade Details & Psychology</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button onClick={() => setIsDark(!isDark)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 20, border: T.borderG, background: T.card2, color: T.text2, cursor: "pointer", fontSize: 12, fontWeight: 700, transition: "all .2s" }}>
+            <button onClick={() => setIsDark(!isDark)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 20, border: T.borderG, background: T.card2, color: T.text2, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
               {isDark ? "☀️ Light" : "🌙 Dark"}
             </button>
             <button onClick={onClose} style={{ color: T.text2, background: "none", border: "none", cursor: "pointer", fontSize: 15 }}><FaTimes /></button>
           </div>
         </div>
-        <div style={{ display: "flex", padding: "0 26px", borderBottom: T.border, flexShrink: 0, background: T.card }}>
-          {["Trade Details", "Psychology"].map((s, i) => (
-            <button key={s} onClick={() => i < step && setStep(i + 1)} style={{ flex: 1, padding: "11px 0", background: "none", border: "none", borderBottom: step === i + 1 ? `2px solid ${GOLD_C}` : "2px solid transparent", color: step === i + 1 ? GOLD_C : T.text3, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s" }}>
-              {i + 1}. {s}
-            </button>
-          ))}
-        </div>
+
+        {/* ── BODY — single scrollable page */}
         <div style={{ padding: "18px 22px", overflowY: "auto", flex: 1, background: T.bg }}>
-          {step === 1 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Date</label>
-                  <input type="datetime-local" value={tradeData.date} onChange={e => setTradeData({ ...tradeData, date: e.target.value })} style={iS} />
-                </div>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pair</label>
-                  <select value={tradeData.pair} onChange={e => setTradeData({ ...tradeData, pair: e.target.value })} style={iS}>
-                    {CURRENCY_PAIRS.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Direction (Type)</label>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                    {["BUY", "SELL"].map(d => (
-                      <button key={d} onClick={() => setTradeData({ ...tradeData, direction: d })} style={{ padding: "11px 0", borderRadius: 10, fontWeight: 900, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, background: tradeData.direction === d ? (d === "BUY" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)") : T.card2, border: tradeData.direction === d ? (d === "BUY" ? "1px solid #22c55e" : "1px solid #ef4444") : T.border, color: tradeData.direction === d ? (d === "BUY" ? GREEN_C : RED_C) : T.text3 }}>
-                        {d === "BUY" ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
-                        {d === "BUY" ? "LONG" : "SHORT"}
-                      </button>
-                    ))}
-                  </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+            {/* ROW 1 — Date / Pair / Direction */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Date</label>
+                <input type="datetime-local" value={tradeData.date} onChange={e => setTradeData({ ...tradeData, date: e.target.value })} style={iS} />
+              </div>
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pair</label>
+                <select value={tradeData.pair} onChange={e => setTradeData({ ...tradeData, pair: e.target.value })} style={iS}>
+                  {CURRENCY_PAIRS.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Direction (Type)</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                  {["BUY", "SELL"].map(d => (
+                    <button key={d} onClick={() => setTradeData({ ...tradeData, direction: d })} style={{ padding: "11px 0", borderRadius: 10, fontWeight: 900, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, background: tradeData.direction === d ? (d === "BUY" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)") : T.card2, border: tradeData.direction === d ? (d === "BUY" ? "1px solid #22c55e" : "1px solid #ef4444") : T.border, color: tradeData.direction === d ? (d === "BUY" ? GREEN_C : RED_C) : T.text3 }}>
+                      {d === "BUY" ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
+                      {d === "BUY" ? "LONG" : "SHORT"}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Lots</label>
-                  <input type="number" step="any" placeholder="0.10" value={tradeData.lotSize} onChange={e => setTradeData({ ...tradeData, lotSize: e.target.value })} style={iS} />
-                </div>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Timeframe</label>
-                  <select value={tradeData.timeframe} onChange={e => setTradeData({ ...tradeData, timeframe: e.target.value })} style={iS}>
-                    <option value="">Select</option>
-                    {TIMEFRAMES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Session</label>
-                  <select value={tradeData.session} onChange={e => setTradeData({ ...tradeData, session: e.target.value })} style={iS}>
-                    <option value="">Select</option>
-                    <option value="Asian">Asian</option>
-                    <option value="London">🇬🇧 London</option>
-                    <option value="New York">New York</option>
-                  </select>
-                </div>
+            </div>
+
+            {/* ROW 2 — Lots / Timeframe / Session */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Lots</label>
+                <input type="number" step="any" placeholder="0.10" value={tradeData.lotSize} onChange={e => setTradeData({ ...tradeData, lotSize: e.target.value })} style={iS} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                {[{ k: "entryPrice", l: "Entry", p: "1928.18" }, { k: "stopLoss", l: "Stoploss", p: "1923.18" }, { k: "takeProfit", l: "Take Profit", p: "1938.18" }].map(({ k, l, p }) => (
-                  <div key={k}>
-                    <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>{l}</label>
-                    <input type="number" step="any" placeholder={p} value={tradeData[k]} onChange={e => setTradeData({ ...tradeData, [k]: e.target.value })} style={iS} />
-                  </div>
-                ))}
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Timeframe</label>
+                <select value={tradeData.timeframe} onChange={e => setTradeData({ ...tradeData, timeframe: e.target.value })} style={iS}>
+                  <option value="">Select</option>
+                  {TIMEFRAMES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
               </div>
-              {rrr && (
-                <div style={{ display: "flex", alignItems: "center", gap: 10, background: T.goldDim, border: T.borderG, borderRadius: 10, padding: "9px 13px" }}>
-                  <FaTrophy style={{ color: GOLD_C }} />
-                  <span style={{ color: T.text1, fontWeight: 900 }}>RRR = 1:{rrr}</span>
-                  <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: parseFloat(rrr) >= 2 ? GREEN_C : parseFloat(rrr) >= 1 ? GOLD_C : RED_C }}>
-                    {parseFloat(rrr) >= 2 ? "✅ Great" : parseFloat(rrr) >= 1 ? "⚠️ OK" : "❌ Risky"}
-                  </span>
-                </div>
-              )}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Setup</label>
-                  <input type="text" placeholder="Rejection from 5min, Breakout+Ref..." value={tradeData.setup} onChange={e => setTradeData({ ...tradeData, setup: e.target.value })} style={iS} />
-                </div>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Strategy</label>
-                  <input type="text" placeholder="ICT, SMC, CRT..." value={tradeData.strategy} onChange={e => setTradeData({ ...tradeData, strategy: e.target.value })} style={iS} />
-                </div>
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Session</label>
+                <select value={tradeData.session} onChange={e => setTradeData({ ...tradeData, session: e.target.value })} style={iS}>
+                  <option value="">Select</option>
+                  <option value="Asian">Asian</option>
+                  <option value="London">London</option>
+                  <option value="New York">New York</option>
+                </select>
               </div>
+            </div>
+
+            {/* ROW 3 — Entry / SL / TP */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              {[{ k: "entryPrice", l: "Entry", p: "1928.18" }, { k: "stopLoss", l: "Stoploss", p: "1923.18" }, { k: "takeProfit", l: "Take Profit", p: "1938.18" }].map(({ k, l, p }) => (
+                <div key={k}>
+                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>{l}</label>
+                  <input type="number" step="any" placeholder={p} value={tradeData[k]} onChange={e => setTradeData({ ...tradeData, [k]: e.target.value })} style={iS} />
+                </div>
+              ))}
+            </div>
+
+            {/* RRR badge */}
+            {rrr && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, background: T.goldDim, border: T.borderG, borderRadius: 10, padding: "9px 13px" }}>
+                <FaTrophy style={{ color: GOLD_C }} />
+                <span style={{ color: T.text1, fontWeight: 900 }}>RRR = 1:{rrr}</span>
+                <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: parseFloat(rrr) >= 2 ? GREEN_C : parseFloat(rrr) >= 1 ? GOLD_C : RED_C }}>
+                  {parseFloat(rrr) >= 2 ? "✅ Great" : parseFloat(rrr) >= 1 ? "⚠️ OK" : "❌ Risky"}
+                </span>
+              </div>
+            )}
+
+            {/* ROW 4 — Setup / Strategy */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Setup</label>
+                <input type="text" placeholder="Rejection from 5min, Breakout+Ref..." value={tradeData.setup} onChange={e => setTradeData({ ...tradeData, setup: e.target.value })} style={iS} />
+              </div>
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Strategy</label>
+                <input type="text" placeholder="ICT, SMC, CRT..." value={tradeData.strategy} onChange={e => setTradeData({ ...tradeData, strategy: e.target.value })} style={iS} />
+              </div>
+            </div>
+
+            {/* ROW 5 — Status + Pips side by side */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
                 <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Status</label>
                 <select value={tradeData.status} onChange={e => setTradeData({ ...tradeData, status: e.target.value })} style={iS}>
                   {STATUS_OPTIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pips</label>
+                <input type="number" step="any" placeholder="50" value={tradeData.pips} onChange={e => setTradeData({ ...tradeData, pips: e.target.value })} style={iS} />
+              </div>
+            </div>
+
+            {/* 🔥 ACCOUNT BURNED WARNING — shows when Loss is selected */}
+            {isLoss && (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.40)", borderRadius: 12, padding: "12px 16px" }}>
+                <span style={{ fontSize: 22 }}>🔥</span>
                 <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Exit Avg</label>
-                  <input type="number" step="any" placeholder="1924.57" value={tradeData.exitPrice} onChange={e => handleExitPrice(e.target.value)} style={iS} />
-                </div>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Exit Tape/Loge</label>
-                  <input type="text" placeholder="TP1, TP2..." value={tradeData.exitTape} onChange={e => setTradeData({ ...tradeData, exitTape: e.target.value })} style={iS} />
-                </div>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pips</label>
-                  <input type="number" step="any" placeholder="50" value={tradeData.pips} onChange={e => setTradeData({ ...tradeData, pips: e.target.value })} style={iS} />
+                  <p style={{ color: RED_C, fontWeight: 900, fontSize: 13, margin: 0 }}>Account waa gubtay!</p>
+                  <p style={{ color: "#f87171", fontSize: 11, margin: "2px 0 0", fontWeight: 500 }}>Xukun xun — talo gal, nafsadaada xiri, manta jooji.</p>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Net P&L ($)</label>
-                  <input type="number" step="any" placeholder="150 or -50" value={tradeData.profit_loss} onChange={e => handlePLChange(e.target.value)} style={iS} />
-                </div>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    Net P&L %
-                    {tradeData.profitPercent && (
-                      <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: parseFloat(tradeData.profitPercent) >= 0 ? GREEN_C : RED_C, background: parseFloat(tradeData.profitPercent) >= 0 ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)", padding: "1px 6px", borderRadius: 6 }}>Auto</span>
-                    )}
-                  </label>
-                  <input type="number" step="any" placeholder="+1%" value={tradeData.profitPercent} onChange={e => setTradeData({ ...tradeData, profitPercent: e.target.value })} style={{ ...iS, color: tradeData.profitPercent ? (parseFloat(tradeData.profitPercent) >= 0 ? GREEN_C : RED_C) : T.text1, fontWeight: tradeData.profitPercent ? 800 : 400 }} />
-                </div>
-                <div>
-                  <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>RR</label>
-                  <input type="number" step="any" placeholder="1.5" value={tradeData.rr} onChange={e => setTradeData({ ...tradeData, rr: e.target.value })} style={iS} />
-                </div>
+            )}
+
+            {/* ROW 6 — Exit Avg / Exit Tape / (pips moved up) */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Exit Avg</label>
+                <input type="number" step="any" placeholder="1924.57" value={tradeData.exitPrice} onChange={e => handleExitPrice(e.target.value)} style={iS} />
               </div>
               <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Bullet / Money / ERA</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                  {[{ key: "bullet", label: "Bullet" }, { key: "money", label: "Money" }].map(({ key, label }) => (
-                    <div key={key}>
-                      <label style={{ color: T.text2, fontSize: 11, marginBottom: 5, display: "block" }}>{label}</label>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                        {["YES", "NO"].map(v => (
-                          <button key={v} onClick={() => setTradeData({ ...tradeData, [key]: v })} style={{ padding: "9px 0", borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: "pointer", background: tradeData[key] === v ? (v === "YES" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)") : T.card2, border: tradeData[key] === v ? (v === "YES" ? "1px solid #22c55e" : "1px solid #ef4444") : T.border, color: tradeData[key] === v ? (v === "YES" ? GREEN_C : RED_C) : T.text3 }}>
-                            {v === "YES" ? "✓" : "✗"} {v}
-                          </button>
-                        ))}
-                      </div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Exit Tape / Loge</label>
+                <input type="text" placeholder="TP1, TP2..." value={tradeData.exitTape} onChange={e => setTradeData({ ...tradeData, exitTape: e.target.value })} style={iS} />
+              </div>
+            </div>
+
+            {/* ROW 7 — Net P&L / Net P&L % / RR */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Net P&amp;L ($)</label>
+                <input type="number" step="any" placeholder="150 or -50" value={tradeData.profit_loss} onChange={e => handlePLChange(e.target.value)} style={iS} />
+              </div>
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Net P&amp;L %
+                  {tradeData.profitPercent && (
+                    <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: parseFloat(tradeData.profitPercent) >= 0 ? GREEN_C : RED_C, background: parseFloat(tradeData.profitPercent) >= 0 ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)", padding: "1px 6px", borderRadius: 6 }}>Auto</span>
+                  )}
+                </label>
+                <input type="number" step="any" placeholder="+1%" value={tradeData.profitPercent} onChange={e => setTradeData({ ...tradeData, profitPercent: e.target.value })} style={{ ...iS, color: tradeData.profitPercent ? (parseFloat(tradeData.profitPercent) >= 0 ? GREEN_C : RED_C) : T.text1, fontWeight: tradeData.profitPercent ? 800 : 400 }} />
+              </div>
+              <div>
+                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>RR</label>
+                <input type="number" step="any" placeholder="1.5" value={tradeData.rr} onChange={e => setTradeData({ ...tradeData, rr: e.target.value })} style={iS} />
+              </div>
+            </div>
+
+            {/* ROW 8 — Bullet / Money / ERA */}
+            <div>
+              <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Bullet / Money / ERA</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                {[{ key: "bullet", label: "Bullet" }, { key: "money", label: "Money" }].map(({ key, label }) => (
+                  <div key={key}>
+                    <label style={{ color: T.text2, fontSize: 11, marginBottom: 5, display: "block" }}>{label}</label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                      {["YES", "NO"].map(v => (
+                        <button key={v} onClick={() => setTradeData({ ...tradeData, [key]: v })} style={{ padding: "9px 0", borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: "pointer", background: tradeData[key] === v ? (v === "YES" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)") : T.card2, border: tradeData[key] === v ? (v === "YES" ? "1px solid #22c55e" : "1px solid #ef4444") : T.border, color: tradeData[key] === v ? (v === "YES" ? GREEN_C : RED_C) : T.text3 }}>
+                          {v === "YES" ? "✓" : "✗"} {v}
+                        </button>
+                      ))}
                     </div>
-                  ))}
-                  <div>
-                    <label style={{ color: T.text2, fontSize: 11, marginBottom: 5, display: "block" }}>ERA</label>
-                    <input type="text" placeholder="ERA value..." value={tradeData.era} onChange={e => setTradeData({ ...tradeData, era: e.target.value })} style={iS} />
                   </div>
+                ))}
+                <div>
+                  <label style={{ color: T.text2, fontSize: 11, marginBottom: 5, display: "block" }}>ERA</label>
+                  <input type="text" placeholder="ERA value..." value={tradeData.era} onChange={e => setTradeData({ ...tradeData, era: e.target.value })} style={iS} />
                 </div>
               </div>
             </div>
-          )}
-          {step === 2 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
-              <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Emotion</label>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
-                  {["Calm 😌", "Confident 💪", "FOMO 😰", "Greedy 🤑", "Revenge 😡", "Tired 😴"].map(e => (
-                    <button key={e} onClick={() => setTradeData({ ...tradeData, emotion: e })} style={{ padding: "9px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s", background: tradeData.emotion === e ? T.goldDim : T.card2, border: tradeData.emotion === e ? T.borderG : T.border, color: tradeData.emotion === e ? GOLD_C : T.text2 }}>
-                      {e}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Psychology Notes</label>
-                <textarea placeholder="Maxaad ka fikiraysay?" value={tradeData.notes_psychology} onChange={e => setTradeData({ ...tradeData, notes_psychology: e.target.value })} style={{ ...iS, height: 100, resize: "none" }} />
-              </div>
-              <div>
-                <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Chart Screenshot</label>
-                <input ref={imgRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageSelect} />
-                {setupImagePreview
-                  ? <div style={{ position: "relative" }}>
-                      <img src={setupImagePreview} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 10 }} />
-                      <button onClick={() => { setSetupImage(null); setSetupImagePreview(null); }} style={{ position: "absolute", top: 6, right: 6, background: RED_C, color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer" }}><FaTimes size={8} /></button>
-                    </div>
-                  : <div onClick={() => imgRef.current?.click()} style={{ border: `2px dashed rgba(245,197,24,0.2)`, borderRadius: 10, padding: 22, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", background: T.goldDim2 }}>
-                      <FaUpload style={{ color: GOLD_C, fontSize: 18, marginBottom: 5 }} />
-                      <p style={{ color: T.text1, fontWeight: 700, fontSize: 13, margin: 0 }}>Upload Screenshot</p>
-                      <p style={{ color: T.text3, fontSize: 11, marginTop: 2 }}>PNG, JPG</p>
-                    </div>
-                }
+
+            {/* ── DIVIDER: Psychology Section */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 2px" }}>
+              <div style={{ flex: 1, height: 1, background: `rgba(245,197,24,0.18)` }} />
+              <span style={{ color: GOLD_C, fontSize: 11, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase" }}>Psychology</span>
+              <div style={{ flex: 1, height: 1, background: `rgba(245,197,24,0.18)` }} />
+            </div>
+
+            {/* Emotion */}
+            <div>
+              <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Emotion</label>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+                {["Calm 😌", "Confident 💪", "FOMO 😰", "Greedy 🤑", "Revenge 😡", "Tired 😴"].map(e => (
+                  <button key={e} onClick={() => setTradeData({ ...tradeData, emotion: e })} style={{ padding: "9px 4px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .2s", background: tradeData.emotion === e ? T.goldDim : T.card2, border: tradeData.emotion === e ? T.borderG : T.border, color: tradeData.emotion === e ? GOLD_C : T.text2 }}>
+                    {e}
+                  </button>
+                ))}
               </div>
             </div>
-          )}
+
+            {/* Psychology Notes */}
+            <div>
+              <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Psychology Notes</label>
+              <textarea placeholder="Maxaad ka fikiraysay?" value={tradeData.notes_psychology} onChange={e => setTradeData({ ...tradeData, notes_psychology: e.target.value })} style={{ ...iS, height: 100, resize: "none" }} />
+            </div>
+
+            {/* Chart Screenshot */}
+            <div>
+              <label style={{ color: T.text2, fontSize: 11, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Chart Screenshot</label>
+              <input ref={imgRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageSelect} />
+              {setupImagePreview
+                ? <div style={{ position: "relative" }}>
+                    <img src={setupImagePreview} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 10 }} />
+                    <button onClick={() => { setSetupImage(null); setSetupImagePreview(null); }} style={{ position: "absolute", top: 6, right: 6, background: RED_C, color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer" }}><FaTimes size={8} /></button>
+                  </div>
+                : <div onClick={() => imgRef.current?.click()} style={{ border: `2px dashed rgba(245,197,24,0.2)`, borderRadius: 10, padding: 22, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", background: T.goldDim2 }}>
+                    <FaUpload style={{ color: GOLD_C, fontSize: 18, marginBottom: 5 }} />
+                    <p style={{ color: T.text1, fontWeight: 700, fontSize: 13, margin: 0 }}>Upload Screenshot</p>
+                    <p style={{ color: T.text3, fontSize: 11, marginTop: 2 }}>PNG, JPG</p>
+                  </div>
+              }
+            </div>
+
+          </div>
         </div>
+
+        {/* ── FOOTER */}
         <div style={{ padding: "14px 22px 18px", borderTop: T.border, display: "flex", justifyContent: "space-between", flexShrink: 0, background: T.footerBg }}>
-          <button onClick={() => step === 1 ? onClose() : setStep(1)} style={{ padding: "9px 18px", borderRadius: 10, border: T.border, background: "none", color: T.text2, fontWeight: 700, cursor: "pointer" }}>
-            {step === 1 ? "Cancel" : "← Back"}
+          <button onClick={onClose} style={{ padding: "9px 18px", borderRadius: 10, border: T.border, background: "none", color: T.text2, fontWeight: 700, cursor: "pointer" }}>
+            Cancel
           </button>
-          {step === 1
-            ? <button onClick={() => setStep(2)} style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", background: GOLD_C }}>Next: Psychology →</button>
-            : <button onClick={handleSave} disabled={uploading} style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", display: "flex", alignItems: "center", gap: 6, background: GOLD_C, opacity: uploading ? 0.6 : 1 }}>
-                <FaSave />{uploading ? "Saving..." : "Save Trade"}
-              </button>
-          }
+          <button onClick={handleSave} disabled={uploading} style={{ padding: "9px 22px", borderRadius: 10, fontWeight: 900, color: "#000", fontSize: 13, cursor: "pointer", border: "none", display: "flex", alignItems: "center", gap: 6, background: GOLD_C, opacity: uploading ? 0.6 : 1 }}>
+            <FaSave />{uploading ? "Saving..." : "Save Trade"}
+          </button>
         </div>
+
       </div>
     </div>
   );
@@ -1308,8 +1347,6 @@ export default function JournalTrading() {
           </div>
         </div>
 
-        {accountBlown && <div style={{ margin: "14px 26px 0", padding: "12px 16px", borderRadius: 10, border: `1px solid ${RED_NEG}`, background: "rgba(239,68,68,0.08)", display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 20 }}>🔴</span><div><p style={{ color: RED_NEG, fontWeight: 900, fontSize: 14, margin: 0 }}>Akoonka waa kaa gubtay sxb!</p><p style={{ color: TEXT2, fontSize: 11, margin: "1px 0 0" }}>Waxaad gaartay ugu badan ee aad lumin karto (${maxDrawdown}).</p></div></div>}
-
         {/* ── DASHBOARD ── */}
         {activeTab === "dashboard" && (
           <div style={{ padding: "20px 26px", animation: "fadeIn .3s ease" }}>
@@ -1445,7 +1482,7 @@ export default function JournalTrading() {
                   {[
                     { label: "Pair", val: journalFilterPair, set: setJournalFilterPair, opts: [["All", "All Pairs"], ...CURRENCY_PAIRS.map(p => [p, p])] },
                     { label: "Status", val: journalFilterStatus, set: setJournalFilterStatus, opts: [["All", "All Status"], ["Open", "🟢 Open"], ["Win", "✅ Win"], ["Loss", "❌ Loss"], ["Breakeven", "➖ Breakeven"]] },
-                    { label: "Session", val: journalFilterSession, set: setJournalFilterSession, opts: [["All", "All Sessions"], ["Asian", "Asian"], ["London", "🇬🇧 London"], ["New York", "New York"]] },
+                    { label: "Session", val: journalFilterSession, set: setJournalFilterSession, opts: [["All", "All Sessions"], ["Asian", "Asian"], ["London", " London"], ["New York", "New York"]] },
                     { label: "Direction", val: journalFilterDir, set: setJournalFilterDir, opts: [["All", "BUY & SELL"], ["BUY", "↑ BUY only"], ["SELL", "↓ SELL only"]] },
                   ].map(({ label, val, set, opts }) => (
                     <div key={label}>
