@@ -563,17 +563,10 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             </div>
 
-            {/* STATUS + WIN BADGE / TIMEFRAME — 2 COL (Pips waa la qaatay) */}
+            {/* STATUS / TIMEFRAME — 2 COL (Win badge ka saaray halkan) */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
                 <label style={LBL}>Status</label>
-                {/* WIN BADGE — ka soo baxda hadduu Win yahay */}
-                {isWin && (
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.4)", borderRadius: 8, padding: "3px 10px", marginBottom: 6 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: GREEN_C }} />
-                    <span style={{ color: GREEN_C, fontSize: 10, fontWeight: 800, letterSpacing: "0.06em" }}>WIN ✅</span>
-                  </div>
-                )}
                 <select value={tradeData.status} onChange={e => setTradeData({ ...tradeData, status: e.target.value })} style={iS}>
                   {STATUS_OPTIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
                 </select>
@@ -610,7 +603,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             </div>
 
-            {/* BULLET / MONEY / ERA — KA HOR Net P&L */}
+            {/* BULLET / MONEY / ERA */}
             <div>
               <label style={{ ...LBL, marginBottom: 8 }}>Bullet / Money / ERA</label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
@@ -660,6 +653,15 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               <span style={{ color: GOLD_C, fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>Psychology</span>
               <div style={{ flex: 1, height: 1, background: "rgba(245,197,24,0.18)" }} />
             </div>
+
+            {/* WIN BADGE — Psychology korkiisa, Emotion ka hore */}
+            {isWin && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.35)", borderRadius: 12, padding: "10px 16px" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: GREEN_C, boxShadow: "0 0 6px #22c55e" }} />
+                <span style={{ color: GREEN_C, fontWeight: 900, fontSize: 13 }}>WIN ✅</span>
+                <span style={{ color: isDark ? "#86efac" : "#15803d", fontSize: 11, fontWeight: 600, marginLeft: 4 }}>Hambalyo! Trade fiican baad gashay.</span>
+              </div>
+            )}
 
             {/* EMOTION */}
             <div>
