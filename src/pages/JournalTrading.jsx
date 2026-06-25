@@ -1844,107 +1844,16 @@ export default function JournalTrading() {
           </div>
         )}
 
-       {activeTab === "settings" && (
-  <div style={{ 
-    padding: "24px 26px", 
-    animation: "fadeIn .3s ease", 
-    background: isDarkMode ? MAIN_BG : "#f5f5f0", 
-    minHeight: "100%" 
-  }}>
-    <h2 style={{ color: isDarkMode ? TEXT1 : "#111", fontWeight: 900, fontSize: 20, margin: "0 0 4px" }}>Settings</h2>
-    <p style={{ color: isDarkMode ? TEXT2 : "#444", fontSize: 12, margin: "0 0 24px" }}>App settings & preferences</p>
-
-    {/* Appearance */}
-    <div style={{ background: isDarkMode ? CARD_BG : "#ffffff", border: isDarkMode ? BORDER : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "20px 22px", marginBottom: 16 }}>
-      <p style={{ color: isDarkMode ? TEXT2 : "#444", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 16px" }}>🎨 Appearance</p>
-      
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: isDarkMode ? BORDER : "1px solid rgba(0,0,0,0.08)" }}>
-        <div>
-          <p style={{ color: isDarkMode ? TEXT1 : "#111", fontWeight: 700, fontSize: 14, margin: "0 0 3px" }}>Theme Mode</p>
-          <p style={{ color: isDarkMode ? TEXT2 : "#555", fontSize: 11, margin: 0 }}>Switch between Dark and Light mode</p>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          {[{ label: "🌙 Dark", val: true }, { label: "☀️ Light", val: false }].map(opt => (
-            <button
-              key={opt.label}
-              onClick={() => setIsDarkMode(opt.val)}
-              style={{
-                padding: "8px 16px", borderRadius: 9, fontWeight: 700, fontSize: 12,
-                cursor: "pointer", transition: "all .2s",
-                background: isDarkMode === opt.val ? (isDarkMode ? GOLD : "#b48c00") : (isDarkMode ? CARD2 : "#f0f0eb"),
-                color: isDarkMode === opt.val ? "#000" : (isDarkMode ? TEXT2 : "#444"),
-                border: isDarkMode === opt.val ? "none" : (isDarkMode ? BORDER : "1px solid rgba(0,0,0,0.08)"),
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0" }}>
-        <div>
-          <p style={{ color: isDarkMode ? TEXT1 : "#111", fontWeight: 700, fontSize: 14, margin: "0 0 3px" }}>Current Mode</p>
-          <p style={{ color: isDarkMode ? TEXT2 : "#555", fontSize: 11, margin: 0 }}>Active: {isDarkMode ? "Dark Mode 🌙" : "Light Mode ☀️"}</p>
-        </div>
-        <span style={{ background: isDarkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)", color: isDarkMode ? TEXT1 : "#111", padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, border: isDarkMode ? BORDER : "1px solid rgba(0,0,0,0.08)" }}>
-          {isDarkMode ? "🌙 Dark" : "☀️ Light"}
-        </span>
-      </div>
-    </div>
-
-    {/* Account */}
-    <div style={{ background: isDarkMode ? CARD_BG : "#ffffff", border: isDarkMode ? BORDER : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "20px 22px", marginBottom: 16 }}>
-      <p style={{ color: isDarkMode ? TEXT2 : "#444", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 16px" }}>👤 Account</p>
-      {[
-        { icon: "📧", label: "Email", val: currentUser?.email },
-        { icon: "🏷️", label: "Display Name", val: traderName },
-        { icon: "⭐", label: "Plan", val: "Pro Trader" },
-      ].map((item, i, arr) => (
-        <div key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", borderBottom: i < arr.length - 1 ? (isDarkMode ? BORDER : "1px solid rgba(0,0,0,0.08)") : "none" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 16 }}>{item.icon}</span>
-            <p style={{ color: isDarkMode ? TEXT1 : "#111", fontWeight: 600, fontSize: 13, margin: 0 }}>{item.label}</p>
+        {/* ── SETTINGS ── */}
+        {activeTab === "settings" && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 400 }}>
+            <div style={{ textAlign: "center" }}>
+              <span style={{ fontSize: 40 }}>⚙️</span>
+              <p style={{ color: TEXT1, fontWeight: 900, fontSize: 16, marginTop: 12 }}>Settings</p>
+              <p style={{ color: TEXT3, fontSize: 13 }}>Coming Soon</p>
+            </div>
           </div>
-          <span style={{ color: isDarkMode ? TEXT2 : "#555", fontSize: 12 }}>{item.val}</span>
-        </div>
-      ))}
-    </div>
-
-    {/* Trading Info */}
-    <div style={{ background: isDarkMode ? CARD_BG : "#ffffff", border: isDarkMode ? BORDER : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "20px 22px", marginBottom: 16 }}>
-      <p style={{ color: isDarkMode ? TEXT2 : "#444", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 16px" }}>📊 Trading Info</p>
-      {[
-        { label: "Total Trades", val: trades.length },
-        { label: "Win Rate", val: `${winRate}%` },
-        { label: "Account Balance", val: `$${balance.toFixed(2)}` },
-        { label: "Max Drawdown Limit", val: `$${maxDrawdown}` },
-      ].map((item, i, arr) => (
-        <div key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: i < arr.length - 1 ? (isDarkMode ? BORDER : "1px solid rgba(0,0,0,0.08)") : "none" }}>
-          <p style={{ color: isDarkMode ? TEXT1 : "#111", fontSize: 13, margin: 0 }}>{item.label}</p>
-          <span style={{ color: isDarkMode ? GOLD : "#b48c00", fontWeight: 700, fontSize: 13 }}>{item.val}</span>
-        </div>
-      ))}
-    </div>
-
-    {/* Danger Zone */}
-    <div style={{ background: isDarkMode ? CARD_BG : "#ffffff", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 14, padding: "20px 22px" }}>
-      <p style={{ color: "#ef4444", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 14px" }}>⚠️ Danger Zone</p>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <p style={{ color: isDarkMode ? TEXT1 : "#111", fontWeight: 700, fontSize: 13, margin: "0 0 3px" }}>Sign Out</p>
-          <p style={{ color: isDarkMode ? TEXT2 : "#555", fontSize: 11, margin: 0 }}>Akoonkaaga ka bax</p>
-        </div>
-        <button
-          onClick={() => { if (window.confirm("Sign out garaynaa?")) { import("firebase/auth").then(({ signOut }) => signOut(auth)); } }}
-          style={{ padding: "8px 18px", borderRadius: 9, fontWeight: 700, fontSize: 12, cursor: "pointer", background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}
-        >
-          Sign Out
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        )}
 
       </div>
     </div>
