@@ -1844,17 +1844,123 @@ export default function JournalTrading() {
           </div>
         )}
 
-        {/* ── SETTINGS ── */}
-        {activeTab === "settings" && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 400 }}>
-            <div style={{ textAlign: "center" }}>
-              <span style={{ fontSize: 40 }}>⚙️</span>
-              <p style={{ color: TEXT1, fontWeight: 900, fontSize: 16, marginTop: 12 }}>Settings</p>
-              <p style={{ color: TEXT3, fontSize: 13 }}>Coming Soon</p>
-            </div>
-          </div>
-        )}
+       {/* ── SETTINGS ── */}
+{activeTab === "settings" && (() => {
+  const [isDark, setIsDark] = useState(true);
 
+  const T = isDark
+    ? {
+        bg: MAIN_BG, card: CARD_BG, card2: CARD2, card3: CARD3,
+        text1: TEXT1, text2: TEXT2, text3: TEXT3,
+        border: BORDER, borderG: BORDER_G,
+        goldDim: GOLD_DIM, goldDim2: GOLD_DIM2,
+      }
+    : {
+        bg: "#f5f5f0", card: "#ffffff", card2: "#f0f0eb", card3: "#e8e8e3",
+        text1: "#111111", text2: "#444444", text3: "#999999",
+        border: "1px solid rgba(0,0,0,0.08)", borderG: "1px solid rgba(180,140,0,0.4)",
+        goldDim: "rgba(180,140,0,0.1)", goldDim2: "rgba(180,140,0,0.05)",
+      };
+
+  const GC = isDark ? GOLD : "#b48c00";
+
+  return (
+    <div style={{ padding: "24px 26px", animation: "fadeIn .3s ease", background: T.bg, minHeight: "100%" }}>
+      <h2 style={{ color: T.text1, fontWeight: 900, fontSize: 20, margin: "0 0 4px" }}>Settings</h2>
+      <p style={{ color: T.text2, fontSize: 12, margin: "0 0 24px" }}>App settings & preferences</p>
+
+      {/* Appearance */}
+      <div style={{ background: T.card, border: T.border, borderRadius: 14, padding: "20px 22px", marginBottom: 16 }}>
+        <p style={{ color: T.text2, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 16px" }}>🎨 Appearance</p>
+        
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: T.border }}>
+          <div>
+            <p style={{ color: T.text1, fontWeight: 700, fontSize: 14, margin: "0 0 3px" }}>Theme Mode</p>
+            <p style={{ color: T.text2, fontSize: 11, margin: 0 }}>Switch between Dark and Light mode</p>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[{ label: "🌙 Dark", val: true }, { label: "☀️ Light", val: false }].map(opt => (
+              <button
+                key={opt.label}
+                onClick={() => setIsDark(opt.val)}
+                style={{
+                  padding: "8px 16px", borderRadius: 9, fontWeight: 700, fontSize: 12,
+                  cursor: "pointer", transition: "all .2s",
+                  background: isDark === opt.val ? GC : T.card2,
+                  color: isDark === opt.val ? "#000" : T.text2,
+                  border: isDark === opt.val ? "none" : T.border,
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0" }}>
+          <div>
+            <p style={{ color: T.text1, fontWeight: 700, fontSize: 14, margin: "0 0 3px" }}>Current Mode</p>
+            <p style={{ color: T.text2, fontSize: 11, margin: 0 }}>Active theme is {isDark ? "Dark" : "Light"} Mode</p>
+          </div>
+          <span style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)", color: T.text1, padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, border: T.border }}>
+            {isDark ? "🌙 Dark" : "☀️ Light"}
+          </span>
+        </div>
+      </div>
+
+      {/* Account */}
+      <div style={{ background: T.card, border: T.border, borderRadius: 14, padding: "20px 22px", marginBottom: 16 }}>
+        <p style={{ color: T.text2, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 16px" }}>👤 Account</p>
+        {[
+          { icon: "📧", label: "Email", val: currentUser?.email },
+          { icon: "🏷️", label: "Display Name", val: traderName },
+          { icon: "⭐", label: "Plan", val: "Pro Trader" },
+        ].map((item, i, arr) => (
+          <div key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", borderBottom: i < arr.length - 1 ? T.border : "none" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 16 }}>{item.icon}</span>
+              <p style={{ color: T.text1, fontWeight: 600, fontSize: 13, margin: 0 }}>{item.label}</p>
+            </div>
+            <span style={{ color: T.text2, fontSize: 12 }}>{item.val}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Trading Defaults */}
+      <div style={{ background: T.card, border: T.border, borderRadius: 14, padding: "20px 22px", marginBottom: 16 }}>
+        <p style={{ color: T.text2, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 16px" }}>📊 Trading Info</p>
+        {[
+          { label: "Total Trades", val: trades.length },
+          { label: "Win Rate", val: `${winRate}%` },
+          { label: "Account Balance", val: `$${balance.toFixed(2)}` },
+          { label: "Max Drawdown Limit", val: `$${maxDrawdown}` },
+        ].map((item, i, arr) => (
+          <div key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: i < arr.length - 1 ? T.border : "none" }}>
+            <p style={{ color: T.text1, fontSize: 13, margin: 0 }}>{item.label}</p>
+            <span style={{ color: GC, fontWeight: 700, fontSize: 13 }}>{item.val}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Danger Zone */}
+      <div style={{ background: T.card, border: "1px solid rgba(239,68,68,0.2)", borderRadius: 14, padding: "20px 22px" }}>
+        <p style={{ color: "#ef4444", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 14px" }}>⚠️ Danger Zone</p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <p style={{ color: T.text1, fontWeight: 700, fontSize: 13, margin: "0 0 3px" }}>Sign Out</p>
+            <p style={{ color: T.text2, fontSize: 11, margin: 0 }}>Akoonkaaga ka bax</p>
+          </div>
+          <button
+            onClick={() => { if (window.confirm("Sign out garaynaa?")) { import("firebase/auth").then(({ signOut }) => signOut(auth)); } }}
+            style={{ padding: "8px 18px", borderRadius: 9, fontWeight: 700, fontSize: 12, cursor: "pointer", background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+})()}
       </div>
     </div>
   );
