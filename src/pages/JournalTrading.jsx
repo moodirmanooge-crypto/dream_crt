@@ -1501,18 +1501,24 @@ export default function JournalTrading() {
           </div>
         </div>
 
-       {activeTab === "dashboard" && (
+    {activeTab === "dashboard" && (
   <div style={{ 
     flex: 1, 
     display: "flex", 
     alignItems: "center", 
     justifyContent: "center",
-    animation: "fadeIn .3s ease" 
+    animation: "fadeIn .3s ease",
+    width: "100%",
+    height: "100vh",
   }}>
     <img 
       src="/image.png"  
       alt="Dream CRT" 
-      style={{ maxWidth: 400, width: "100%" }} 
+      style={{ 
+        width: "100%", 
+        height: "100vh", 
+        objectFit: "cover"
+      }} 
     />
   </div>
 )}
