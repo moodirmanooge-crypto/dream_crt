@@ -459,7 +459,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
     { value: "Cancelled", label: "Cancelled 🚫" },
   ];
 
-  const isLoss = tradeData.status === "Loss";
   const isWin = tradeData.status === "Win";
 
   return (
@@ -580,17 +579,6 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               </div>
             </div>
 
-            {/* 🔥 LOSS BANNER */}
-            {isLoss && (
-              <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.40)", borderRadius: 12, padding: "12px 16px" }}>
-                <span style={{ fontSize: 24 }}>🔥</span>
-                <div>
-                  <p style={{ color: RED_C, fontWeight: 900, fontSize: 13, margin: 0 }}>Account waa gubtay!</p>
-                  <p style={{ color: "#f87171", fontSize: 11, margin: "3px 0 0", fontWeight: 500 }}>Xukun xun — talo gal, nafsadaada xiri, manta jooji.</p>
-                </div>
-              </div>
-            )}
-
             {/* EXIT AVG / EXIT TAPE */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
@@ -654,7 +642,7 @@ function NewTradeModal({ onClose, onSave, profileData }) {
               <div style={{ flex: 1, height: 1, background: "rgba(245,197,24,0.18)" }} />
             </div>
 
-            {/* WIN BADGE — HAL MEEL KALIYA, Psychology ka hoose */}
+            {/* WIN BADGE — HAL MEEL KALIYA */}
             {isWin && (
               <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.35)", borderRadius: 12, padding: "10px 16px" }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: GREEN_C, boxShadow: "0 0 6px #22c55e" }} />
