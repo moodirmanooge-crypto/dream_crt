@@ -708,121 +708,288 @@ function NewTradeModal({ onClose, onSave, profileData }) {
 function JournalTradeDetailModal({ trade, onClose, onDelete }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgErr, setImgErr] = useState(false);
+  const [isDark, setIsDark] = useState(true);
+
+  const T = isDark
+    ? {
+        bg: "#0d0d0d", card: "#141414", card2: "#1a1a1a",
+        text1: "#ffffff", text2: "#cccccc", text3: "#555555",
+        border: "1px solid rgba(255,255,255,0.07)",
+        borderG: "1px solid rgba(245,197,24,0.35)",
+        goldDim: "rgba(245,197,24,0.08)",
+        goldDim2: "rgba(245,197,24,0.04)",
+        shadow: "0 0 80px rgba(245,197,24,0.12)",
+        headerBg: "#141414", footerBg: "#0d0d0d",
+      }
+    : {
+        bg: "#ffffff", card: "#f8f8f8", card2: "#efefef",
+        text1: "#111111", text2: "#333333", text3: "#777777",
+        border: "1px solid rgba(0,0,0,0.10)",
+        borderG: "1px solid rgba(180,140,0,0.45)",
+        goldDim: "rgba(180,140,0,0.08)",
+        goldDim2: "rgba(180,140,0,0.04)",
+        shadow: "0 0 80px rgba(180,140,0,0.10)",
+        headerBg: "#f8f8f8", footerBg: "#f8f8f8",
+      };
+
+  const GOLD_C  = isDark ? "#f5c518" : "#b48c00";
+  const GREEN_C = "#22c55e";
+  const RED_C   = "#ef4444";
+  const BLUE_C  = "#3b82f6";
 
   const STATUS_CFG = {
-    Win:       { color: GREEN,   bg: "rgba(34,197,94,0.12)",   border: "rgba(34,197,94,0.3)",   icon: "✅", label: "WIN" },
-    Loss:      { color: RED_NEG, bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.3)",   icon: "❌", label: "LOSS" },
-    Breakeven: { color: GOLD,    bg: "rgba(245,197,24,0.12)",  border: "rgba(245,197,24,0.3)",  icon: "➖", label: "B/E" },
-    Open:      { color: BLUE,    bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.3)",  icon: "●",  label: "OPEN" },
+    Win:       { color: GREEN_C, bg: "rgba(34,197,94,0.12)",  border: "rgba(34,197,94,0.3)",  icon: "✅", label: "WIN" },
+    Loss:      { color: RED_C,   bg: "rgba(239,68,68,0.12)",  border: "rgba(239,68,68,0.3)",  icon: "❌", label: "LOSS" },
+    Breakeven: { color: GOLD_C,  bg: "rgba(245,197,24,0.12)", border: "rgba(245,197,24,0.3)", icon: "➖", label: "B/E" },
+    Open:      { color: BLUE_C,  bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.3)", icon: "●",  label: "OPEN" },
+    Pending:   { color: "#f97316", bg: "rgba(249,115,22,0.12)", border: "rgba(249,115,22,0.3)", icon: "⏳", label: "PENDING" },
+    Cancelled: { color: "#6b7280", bg: "rgba(107,114,128,0.12)", border: "rgba(107,114,128,0.3)", icon: "🚫", label: "CANCELLED" },
   };
   const EMO_COLOR = {
     "Calm 😌": "#22c55e", "Confident 💪": "#3b82f6", "FOMO 😰": "#f97316",
     "Greedy 🤑": "#eab308", "Revenge 😡": "#ef4444", "Tired 😴": "#8b5cf6",
   };
 
-  const pl = Number(trade.profit_loss || 0);
-  const sc = STATUS_CFG[trade.status] || STATUS_CFG.Open;
-  const emoColor = EMO_COLOR[trade.emotion] || GOLD;
+  const pl        = Number(trade.profit_loss || 0);
+  const sc        = STATUS_CFG[trade.status] || STATUS_CFG.Open;
+  const emoColor  = EMO_COLOR[trade.emotion] || GOLD_C;
   const hasValidPL = trade.profit_loss !== "" && trade.profit_loss !== undefined && trade.profit_loss !== null;
 
-  const KVBox = ({ label, value, color, full = false }) => (
-    <div style={{ background: CARD2, border: BORDER, borderRadius: 11, padding: "12px 14px", gridColumn: full ? "span 2" : "span 1" }}>
-      <p style={{ color: TEXT3, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 5px" }}>{label}</p>
-      <p style={{ color: color || TEXT1, fontWeight: 700, fontSize: 14, margin: 0 }}>{value || "—"}</p>
+  // KV box – reusable field card
+  const KVBox = ({ label, value, color, icon }) => (
+    <div style={{
+      background: T.card2, border: T.border, borderRadius: 11,
+      padding: "13px 15px",
+    }}>
+      <p style={{
+        color: T.text3, fontSize: 9, fontWeight: 800,
+        textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px",
+      }}>
+        {icon && <span style={{ marginRight: 4 }}>{icon}</span>}{label}
+      </p>
+      <p style={{ color: color || T.text1, fontWeight: 700, fontSize: 15, margin: 0 }}>
+        {value || "—"}
+      </p>
     </div>
   );
 
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.92)", backdropFilter: "blur(14px)", padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: "92vh", borderRadius: 22, background: CARD_BG, border: BORDER_G, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 0 80px rgba(245,197,24,0.15)", animation: "fadeIn .25s ease" }}>
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 60,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: "rgba(0,0,0,0.93)", backdropFilter: "blur(14px)",
+        padding: "4px",
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: "98vw", height: "98vh",
+          borderRadius: 22, background: T.card,
+          border: T.borderG, overflow: "hidden",
+          display: "flex", flexDirection: "column",
+          boxShadow: T.shadow,
+          animation: "fadeIn .25s ease",
+        }}
+      >
 
         {/* ── HEADER ── */}
-        <div style={{ padding: "20px 22px 16px", borderBottom: BORDER, flexShrink: 0 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              {/* Direction Icon */}
-              <div style={{ width: 48, height: 48, borderRadius: 13, background: trade.direction === "BUY" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${trade.direction === "BUY" ? GREEN : RED_NEG}30`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, flexShrink: 0 }}>
-                {trade.direction === "BUY" ? <FaArrowUp style={{ color: GREEN, fontSize: 16 }} /> : <FaArrowDown style={{ color: RED_NEG, fontSize: 16 }} />}
-                <span style={{ fontSize: 8, fontWeight: 900, color: trade.direction === "BUY" ? GREEN : RED_NEG }}>{trade.direction}</span>
-              </div>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <h2 style={{ color: TEXT1, fontWeight: 900, fontSize: 22, margin: 0 }}>{trade.pair}</h2>
-                  {trade.strategy && (
-                    <span style={{ background: GOLD_DIM, border: "1px solid rgba(245,197,24,0.2)", borderRadius: 6, color: GOLD, fontSize: 10, fontWeight: 800, padding: "2px 8px" }}>
-                      {trade.strategy}
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 6, color: sc.color, fontSize: 11, fontWeight: 800, padding: "3px 10px" }}>
-                    {sc.icon} {sc.label}
+        <div style={{
+          padding: "16px 24px 14px",
+          borderBottom: T.border, flexShrink: 0,
+          background: T.headerBg,
+          display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+        }}>
+          {/* Left: direction icon + pair info */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+              background: trade.direction === "BUY" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+              border: `1px solid ${trade.direction === "BUY" ? GREEN_C : RED_C}30`,
+              display: "flex", flexDirection: "column", alignItems: "center",
+              justifyContent: "center", gap: 2,
+            }}>
+              {trade.direction === "BUY"
+                ? <FaArrowUp style={{ color: GREEN_C, fontSize: 18 }} />
+                : <FaArrowDown style={{ color: RED_C, fontSize: 18 }} />}
+              <span style={{ fontSize: 8, fontWeight: 900, color: trade.direction === "BUY" ? GREEN_C : RED_C }}>
+                {trade.direction}
+              </span>
+            </div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                <h2 style={{ color: T.text1, fontWeight: 900, fontSize: 24, margin: 0 }}>{trade.pair}</h2>
+                {trade.strategy && (
+                  <span style={{
+                    background: T.goldDim, border: T.borderG,
+                    borderRadius: 6, color: GOLD_C, fontSize: 11, fontWeight: 800,
+                    padding: "3px 10px",
+                  }}>
+                    {trade.strategy}
                   </span>
-                  {trade.session && <span style={{ background: CARD2, border: BORDER, borderRadius: 6, color: TEXT2, fontSize: 10, padding: "3px 8px" }}>🌐 {trade.session}</span>}
-                  {trade.timeframe && <span style={{ background: CARD2, border: BORDER, borderRadius: 6, color: TEXT2, fontSize: 10, padding: "3px 8px" }}>{trade.timeframe}</span>}
-                </div>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                <span style={{
+                  background: sc.bg, border: `1px solid ${sc.border}`,
+                  borderRadius: 6, color: sc.color, fontSize: 11, fontWeight: 800,
+                  padding: "3px 11px",
+                }}>
+                  {sc.icon} {sc.label}
+                </span>
+                {trade.session && (
+                  <span style={{ background: T.card2, border: T.border, borderRadius: 6, color: T.text2, fontSize: 10, padding: "3px 9px" }}>
+                    🌐 {trade.session}
+                  </span>
+                )}
+                {trade.timeframe && (
+                  <span style={{ background: T.card2, border: T.border, borderRadius: 6, color: T.text2, fontSize: 10, padding: "3px 9px" }}>
+                    ⏱ {trade.timeframe}
+                  </span>
+                )}
+                {trade.emotion && (
+                  <span style={{
+                    background: emoColor + "20", border: `1px solid ${emoColor}40`,
+                    borderRadius: 6, color: emoColor, fontSize: 10, fontWeight: 700,
+                    padding: "3px 9px",
+                  }}>
+                    {trade.emotion}
+                  </span>
+                )}
               </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-              <button onClick={onClose} style={{ background: CARD2, border: BORDER, color: TEXT2, cursor: "pointer", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}><FaTimes /></button>
-              {hasValidPL && (
-                <p style={{ color: pl >= 0 ? GREEN : RED_NEG, fontWeight: 900, fontSize: 24, margin: 0, letterSpacing: "-0.5px" }}>
-                  {pl >= 0 ? "+" : ""}${pl}
-                </p>
-              )}
-              {trade.rrr && trade.rrr !== "0" && (
-                <p style={{ color: GOLD, fontSize: 11, fontWeight: 700, margin: 0 }}>RR 1:{trade.rrr}</p>
-              )}
+          </div>
+
+          {/* Right: P&L + RR + controls */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {/* Dark / Light toggle */}
+              <button
+                onClick={() => setIsDark(!isDark)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "6px 13px", borderRadius: 20,
+                  border: T.borderG, background: T.card2,
+                  color: T.text2, cursor: "pointer", fontSize: 12, fontWeight: 700,
+                }}
+              >
+                {isDark ? "☀️ Light" : "🌙 Dark"}
+              </button>
+              <button
+                onClick={onClose}
+                style={{
+                  background: T.card2, border: T.border, color: T.text2,
+                  cursor: "pointer", borderRadius: 9,
+                  width: 32, height: 32,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+                }}
+              >
+                <FaTimes />
+              </button>
             </div>
+            {hasValidPL && (
+              <p style={{
+                color: pl >= 0 ? GREEN_C : RED_C,
+                fontWeight: 900, fontSize: 30, margin: 0, letterSpacing: "-1px",
+              }}>
+                {pl >= 0 ? "+" : ""}${pl}
+              </p>
+            )}
+            {trade.rrr && trade.rrr !== "0" && (
+              <p style={{ color: GOLD_C, fontSize: 12, fontWeight: 700, margin: 0 }}>
+                RR 1:{trade.rrr}
+              </p>
+            )}
           </div>
         </div>
 
         {/* ── SCROLLABLE BODY ── */}
-        <div style={{ overflowY: "auto", flex: 1, padding: "16px 22px 22px" }}>
+        <div style={{
+          overflowY: "auto", flex: 1,
+          padding: "20px 24px 24px",
+          background: T.bg,
+        }}>
 
-          {/* KV GRID */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-            <KVBox label="Entry" value={trade.entryPrice} />
-            <KVBox label="Lot Size" value={trade.lotSize ? `${trade.lotSize} lot` : null} />
-            <KVBox label="Take Profit" value={trade.takeProfit} color={GREEN} />
-            <KVBox label="Stop Loss" value={trade.stopLoss} color={RED_NEG} />
-            <KVBox label="Pips" value={trade.pips ? `${trade.pips} pips` : null} color={GOLD} />
-            <KVBox label="Net P&L" value={hasValidPL ? `${pl >= 0 ? "+" : ""}$${pl}` : null} color={pl >= 0 ? GREEN : RED_NEG} />
-            {trade.exitPrice && <KVBox label="Exit Avg" value={trade.exitPrice} />}
-            {trade.profitPercent && <KVBox label="P&L %" value={`${trade.profitPercent}%`} color={parseFloat(trade.profitPercent) >= 0 ? GREEN : RED_NEG} />}
-            {trade.bullet && <KVBox label="Bullet" value={trade.bullet} color={trade.bullet === "YES" ? GREEN : RED_NEG} />}
-            {trade.money && <KVBox label="Money" value={trade.money} color={trade.money === "YES" ? GREEN : RED_NEG} />}
-            {trade.era && <KVBox label="ERA" value={trade.era} />}
-            {trade.exitTape && <KVBox label="Exit Tape" value={trade.exitTape} />}
+          {/* ── FIELD GRID (same order as NewTradeModal) ── */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 14 }}>
+            <KVBox label="Entry"     value={trade.entryPrice} />
+            <KVBox label="Lot Size"  value={trade.lotSize ? `${trade.lotSize} lot` : null} />
+            <KVBox label="Take Profit" value={trade.takeProfit} color={GREEN_C} />
+            <KVBox label="Stop Loss"   value={trade.stopLoss}   color={RED_C} />
+            <KVBox label="Pips"    value={trade.pips ? `${trade.pips} pips` : null} color={GOLD_C} />
+            <KVBox label="Net P&L" value={hasValidPL ? `${pl >= 0 ? "+" : ""}$${pl}` : null} color={pl >= 0 ? GREEN_C : RED_C} />
+            <KVBox label="Exit Avg" value={trade.exitPrice || null} />
+            <KVBox label="P&L %"   value={trade.profitPercent ? `${trade.profitPercent}%` : null} color={trade.profitPercent ? (parseFloat(trade.profitPercent) >= 0 ? GREEN_C : RED_C) : undefined} />
           </div>
 
-          {/* SETUP NOTE */}
-          {trade.setup && (
-            <div style={{ background: CARD2, border: BORDER, borderRadius: 11, padding: "12px 14px", marginBottom: 10 }}>
-              <p style={{ color: TEXT3, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 5px" }}>📋 Setup</p>
-              <p style={{ color: TEXT1, fontSize: 13, margin: 0, lineHeight: 1.6 }}>{trade.setup}</p>
-            </div>
-          )}
-
-          {/* PSYCHOLOGY NOTE */}
-          {trade.notes_psychology && (
-            <div style={{ background: GOLD_DIM2, borderLeft: `3px solid ${GOLD}50`, borderRadius: "0 11px 11px 0", padding: "12px 14px", marginBottom: 10 }}>
-              <p style={{ color: TEXT3, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 5px" }}>🧠 Psychology</p>
-              {trade.emotion && (
-                <span style={{ background: emoColor + "20", border: `1px solid ${emoColor}40`, borderRadius: 6, color: emoColor, fontSize: 10, fontWeight: 700, padding: "2px 8px", display: "inline-block", marginBottom: 7 }}>
-                  {trade.emotion}
-                </span>
+          {/* ── BULLET / MONEY / ERA row ── */}
+          {(trade.bullet || trade.money || trade.era || trade.exitTape) && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 14 }}>
+              {trade.bullet && (
+                <KVBox label="Bullet" value={trade.bullet} color={trade.bullet === "YES" ? GREEN_C : RED_C} />
               )}
-              <p style={{ color: TEXT2, fontSize: 13, margin: 0, lineHeight: 1.6 }}>{trade.notes_psychology}</p>
+              {trade.money && (
+                <KVBox label="Money" value={trade.money} color={trade.money === "YES" ? GREEN_C : RED_C} />
+              )}
+              {trade.era && (
+                <KVBox label="ERA" value={trade.era} />
+              )}
+              {trade.exitTape && (
+                <KVBox label="Exit Tape / Loge" value={trade.exitTape} />
+              )}
             </div>
           )}
 
-          {/* CHART IMAGE */}
+          {/* ── SETUP NOTE ── */}
+          {trade.setup && (
+            <div style={{
+              background: T.card2, border: T.border, borderRadius: 12,
+              padding: "13px 16px", marginBottom: 12,
+            }}>
+              <p style={{ color: T.text3, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>
+                📋 Setup
+              </p>
+              <p style={{ color: T.text1, fontSize: 13, margin: 0, lineHeight: 1.6 }}>{trade.setup}</p>
+            </div>
+          )}
+
+          {/* ── PSYCHOLOGY NOTE ── */}
+          {trade.notes_psychology && (
+            <div style={{
+              background: T.goldDim2,
+              borderLeft: `3px solid ${GOLD_C}50`,
+              borderRadius: "0 12px 12px 0",
+              padding: "13px 16px", marginBottom: 12,
+            }}>
+              <p style={{ color: T.text3, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 7px" }}>
+                🧠 Psychology
+              </p>
+              <p style={{ color: T.text2, fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+                {trade.notes_psychology}
+              </p>
+            </div>
+          )}
+
+          {/* ── CHART IMAGE ── */}
           {trade.setupImageURL && !imgErr && (
-            <div style={{ borderRadius: 12, overflow: "hidden", marginBottom: 10, position: "relative", background: CARD2, minHeight: imgLoaded ? 0 : 80 }}>
+            <div style={{
+              borderRadius: 14, overflow: "hidden",
+              marginBottom: 14, position: "relative",
+              background: T.card2,
+              minHeight: imgLoaded ? 0 : 100,
+            }}>
               {!imgLoaded && (
-                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${GOLD}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
+                <div style={{
+                  position: "absolute", inset: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: "50%",
+                    border: `2px solid ${GOLD_C}`, borderTopColor: "transparent",
+                    animation: "spin 0.8s linear infinite",
+                  }} />
                 </div>
               )}
               <img
@@ -831,13 +998,32 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
                 referrerPolicy="no-referrer"
                 onLoad={() => setImgLoaded(true)}
                 onError={() => setImgErr(true)}
-                style={{ width: "100%", maxHeight: 280, objectFit: "cover", display: "block", opacity: imgLoaded ? 1 : 0, transition: "opacity .3s" }}
+                style={{
+                  width: "100%",
+                  maxHeight: "55vh",
+                  objectFit: "contain",
+                  display: "block",
+                  opacity: imgLoaded ? 1 : 0,
+                  transition: "opacity .3s",
+                  background: T.card2,
+                }}
               />
               {imgLoaded && (
-                <div style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.7)", borderRadius: 6, padding: "4px 9px", display: "flex", alignItems: "center", gap: 5 }}>
-                  <FaImage style={{ color: GOLD, fontSize: 9 }} />
-                  <span style={{ color: TEXT2, fontSize: 10 }}>Chart Setup</span>
-                  <a href={trade.setupImageURL} target="_blank" rel="noopener noreferrer" style={{ color: GOLD, fontSize: 9, marginLeft: 4 }}>
+                <div style={{
+                  position: "absolute", bottom: 10, right: 10,
+                  background: "rgba(0,0,0,0.7)", borderRadius: 7,
+                  padding: "5px 11px",
+                  display: "flex", alignItems: "center", gap: 6,
+                }}>
+                  <FaImage style={{ color: GOLD_C, fontSize: 10 }} />
+                  <span style={{ color: "#ccc", fontSize: 11 }}>Chart Setup</span>
+                  <a
+                    href={trade.setupImageURL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: GOLD_C, fontSize: 10, marginLeft: 2 }}
+                    onClick={e => e.stopPropagation()}
+                  >
                     <FaExternalLinkAlt />
                   </a>
                 </div>
@@ -845,26 +1031,48 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
             </div>
           )}
 
-          {/* DATE */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, color: TEXT3, fontSize: 11 }}>
+          {/* ── DATE ── */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, color: T.text3, fontSize: 11 }}>
             <FaCalendarAlt size={9} />
-            <span>{new Date(trade.createdAt).toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+            <span>
+              {new Date(trade.createdAt).toLocaleString("en-US", {
+                month: "long", day: "numeric", year: "numeric",
+                hour: "2-digit", minute: "2-digit",
+              })}
+            </span>
           </div>
         </div>
 
         {/* ── FOOTER ── */}
-        <div style={{ padding: "12px 22px 16px", borderTop: BORDER, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+        <div style={{
+          padding: "13px 24px 18px",
+          borderTop: T.border,
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          flexShrink: 0, background: T.footerBg,
+        }}>
           <button
             onClick={() => onDelete(trade.id)}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, background: "none", border: "1px solid rgba(239,68,68,0.25)", color: RED_NEG, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .15s" }}
+            style={{
+              display: "flex", alignItems: "center", gap: 7,
+              padding: "9px 18px", borderRadius: 10,
+              background: "none",
+              border: "1px solid rgba(239,68,68,0.28)",
+              color: RED_C, fontSize: 13, fontWeight: 700, cursor: "pointer",
+              transition: "all .15s",
+            }}
             onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
           >
-            <FaTrash size={10} /> Delete Trade
+            <FaTrash size={11} /> Delete Trade
           </button>
           <button
             onClick={onClose}
-            style={{ padding: "8px 20px", borderRadius: 9, background: GOLD, color: "#000", border: "none", fontWeight: 900, fontSize: 12, cursor: "pointer" }}
+            style={{
+              padding: "9px 28px", borderRadius: 10,
+              background: isDark ? "#f5c518" : "#b48c00",
+              color: "#000", border: "none",
+              fontWeight: 900, fontSize: 13, cursor: "pointer",
+            }}
           >
             Close
           </button>
@@ -873,7 +1081,6 @@ function JournalTradeDetailModal({ trade, onClose, onDelete }) {
     </div>
   );
 }
-
 // ── JOURNAL TRADE CARD ────────────────────────────────────────────────
 function JournalTradeCard({ trade, onDelete, onOpen }) {
   const [imgLoaded, setImgLoaded] = useState(false);
