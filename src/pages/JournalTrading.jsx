@@ -1501,106 +1501,21 @@ export default function JournalTrading() {
           </div>
         </div>
 
-        {/* ── DASHBOARD ── */}
         {activeTab === "dashboard" && (
-          <div style={{ padding: "20px 26px", animation: "fadeIn .3s ease" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 18 }}>
-              <StatCard label="Net P&L" value={`${monthlyProfit >= 0 ? "+" : ""}$${monthlyProfit.toFixed(2)}`} color={monthlyProfit >= 0 ? GREEN : RED_NEG} change={`${Math.abs(monthlyProfit).toFixed(0)}`} changeUp={monthlyProfit >= 0} sparkData={eqData.slice(-8)} />
-              <StatCard label="Profit Factor" value={profitFactor} color={parseFloat(profitFactor) >= 1.5 ? GREEN : GOLD} sparkData={eqData.slice(-8).map((d, i) => ({ v: i + 1 }))} />
-              <StatCard label="Win %" value={`${winRate}%`} color={winRate >= 60 ? GREEN : winRate >= 40 ? GOLD : RED_NEG} change={`${wins}W / ${losses}L`} changeUp={winRate >= 50} />
-              <StatCard label="Avg Win / Loss" value={`${avgWin !== "–" ? `$${avgWin}` : "–"}`} color={GREEN} />
-              <StatCard label="Max Drawdown" value={`-$${maxDD}`} color={RED_NEG} />
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 14, marginBottom: 18 }}>
-              <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "20px 22px" }}>
-                <p style={{ color: TEXT2, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 14px" }}>Trade Score</p>
-                <p style={{ color: TEXT2, fontSize: 10, margin: "0 0 14px" }}>Weighted composite of your edge</p>
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
-                  <svg width="120" height="120" viewBox="0 0 120 120">
-                    <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
-                    <circle cx="60" cy="60" r="50" fill="none" stroke={scoreColor} strokeWidth="8" strokeDasharray={`${2 * Math.PI * 50}`} strokeDashoffset={`${2 * Math.PI * 50 * (1 - tradeScore / 100)}`} strokeLinecap="round" transform="rotate(-90 60 60)" style={{ transition: "stroke-dashoffset 1s ease" }} />
-                    <text x="60" y="56" textAnchor="middle" fill={TEXT1} fontSize="28" fontWeight="900">{tradeScore}</text>
-                    <text x="60" y="72" textAnchor="middle" fill={scoreColor} fontSize="11" fontWeight="700">{tradeScore >= 70 ? "Strong" : tradeScore >= 40 ? "Average" : "Weak"}</text>
-                  </svg>
-                </div>
-                {[
-                  { l: "Win rate", v: winRate, max: 100 },
-                  { l: "Profit factor", v: Math.min(100, parseFloat(profitFactor || 0) * 20), max: 100 },
-                  { l: "Win / loss ratio", v: avgLoss !== "–" && avgWin !== "–" ? Math.min(100, (parseFloat(avgWin) / parseFloat(avgLoss)) * 40) : 0, max: 100 },
-                  { l: "Consistency", v: Math.min(100, totalTrades * 5), max: 100 },
-                ].map(row => (
-                  <div key={row.l} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                    <span style={{ color: TEXT2, fontSize: 11, width: 100, flexShrink: 0 }}>{row.l}</span>
-                    <div style={{ flex: 1, height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 4, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${row.v}%`, background: GOLD, borderRadius: 4, transition: "width .8s ease" }} />
-                    </div>
-                    <span style={{ color: TEXT1, fontSize: 11, fontWeight: 700, width: 26, textAlign: "right" }}>{Math.round(row.v)}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "20px 22px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                  <div>
-                    <p style={{ color: TEXT2, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 4px" }}>Equity Curve</p>
-                    <p style={{ color: TEXT1, fontWeight: 900, fontSize: 26, margin: 0, letterSpacing: "-1px" }}>${balance.toFixed(2)}</p>
-                    <p style={{ color: monthlyProfit >= 0 ? GREEN : RED_NEG, fontSize: 12, margin: "2px 0 0", fontWeight: 700 }}>{monthlyProfit >= 0 ? "+" : ""}${monthlyProfit.toFixed(2)} ({winRate}%)</p>
-                  </div>
-                </div>
-                {eqData.length > 1 ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <AreaChart data={eqData}>
-                      <defs><linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={GOLD} stopOpacity={0.2} /><stop offset="95%" stopColor={GOLD} stopOpacity={0} /></linearGradient></defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
-                      <XAxis dataKey="name" stroke="#222" tick={{ fill: TEXT3, fontSize: 9 }} />
-                      <YAxis stroke="#222" tick={{ fill: TEXT3, fontSize: 9 }} />
-                      <Tooltip contentStyle={{ background: CARD2, border: BORDER_G, borderRadius: 8, color: TEXT1, fontSize: 11 }} />
-                      <Area type="monotone" dataKey="balance" stroke={GOLD} fill="url(#goldGrad)" strokeWidth={2} dot={false} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ color: TEXT3, fontSize: 12 }}>Add closed trades to see equity curve</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "18px 20px", marginBottom: 18 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <p style={{ color: TEXT1, fontWeight: 900, fontSize: 14, margin: 0 }}>Recent Trades</p>
-                <button onClick={() => setActiveTab("journal")} style={{ color: GOLD, background: "none", border: "none", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>View All →</button>
-              </div>
-              {trades.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "32px 0" }}>
-                  <p style={{ color: TEXT3, fontSize: 30, margin: "0 0 8px" }}>📋</p>
-                  <p style={{ color: TEXT3, fontSize: 12 }}>No trades yet. Add your first trade!</p>
-                  <button onClick={() => setShowNewTradeModal(true)} style={{ marginTop: 10, background: GOLD, color: "#000", border: "none", borderRadius: 8, padding: "8px 18px", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>+ New Trade</button>
-                </div>
-              ) : (
-                <div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.7fr 0.8fr 0.8fr 0.7fr 0.8fr 0.6fr 1fr", gap: 6, padding: "0 6px 9px", borderBottom: BORDER }}>
-                    {["PAIR", "DIR", "ENTRY", "EXIT", "STATUS", "P/L", "RR", "DATE"].map(h => <span key={h} style={{ color: TEXT3, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em" }}>{h}</span>)}
-                  </div>
-                  {[...trades].sort((a, b) => b.createdAt - a.createdAt).slice(0, 8).map(t => {
-                    const pl = Number(t.profit_loss || 0);
-                    const sc = t.status === "Win" ? GREEN : t.status === "Loss" ? RED_NEG : t.status === "Open" ? BLUE : TEXT3;
-                    return (
-                      <div key={t.id} style={{ display: "grid", gridTemplateColumns: "1.2fr 0.7fr 0.8fr 0.8fr 0.7fr 0.8fr 0.6fr 1fr", gap: 6, padding: "9px 6px", borderBottom: `1px solid rgba(255,255,255,0.03)`, alignItems: "center" }}>
-                        <div><p style={{ color: TEXT1, fontWeight: 700, fontSize: 12, margin: 0 }}>{t.pair}</p>{t.strategy && <p style={{ color: TEXT3, fontSize: 9, margin: "1px 0 0" }}>{t.strategy}</p>}</div>
-                        <span style={{ background: t.direction === "BUY" ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)", color: t.direction === "BUY" ? GREEN : RED_NEG, fontWeight: 700, fontSize: 10, padding: "2px 6px", borderRadius: 5, textAlign: "center", display: "inline-block" }}>{t.direction}</span>
-                        <span style={{ color: TEXT2, fontSize: 11 }}>{t.entryPrice || "—"}</span>
-                        <span style={{ color: TEXT2, fontSize: 11 }}>{t.takeProfit || "—"}</span>
-                        <span style={{ color: sc, fontWeight: 700, fontSize: 10, padding: "2px 6px", borderRadius: 5, background: sc + "15", textAlign: "center", display: "inline-block" }}>{t.status}</span>
-                        <span style={{ color: pl >= 0 ? GREEN : RED_NEG, fontWeight: 700, fontSize: 11 }}>{t.profit_loss !== "" && t.profit_loss !== undefined ? `${pl >= 0 ? "+" : ""}$${pl}` : "—"}</span>
-                        <span style={{ color: TEXT2, fontSize: 10 }}>{t.rrr ? `1:${t.rrr}` : "—"}</span>
-                        <span style={{ color: TEXT3, fontSize: 10 }}>{new Date(t.createdAt).toLocaleDateString()}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+  <div style={{ 
+    flex: 1, 
+    display: "flex", 
+    alignItems: "center", 
+    justifyContent: "center",
+    animation: "fadeIn .3s ease" 
+  }}>
+    <img 
+      public="/image.png" 
+      alt="Dream CRT" 
+      style={{ maxWidth: 400, width: "100%" }} 
+    />
+  </div>
+)}
 
         {/* ── TRADE HISTORY ── */}
         {activeTab === "journal" && (
