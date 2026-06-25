@@ -1769,15 +1769,83 @@ export default function JournalTrading() {
         )}
 
         {/* ── SETTINGS ── */}
-        {activeTab === "settings" && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 400 }}>
-            <div style={{ textAlign: "center" }}>
-              <span style={{ fontSize: 40 }}>⚙️</span>
-              <p style={{ color: TEXT1, fontWeight: 900, fontSize: 16, marginTop: 12 }}>Settings</p>
-              <p style={{ color: TEXT3, fontSize: 13 }}>Coming Soon</p>
-            </div>
+{activeTab === "settings" && (
+  <div style={{ maxWidth: 480, margin: "40px auto", padding: "0 16px" }}>
+
+    {/* HEADER */}
+    <div style={{ marginBottom: 28 }}>
+      <p style={{ color: TEXT1, fontWeight: 900, fontSize: 20, margin: 0 }}>Settings</p>
+      <p style={{ color: TEXT3, fontSize: 12, margin: "4px 0 0" }}>Appearance iyo preferences</p>
+    </div>
+
+    {/* APPEARANCE CARD */}
+    <div style={{ background: CARD, border: BORDER_G, borderRadius: 16, overflow: "hidden", marginBottom: 16 }}>
+      <div style={{ padding: "12px 18px", borderBottom: BORDER }}>
+        <p style={{ color: TEXT3, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>Appearance</p>
+      </div>
+
+      {/* Dark Mode Row */}
+      <div style={{ padding: "16px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: BORDER }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: isDark ? "rgba(245,197,24,0.12)" : "rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
+            {isDark ? "🌙" : "☀️"}
           </div>
-        )}
+          <div>
+            <p style={{ color: TEXT1, fontWeight: 700, fontSize: 14, margin: 0 }}>{isDark ? "Dark Mode" : "Light Mode"}</p>
+            <p style={{ color: TEXT3, fontSize: 11, margin: "2px 0 0" }}>{isDark ? "Asalka — madow" : "Cad — iftiin badan"}</p>
+          </div>
+        </div>
+        {/* Toggle switch */}
+        <div
+          onClick={() => setIsDark(!isDark)}
+          style={{
+            width: 52, height: 28, borderRadius: 14, cursor: "pointer", position: "relative", transition: "background 0.3s",
+            background: isDark ? GOLD_C : "rgba(0,0,0,0.15)",
+            border: isDark ? "none" : "1px solid rgba(0,0,0,0.15)",
+          }}
+        >
+          <div style={{
+            position: "absolute", top: 3, left: isDark ? 27 : 3, width: 22, height: 22,
+            borderRadius: "50%", background: "#fff", transition: "left 0.25s",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+          }} />
+        </div>
+      </div>
+
+      {/* Reset to Default Row */}
+      <div style={{ padding: "16px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(59,130,246,0.10)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
+            🔄
+          </div>
+          <div>
+            <p style={{ color: TEXT1, fontWeight: 700, fontSize: 14, margin: 0 }}>Reset to Default</p>
+            <p style={{ color: TEXT3, fontSize: 11, margin: "2px 0 0" }}>Dark mode — asalkii ku celi</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setIsDark(true)}
+          style={{
+            padding: "7px 16px", borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: "pointer",
+            background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.30)",
+            color: "#3b82f6",
+          }}
+        >
+          Reset
+        </button>
+      </div>
+    </div>
+
+    {/* PREVIEW BADGE */}
+    <div style={{ background: isDark ? "rgba(245,197,24,0.06)" : "rgba(180,140,0,0.06)", border: isDark ? "1px solid rgba(245,197,24,0.20)" : "1px solid rgba(180,140,0,0.25)", borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+      <span style={{ fontSize: 16 }}>{isDark ? "🌙" : "☀️"}</span>
+      <p style={{ color: TEXT2, fontSize: 12, margin: 0, fontWeight: 600 }}>
+        Hadeer: <span style={{ color: isDark ? GOLD_C : "#b48c00", fontWeight: 900 }}>{isDark ? "Dark Mode" : "Light Mode"}</span> ayaa shidan
+      </p>
+    </div>
+
+  </div>
+)}
 
       </div>
     </div>
