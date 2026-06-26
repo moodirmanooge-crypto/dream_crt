@@ -144,7 +144,7 @@ export default function Home() {
     },
     {
       tag: "Maalgashi", title: "Copy Trading Services", subtitle: "Maalgashi Toos Ah",
-      items: ["💳 Qaabka 1-aad: Is-qorid bille ah oo ah $50/Bishii.", "💰 Qaabka 2-aad: 25% oo laga gooyo oo keliya lacagta","💰Qaabka Qaabka 3-aad:  VIP Signals $150", "faa\'iidada ah ee laguu sameeyo (Profit Share)", "🔄 Toos u raac xirfaddayda", "⏰ Waqti Uma baahnid"],
+      items: ["💳 Qaabka 1-aad: Is-qorid bille ah oo ah $50/Bishii.", "💰 Qaabka 2-aad: 25% oo laga gooyo oo keliya lacagta","faa\'iidada ah ee laguu sameeyo (Profit Share)", "💰Qaabka Qaabka 3-aad:  VIP Signals $150","🔄 Toos u raac xirfaddayda", "⏰ Waqti Uma baahnid"],
       benefit: "Copy Trading-kayga wuxuu kuu saamaxayaa inaad si toos ah u koobiyeysato entry-yadayda. Xataa haddii aad suuqa ku cusub tahay ama aad tahay qof aad u busy ah, waxaad ka faa\'iidaysan kartaa khibraddayda adoo waqti iyo dadaalba badbaadinaya",
       color: "#f97316", colorDim: "rgba(249,115,22,0.12)", colorBorder: "rgba(249,115,22,0.25)",
       payId: "copy-trading-services", payPrice: "50",
