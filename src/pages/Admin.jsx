@@ -286,7 +286,6 @@ const MOCK_UPLOADS = [];
 const NAV = [
   { id: "dashboard",   label: "Dashboard",      Icon: Icon.Home },
   { id: "upload",      label: "Upload Content",  Icon: Icon.Upload },
-  { id: "uploads",     label: "All Uploads",     Icon: Icon.AllUploads },
   { id: "income",      label: "Income",          Icon: Icon.Income },
   { id: "courses",     label: "Courses",         Icon: Icon.Courses },
   { id: "courseAccess",label: "Course Access",   Icon: Icon.LockOpen },
@@ -1524,7 +1523,6 @@ export default function Admin() {
     courseAccess: "Course Access — Approve Students",
     dashboard: "Dashboard",
     upload: "Upload Content",
-    uploads: "All Uploads",
     income: "Income",
     courses: "Courses",
     students: "Students",
@@ -1532,7 +1530,6 @@ export default function Admin() {
     data: "All Data",
     psychology: "Psychology",
     messages: "Messages",
-    settings: "Settings",
   };
 
   const card = { background: C.surfaceCard, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, boxShadow: "0 4px 24px rgba(0,0,0,0.3)" };
@@ -1678,7 +1675,7 @@ export default function Admin() {
                   </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 18 }}>
-                  <UploadsTable uploads={uploads.slice(0, 5)} onDelete={handleDelete} />
+
                   <div style={card}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
                       <div style={{ width: 3, height: 18, background: C.red, borderRadius: 2 }} />
@@ -1708,7 +1705,6 @@ export default function Admin() {
             )}
 
             {activePage === "upload"  && <UploadContentPage />}
-            {activePage === "uploads" && <UploadsTable uploads={uploads} onDelete={handleDelete} full />}
 
             {activePage === "income" && (
               <div>
