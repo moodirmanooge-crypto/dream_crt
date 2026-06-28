@@ -798,7 +798,7 @@ function UploadContentPage() {
   const singleFileRef = useRef(null);
   const lessonFileRef = useRef(null);
 
-  const PLAYLIST_TYPES = ["playlist", "basic_forex", "crt_course", "mentorship", "copy_trading"];
+  const PLAYLIST_TYPES = ["playlist"];
 
   const uploadWithProgress = (storageRef, file, onProg) =>
     new Promise((resolve, reject) => {
