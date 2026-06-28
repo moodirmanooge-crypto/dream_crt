@@ -109,7 +109,7 @@ export default function Login() {
 
           <h1 className="text-5xl font-bold text-white">
 
-            Welcome 
+            WELCOME TO DREAM CRT
 
           </h1>
 
