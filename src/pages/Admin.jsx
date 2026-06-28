@@ -280,14 +280,7 @@ const GlobalStyle = () => (
   `}</style>
 );
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
-const MOCK_UPLOADS = [
-  { id: "1", name: "Data Structures.pdf", type: "PDF", size: "2.4 MB", date: "May 1, 2026", status: "Published" },
-  { id: "2", name: "Web Development.mp4", type: "Video", size: "128 MB", date: "Apr 30, 2026", status: "Published" },
-  { id: "3", name: "Database Systems.pdf", type: "PDF", size: "3.1 MB", date: "Apr 29, 2026", status: "Published" },
-  { id: "4", name: "Python Tutorial.mp4", type: "Video", size: "245 MB", date: "Apr 28, 2026", status: "Published" },
-  { id: "5", name: "AI Basics.pdf", type: "PDF", size: "1.8 MB", date: "Apr 27, 2026", status: "Published" },
-];
+const MOCK_UPLOADS = [];
 
 // ── PATCH 1: NAV with courseAccess ────────────────────────────────────────────
 const NAV = [
