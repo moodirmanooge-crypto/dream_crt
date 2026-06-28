@@ -515,13 +515,16 @@ export default function Home() {
                     </span>
                     <button
                       onClick={() => {
-                        if (Number(course.price) === 0 || userApprovedCourses.includes(course.id)) {
+                        const catToPayId = { "basic_forex": "basic-forex-course", "crt_course": "crt-course-60", "mentorship": "premium-mentorship-100", "copy_trading": "copy-trading-services" };
+                        const coursePayId = catToPayId[course.category] || course.id;
+                        const hasAccess = Number(course.price) === 0 || userApprovedCourses.includes(course.id) || userApprovedCourses.includes(coursePayId);
+                        if (hasAccess) {
                           window.location.href = `/course/${course.id}`;
                         } else { openPayModal(course.id, course.title, course.price); }
                       }}
                       className="px-5 md:px-6 py-2.5 md:py-3 rounded-xl font-black text-sm transition-all"
-                      style={{ background: userApprovedCourses.includes(course.id) ? "#22c55e" : "#f5c518", color: "#000000" }}>
-                      {userApprovedCourses.includes(course.id) ? "✅ Access Course" : Number(course.price) === 0 ? "Access Free" : "Buy Course"}
+                      style={{ background: (() => { const catToPayId = { "basic_forex": "basic-forex-course", "crt_course": "crt-course-60", "mentorship": "premium-mentorship-100", "copy_trading": "copy-trading-services" }; const coursePayId = catToPayId[course.category] || course.id; return (userApprovedCourses.includes(course.id) || userApprovedCourses.includes(coursePayId)) ? "#22c55e" : "#f5c518"; })(), color: "#000000" }}>
+                      {(() => { const catToPayId = { "basic_forex": "basic-forex-course", "crt_course": "crt-course-60", "mentorship": "premium-mentorship-100", "copy_trading": "copy-trading-services" }; const coursePayId = catToPayId[course.category] || course.id; const hasAccess = userApprovedCourses.includes(course.id) || userApprovedCourses.includes(coursePayId); return hasAccess ? "✅ Access Course" : Number(course.price) === 0 ? "Access Free" : "Buy Course"; })()}
                     </button>
                   </div>
                 </div>
