@@ -100,7 +100,16 @@ export default function CoursePlayer() {
         "copy_trading": "copy-trading-services",
       };
 
+      // Price 0 = bilaash
+      if (courseData && Number(courseData.price) === 0) {
+        setHasAccess(true);
+        setLoading(false);
+        return;
+      }
+
+      // Key 1: email_FirestoreID
       const key1 = `${userEmail}_${id}`;
+      // Key 2: email_payId
       const payId = courseData ? categoryToPayId[courseData.category] : null;
       const key2 = payId ? `${userEmail}_${payId}` : null;
 
@@ -117,9 +126,36 @@ export default function CoursePlayer() {
         }
       }
 
-      if (courseData && Number(courseData.price) === 0) {
-        setHasAccess(true);
-      } else if (accessData && accessDocId) {
+      // Key 3: scan dhammaan courseAccess docs-ka user-ka
+      // Si uu u helo access hadduu category-ga ku jiro approved doc
+      if (!accessDocId && courseData) {
+        const allAccessSnap = await getDocs(collection(db, "courseAccess"));
+        const userApproved = allAccessSnap.docs.filter(
+          d => d.data().email === userEmail && d.data().approved === true
+        );
+        // Hubi hadduu category-ga course-kan ku jiro approved docs-ka
+        for (const d of userApproved) {
+          const dData = d.data();
+          // Hadduu courseId-ku yahay payId-ka
+          if (dData.courseId === payId) {
+            accessDocId = d.id; accessData = dData; break;
+          }
+          // Hadduu courseId-ku yahay Firestore ID-ka course-kan
+          if (dData.courseId === id) {
+            accessDocId = d.id; accessData = dData; break;
+          }
+          // Scan courses si uu u arko hadduu category-gu waafaqsan yahay
+          if (courseData.category) {
+            // Hel courses-ka approved doc-ku u tixraacayo
+            const refCourseSnap = await getDoc(doc(db, "courses", dData.courseId));
+            if (refCourseSnap.exists() && refCourseSnap.data().category === courseData.category) {
+              accessDocId = d.id; accessData = dData; break;
+            }
+          }
+        }
+      }
+
+      if (accessData && accessDocId) {
         const currentFp = getDeviceFingerprint();
         const savedFp = accessData.deviceFingerprint;
         if (!savedFp) {
