@@ -126,21 +126,21 @@ export default function Home() {
       items: ["Waxa aad Heleysaa:", "📹 Casharro Video ah", "📚 Buug PDF ah", "🎥 Live Zoom sessions", "👨\u200d🏫 Macalin ku hago", "✅ Sixida casharada"],
       benefit: "Faa\'iidada: Waa aasaaska saxda ah ee aad ku baraneyso suuqa adigoo ka badbaadaya jahwareerka.",
       color: "#f5c518", colorDim: "rgba(245,197,24,0.12)", colorBorder: "rgba(245,197,24,0.25)",
-      payId: "basic-forex-course", payPrice: "25",
+      payId: "basic-forex-course", payPrice: "35",
     },
     {
       title: "CRT Course 75$", subtitle: "Barashada CRT (Mudo Kooban)",
       items: ["Waxa aad Heleysaa:", "💻 Zoom Live ah — casharro toos ah", "📚 Buug PDF ah — shaxanno & xeerar", "🎯 Sixid & Hagid Joogto ah", "✅ Khaladaadkaaga waa lagaa saxayaa"],
       benefit: "⏱️ Uma baahnid bilooyin badan oo jahwareer ah; mudo kooban gudaheed waxaad ku baranaysaa CRT Strategy",
       color: "#a78bfa", colorDim: "rgba(167,139,250,0.12)", colorBorder: "rgba(167,139,250,0.25)",
-      payId: "crt-course-60", payPrice: "60",
+      payId: "crt-course-60", payPrice: "75",
     },
     {
       title: "Premium Mentorship 125$", subtitle: "Hagidda Shakhsiyadeed & Maareynta",
       items: ["Waxa ku dhex jira", "🎥 Live Zoom joogto ah", "📚 Buug PDF ah", "🤝 Caawin gaar ah iyo", "📊 Maareynta Account Challenge"],
       benefit: "Faa\'iidada: Safarkaaga oo dhan oo aan ku barbar taaganahay iyo caawin toos ah si aad Funded u noqoto",
       color: "#22c55e", colorDim: "rgba(34,197,94,0.12)", colorBorder: "rgba(34,197,94,0.25)",
-      payId: "premium-mentorship-100", payPrice: "100",
+      payId: "premium-mentorship-100", payPrice: "125",
     },
     {
       tag: "Maalgashi", title: "Copy Trading Services", subtitle: "Maalgashi Toos Ah",
@@ -566,7 +566,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* ADMIN PORTAL — hidden button, modal still works via keyboard shortcut */}
+      {/* ADMIN PORTAL */}
       {showAdminPortal && (
         <div className="fixed inset-0 flex items-center justify-center z-[100] px-4"
           style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(8px)" }}
