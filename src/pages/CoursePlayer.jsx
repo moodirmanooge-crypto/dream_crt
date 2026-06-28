@@ -1,12 +1,20 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { auth, db } from "../firebase/config";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, getDocs, collection } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   FaLock, FaPlay, FaCheckCircle, FaMoneyBillWave,
   FaUser, FaEnvelope, FaShieldAlt, FaStar, FaArrowRight, FaClock,
 } from "react-icons/fa";
+
+// ── Bundle map: course payId → Firestore categories to unlock ──
+const BUNDLE_CATEGORIES = {
+  "basic-forex-course":      ["basic_forex"],
+  "crt-course-60":           ["crt_course", "basic_forex"],
+  "premium-mentorship-100":  ["mentorship", "crt_course", "basic_forex", "copy_trading"],
+  "copy-trading-services":   ["copy_trading"],
+};
 
 export default function CoursePlayer() {
   const { id } = useParams();
@@ -22,6 +30,7 @@ export default function CoursePlayer() {
   const [courseTitle, setCourseTitle] = useState("Dream Crt Master Class");
   const [courseVideo, setCourseVideo] = useState("");
   const [coursePrice, setCoursePrice] = useState("25");
+  const [courseCategory, setCourseCategory] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -47,6 +56,7 @@ export default function CoursePlayer() {
           setCourseTitle(data.title || "Dream Crt Master Class");
           setCourseVideo(data.fileURL || "");
           setCoursePrice(data.price || "25");
+          setCourseCategory(data.category || "");
         }
       }
     } catch (err) {
@@ -64,9 +74,9 @@ export default function CoursePlayer() {
           setCourseTitle(data.title || "Dream Crt Master Class");
           setCourseVideo(data.fileURL || "");
           setCoursePrice(data.price || "25");
+          setCourseCategory(data.category || "");
         }
       }
-
       // Access check — approved kaliya
       const accessKey = `${userEmail}_${id}`;
       const accessRef = doc(db, "courseAccess", accessKey);
@@ -80,6 +90,7 @@ export default function CoursePlayer() {
     setLoading(false);
   };
 
+  // ── Handle payment with bundle logic ──
   const handlePayment = async () => {
     if (!phone || !email) {
       alert("Fadlan buuxi dhammaan meelaha");
@@ -87,8 +98,23 @@ export default function CoursePlayer() {
     }
     setSending(true);
     try {
-      const accessKey = `${email}_${id}`;
-      await setDoc(doc(db, "courseAccess", accessKey), {
+      // Hel payId-ka course-ka category-ga ku salaysan
+      const payIdMap = {
+        "basic_forex":   "basic-forex-course",
+        "crt_course":    "crt-course-60",
+        "mentorship":    "premium-mentorship-100",
+        "copy_trading":  "copy-trading-services",
+      };
+      const payId = payIdMap[courseCategory] || id;
+      const categoriesToUnlock = BUNDLE_CATEGORIES[payId] || [courseCategory];
+
+      // Hel dhammaan courses Firestore-ka
+      const coursesSnap = await getDocs(collection(db, "courses"));
+      const allCourses = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Qor courseAccess document ugu horreeya (course-ka la iibsaday)
+      const mainAccessKey = `${email}_${id}`;
+      await setDoc(doc(db, "courseAccess", mainAccessKey), {
         email,
         phone,
         courseId: id,
@@ -97,6 +123,25 @@ export default function CoursePlayer() {
         approved: false,
         createdAt: Date.now(),
       });
+
+      // Qor bundle courses-ka courseAccess documents
+      for (const cat of categoriesToUnlock) {
+        const matchedCourse = allCourses.find(c => c.category === cat);
+        if (matchedCourse && matchedCourse.id !== id) {
+          const bundleKey = `${email}_${matchedCourse.id}`;
+          await setDoc(doc(db, "courseAccess", bundleKey), {
+            email,
+            phone,
+            courseId: matchedCourse.id,
+            courseName: matchedCourse.title || cat,
+            paid: true,
+            approved: false,
+            bundledWith: id,
+            createdAt: Date.now(),
+          });
+        }
+      }
+
       setPaid(true);
       setSending(false);
     } catch (err) {
@@ -128,7 +173,6 @@ export default function CoursePlayer() {
               <FaClock className="text-5xl" style={{ color: "#f5c518" }} />
             </div>
           </div>
-
           <h1 className="text-white text-4xl font-black mb-3 tracking-tight">
             Order <span style={{ color: "#f5c518" }}>Received!</span>
           </h1>
@@ -136,7 +180,6 @@ export default function CoursePlayer() {
           <p className="text-gray-500 text-sm mb-6">
             Order-kaagu waa la helay. Admin-ku wuu fiirin doonaa oo course-ka wuu kuu furi doonaa.
           </p>
-
           <div className="mb-8 rounded-2xl p-6 text-left" style={{ background: "#111111", border: "1px solid rgba(245,197,24,0.2)" }}>
             <div className="flex items-center gap-2 mb-4">
               <FaShieldAlt style={{ color: "#f5c518" }} />
@@ -165,7 +208,6 @@ export default function CoursePlayer() {
               </div>
             </div>
           </div>
-
           <div className="rounded-2xl p-5 text-sm text-left" style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.2)" }}>
             <p className="font-bold mb-1" style={{ color: "#f5c518" }}>⚠️ Xasuusin:</p>
             <p className="text-gray-400">
@@ -253,13 +295,12 @@ export default function CoursePlayer() {
                 <p className="text-gray-300 text-sm leading-relaxed">
                   KUDIR LACAGTA COURSE KA NUMARKAAN{" "}
                   <span className="font-black" style={{ color: "#f5c518" }}>252612515121</span>{" "}
-                  KASOO QAAD SCREENSHORT KADIBNA KU SOODIR WhatsApp  NUMBARKEENA.
+                  KASOO QAAD SCREENSHORT KADIBNA KU SOODIR WhatsApp NUMBARKEENA.
                   252613887399
                 </p>
               </div>
 
               <div className="space-y-4">
-                {/* EMAIL */}
                 <div>
                   <label className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2 block">Email Address</label>
                   <div className="flex items-center rounded-xl px-4 gap-3" style={{ background: "#000", border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -273,8 +314,6 @@ export default function CoursePlayer() {
                     />
                   </div>
                 </div>
-
-                {/* PHONE */}
                 <div>
                   <label className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2 block">EVC Number</label>
                   <div className="flex items-center rounded-xl px-4 gap-3" style={{ background: "#000", border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -331,7 +370,6 @@ export default function CoursePlayer() {
                 Access Granted
               </div>
             </div>
-
             <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
               <video
                 src={courseVideo}
@@ -342,7 +380,6 @@ export default function CoursePlayer() {
                 style={{ height: "65vh" }}
               />
             </div>
-
             <div className="mt-4 flex items-center gap-2 text-gray-700 text-xs justify-center">
               <FaShieldAlt />
               <span>Video-gan waa protected • downloading laguma ogola</span>
