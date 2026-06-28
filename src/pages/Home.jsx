@@ -48,31 +48,28 @@ export default function Home() {
           const approvedDocs = accessSnap.docs.filter(
             d => d.data().email === currentUser.email && d.data().approved === true
           );
-          // Labada ID oo dhan ku dar: Firestore doc ID iyo courseId field-ka (payId)
           const approvedIds = [];
+          const categoryToPayId = {
+            "basic_forex":  "basic-forex-course",
+            "crt_course":   "crt-course-60",
+            "mentorship":   "premium-mentorship-100",
+            "copy_trading": "copy-trading-services",
+          };
           approvedDocs.forEach(d => {
             const data = d.data();
-            if (data.courseId) approvedIds.push(data.courseId); // Firestore auto-ID
-            // Map category → payId si services array-ga u shaqeeyo
-            const categoryToPayId = {
-              "basic_forex":  "basic-forex-course",
-              "crt_course":   "crt-course-60",
-              "mentorship":   "premium-mentorship-100",
-              "copy_trading": "copy-trading-services",
-            };
-            // Hel course-ka category-ga ka fiiri
+            // Ku dar courseId field-ka (Firestore auto-ID ama payId)
+            if (data.courseId) approvedIds.push(data.courseId);
+            // Hadduu courseId payId-ka ah, ku dar sidoo kale
+            if (data.courseId && categoryToPayId[data.courseId]) {
+              approvedIds.push(categoryToPayId[data.courseId]);
+            }
           });
-          // Sidoo kale ku dar payIds-ka category-based
+          // Query courses collection si aan u ogaano category → payId
           getDocs(collection(db, "courses")).then(coursesSnap => {
-            const categoryToPayId = {
-              "basic_forex":  "basic-forex-course",
-              "crt_course":   "crt-course-60",
-              "mentorship":   "premium-mentorship-100",
-              "copy_trading": "copy-trading-services",
-            };
-            const approvedDocIds = approvedDocs.map(d => d.data().courseId);
+            const approvedCourseIds = approvedDocs.map(d => d.data().courseId);
             coursesSnap.docs.forEach(c => {
-              if (approvedDocIds.includes(c.id)) {
+              if (approvedCourseIds.includes(c.id)) {
+                approvedIds.push(c.id);
                 const payId = categoryToPayId[c.data().category];
                 if (payId) approvedIds.push(payId);
               }
