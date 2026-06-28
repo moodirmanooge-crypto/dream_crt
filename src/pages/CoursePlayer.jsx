@@ -79,9 +79,15 @@ export default function CoursePlayer() {
         if (courseSnap.exists()) {
           courseData = courseSnap.data();
           setCourseTitle(courseData.title || "Dream Crt Master Class");
-          setCourseVideo(courseData.fileURL || "");
           setCoursePrice(courseData.price || "25");
           setCourseCategory(courseData.category || "");
+          // Hadduu Playlist yahay, lessons[0].fileURL isticmaal
+          if (courseData.type === "Playlist" && courseData.lessons && courseData.lessons.length > 0) {
+            const sorted = [...courseData.lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
+            setCourseVideo(sorted[0].fileURL || "");
+          } else {
+            setCourseVideo(courseData.fileURL || "");
+          }
         }
       }
 
@@ -400,14 +406,22 @@ export default function CoursePlayer() {
               </div>
             </div>
             <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-              <video
-                src={courseVideo}
-                controls
-                controlsList="nodownload"
-                onContextMenu={(e) => e.preventDefault()}
-                className="w-full bg-black"
-                style={{ height: "65vh" }}
-              />
+              {courseVideo ? (
+                <video
+                  key={courseVideo}
+                  src={courseVideo}
+                  controls
+                  autoPlay
+                  controlsList="nodownload"
+                  onContextMenu={(e) => e.preventDefault()}
+                  className="w-full bg-black"
+                  style={{ height: "65vh" }}
+                />
+              ) : (
+                <div className="w-full bg-black flex items-center justify-center" style={{ height: "65vh" }}>
+                  <p className="text-gray-500 text-sm">⏳ Video loading...</p>
+                </div>
+              )}
             </div>
             <div className="mt-4 flex items-center gap-2 text-gray-700 text-xs justify-center">
               <FaShieldAlt />
