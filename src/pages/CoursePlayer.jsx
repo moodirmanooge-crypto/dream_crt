@@ -54,9 +54,15 @@ export default function CoursePlayer() {
         if (courseSnap.exists()) {
           const data = courseSnap.data();
           setCourseTitle(data.title || "Dream Crt Master Class");
-          setCourseVideo(data.fileURL || "");
           setCoursePrice(data.price || "25");
           setCourseCategory(data.category || "");
+          // Hadduu Playlist yahay, lessons[0].fileURL isticmaal
+          if (data.type === "Playlist" && data.lessons && data.lessons.length > 0) {
+            const sorted = [...data.lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
+            setCourseVideo(sorted[0].fileURL || "");
+          } else {
+            setCourseVideo(data.fileURL || "");
+          }
         }
       }
     } catch (err) {
@@ -66,22 +72,45 @@ export default function CoursePlayer() {
 
   const fetchCourseAndCheckAccess = async (userEmail) => {
     try {
+      let courseData = null;
       if (id) {
         const courseRef = doc(db, "courses", id);
         const courseSnap = await getDoc(courseRef);
         if (courseSnap.exists()) {
-          const data = courseSnap.data();
-          setCourseTitle(data.title || "Dream Crt Master Class");
-          setCourseVideo(data.fileURL || "");
-          setCoursePrice(data.price || "25");
-          setCourseCategory(data.category || "");
+          courseData = courseSnap.data();
+          setCourseTitle(courseData.title || "Dream Crt Master Class");
+          setCourseVideo(courseData.fileURL || "");
+          setCoursePrice(courseData.price || "25");
+          setCourseCategory(courseData.category || "");
         }
       }
-      // Access check — approved kaliya
-      const accessKey = `${userEmail}_${id}`;
-      const accessRef = doc(db, "courseAccess", accessKey);
-      const accessSnap = await getDoc(accessRef);
-      if (accessSnap.exists() && accessSnap.data().approved === true) {
+
+      // ── Access check: hubi labada key oo dhan ──
+      const categoryToPayId = {
+        "basic_forex":  "basic-forex-course",
+        "crt_course":   "crt-course-60",
+        "mentorship":   "premium-mentorship-100",
+        "copy_trading": "copy-trading-services",
+      };
+
+      // Key 1: email_FirestoreID
+      const key1 = `${userEmail}_${id}`;
+      // Key 2: email_payId (e.g. email_basic-forex-course)
+      const payId = courseData ? categoryToPayId[courseData.category] : null;
+      const key2 = payId ? `${userEmail}_${payId}` : null;
+
+      const snap1 = await getDoc(doc(db, "courseAccess", key1));
+      if (snap1.exists() && snap1.data().approved === true) {
+        setHasAccess(true);
+      } else if (key2) {
+        const snap2 = await getDoc(doc(db, "courseAccess", key2));
+        if (snap2.exists() && snap2.data().approved === true) {
+          setHasAccess(true);
+        }
+      }
+
+      // Haddaan course-ka access-ka lahayn, hubi hadduu price 0 yahay
+      if (courseData && Number(courseData.price) === 0) {
         setHasAccess(true);
       }
     } catch (err) {
