@@ -220,15 +220,8 @@ export default function Home() {
     },
   ];
 
-  // Tus course-ka basic_forex-ga ugu dambeeyay (createdAt by desc), haddaan jirin courses[0]
-  const displayCourse = courses.length > 0
-    ? (() => {
-        const basicForex = courses
-          .filter(c => c.category === "basic_forex")
-          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        return [basicForex[0] || courses[0]];
-      })()
-    : [];
+  // Tus dhammaan courses-ka Firestore-ka ku jira, ugu dambeeyay marka hore
+  const displayCourse = [...courses].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
   const desktopLinks = [
     { label: "Home", href: "#home", active: true },
