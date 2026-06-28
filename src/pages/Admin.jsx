@@ -1346,10 +1346,29 @@ function CourseAccessPage() {
         approved: value,
         approvedAt: value ? Date.now() : null,
       });
+      // Auto-approve bundle docs
+      const mainDoc = accessDocs.find(d => d.id === docId);
+      if (mainDoc && mainDoc.email) {
+        const siblings = accessDocs.filter(d =>
+          d.email === mainDoc.email && d.id !== docId && (
+            d.bundledWith === mainDoc.courseId ||
+            d.bundledWith === docId ||
+            (mainDoc.bundledWith && (
+              d.bundledWith === mainDoc.bundledWith ||
+              d.courseId === mainDoc.bundledWith
+            ))
+          )
+        );
+        for (const s of siblings) {
+          await updateDoc(doc(db, "courseAccess", s.id), {
+            approved: value,
+            approvedAt: value ? Date.now() : null,
+          });
+        }
+      }
     } catch (err) { window.alert(err.message); }
     finally { setBusy(b => ({ ...b, [docId]: false })); }
   };
-
   const q = search.trim().toLowerCase();
   const filtered = accessDocs
     .filter(d => {
