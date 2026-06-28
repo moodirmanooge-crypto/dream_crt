@@ -456,7 +456,22 @@ export default function Home() {
               <button
                 onClick={() => {
                   if (userApprovedCourses.includes(svc.payId)) {
-                    document.getElementById("courses")?.scrollIntoView({ behavior: "smooth" });
+                    // Hel course-ka category-ga ku salaysan oo toos u fur
+                    const payIdToCat = {
+                      "basic-forex-course":     "basic_forex",
+                      "crt-course-60":          "crt_course",
+                      "premium-mentorship-100": "mentorship",
+                      "copy-trading-services":  "copy_trading",
+                    };
+                    const cat = payIdToCat[svc.payId];
+                    const matchedCourse = courses
+                      .filter(c => c.category === cat)
+                      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
+                    if (matchedCourse) {
+                      window.location.href = `/course/${matchedCourse.id}`;
+                    } else {
+                      document.getElementById("courses")?.scrollIntoView({ behavior: "smooth" });
+                    }
                   } else { openPayModal(svc.payId, svc.title, svc.payPrice); }
                 }}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm w-fit"
