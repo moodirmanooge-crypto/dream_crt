@@ -6,6 +6,8 @@ import {
   doc,
   setDoc,
   getDoc,
+  query,
+  where,
 } from "firebase/firestore";
 import { db, auth } from "../firebase/config.js";
 import { signOut, onAuthStateChanged } from "firebase/auth";
@@ -95,6 +97,14 @@ export default function Home() {
     } catch (err) { setAdminError("Khalad: " + err.message); }
   };
 
+  // ── Bundle map: marka course la gato, maxay ku jiraan ──
+  const BUNDLE_CATEGORIES = {
+    "basic-forex-course":      ["basic_forex"],
+    "crt-course-60":           ["crt_course", "basic_forex"],
+    "premium-mentorship-100":  ["mentorship", "crt_course", "basic_forex", "copy_trading"],
+    "copy-trading-services":   ["copy_trading"],
+  };
+
   const openPayModal = (courseId, courseName, coursePrice) => {
     if (userApprovedCourses.includes(courseId)) {
       window.location.href = `/course/${courseId}`;
@@ -110,11 +120,43 @@ export default function Home() {
     if (!payPhone || !payEmail) { alert("Fadlan buuxi dhammaan meelaha"); return; }
     setPaying(true);
     try {
-      const accessKey = `${payEmail}_${payCourseId}`;
-      await setDoc(doc(db, "courseAccess", accessKey), {
-        email: payEmail, phone: payPhone, courseId: payCourseId,
-        courseName: payCourseName, paid: true, approved: false, createdAt: Date.now(),
+      // Hel categories-ka bundle-ka
+      const categoriesToUnlock = BUNDLE_CATEGORIES[payCourseId] || [];
+
+      // Hel dhammaan courses Firestore-ka
+      const coursesSnap = await getDocs(collection(db, "courses"));
+      const allCourses = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Qor courseAccess document ugu horreeya (course-ka la iibsaday)
+      const mainAccessKey = `${payEmail}_${payCourseId}`;
+      await setDoc(doc(db, "courseAccess", mainAccessKey), {
+        email: payEmail,
+        phone: payPhone,
+        courseId: payCourseId,
+        courseName: payCourseName,
+        paid: true,
+        approved: false,
+        createdAt: Date.now(),
       });
+
+      // Qor courseAccess documents-ka bundle courses-ka (Firestore category-based)
+      for (const cat of categoriesToUnlock) {
+        const matchedCourse = allCourses.find(c => c.category === cat);
+        if (matchedCourse) {
+          const bundleKey = `${payEmail}_${matchedCourse.id}`;
+          await setDoc(doc(db, "courseAccess", bundleKey), {
+            email: payEmail,
+            phone: payPhone,
+            courseId: matchedCourse.id,
+            courseName: matchedCourse.title || cat,
+            paid: true,
+            approved: false,
+            bundledWith: payCourseId,
+            createdAt: Date.now(),
+          });
+        }
+      }
+
       setPayDone(true);
     } catch (err) { alert(err.message); }
     setPaying(false);
@@ -186,8 +228,6 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <span className="font-black text-xl md:text-2xl tracking-tight" style={{ color: "#f5c518" }}>DREAM CRT</span>
         </div>
-
-        {/* Desktop links */}
         <div className="hidden md:flex gap-5 lg:gap-7 text-sm font-semibold">
           {desktopLinks.map((link) => (
             <a key={link.label} href={link.href} className="transition"
@@ -207,7 +247,6 @@ export default function Home() {
             Trading Journal
           </button>
         </div>
-
         <div className="flex items-center gap-3">
           <div className="hidden md:flex gap-3 items-center">
             {user ? (
@@ -521,6 +560,16 @@ export default function Home() {
                       KASOO QAAD SCREENSHORT KADIBNA KU SOODIR WhatsApp NUMBARKEENA. 252613887399
                     </p>
                   </div>
+                  {/* Bundle info */}
+                  {BUNDLE_CATEGORIES[payCourseId] && BUNDLE_CATEGORIES[payCourseId].length > 1 && (
+                    <div className="rounded-2xl p-4 mb-6" style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.25)" }}>
+                      <p className="font-black text-sm mb-2" style={{ color: "#22c55e" }}>🎁 Includes:</p>
+                      <p className="text-gray-300 text-sm">
+                        {payCourseId === "crt-course-60" && "✅ CRT Course + Basic Forex Course — labadaba si bilaash ah ayaad u heleysaa"}
+                        {payCourseId === "premium-mentorship-100" && "✅ Premium Mentorship + CRT Course + Basic Forex + Copy Trading — dhammaan si bilaash ah"}
+                      </p>
+                    </div>
+                  )}
                   <div className="mb-4">
                     <label className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2 block">Email Address</label>
                     <input type="email" value={payEmail} onChange={(e) => setPayEmail(e.target.value)} placeholder="your@email.com"
