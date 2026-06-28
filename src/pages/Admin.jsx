@@ -802,7 +802,7 @@ function UploadContentPage() {
 
   const uploadWithProgress = (storageRef, file, onProg) =>
     new Promise((resolve, reject) => {
-      const task = uploadBytesResumable(storageRef, file);
+      const task = uploadBytesResumable(storageRef, file, { chunkSize: 1 * 1024 * 1024 });
       task.on("state_changed",
         (snap) => onProg(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
         reject,
@@ -1406,7 +1406,7 @@ export default function Admin() {
   const handleLogout = () => { sessionStorage.removeItem("admin_auth"); setAuthed(false); };
   const uploadFileWithProgress = (storageRef, file, onProgress) =>
     new Promise((resolve, reject) => {
-      const task = uploadBytesResumable(storageRef, file);
+      const task = uploadBytesResumable(storageRef, file, { chunkSize: 1 * 1024 * 1024 });
       task.on("state_changed", (snap) => onProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)), reject, () => getDownloadURL(task.snapshot.ref).then(resolve).catch(reject));
     });
   const handleDelete = (id) => setUploads((prev) => prev.filter((u) => u.id !== id));
