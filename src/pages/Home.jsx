@@ -220,7 +220,10 @@ export default function Home() {
     },
   ];
 
-  const displayCourse = courses.length > 0 ? [courses[0]] : [];
+  // Tus course-ka basic_forex category-ga leh marka hore, haddaan jirin courses[0]
+  const displayCourse = courses.length > 0
+    ? [courses.find(c => c.category === "basic_forex") || courses[0]]
+    : [];
 
   const desktopLinks = [
     { label: "Home", href: "#home", active: true },
