@@ -936,24 +936,24 @@ function UploadContentPage() {
         let fileURL = "";
         let pdfURL = "";
         let totalSteps = (videoFile ? 1 : 0) + (pdfFile ? 1 : 0);
-        let step = 0;
+        let uploadStep = 0;
 
         if (videoFile) {
           setProgressLabel("🎬 Video uploading…");
           const vRef = ref(storage, `videos/${Date.now()}_${videoFile.name}`);
           fileURL = await uploadWithProgress(vRef, videoFile, (p) => {
-            setProgress(Math.round((step / totalSteps) * 80 + (p / totalSteps) * 0.8));
+            setProgress(Math.round((uploadStep / totalSteps) * 80 + (p / totalSteps) * 0.8));
           });
-          step++;
+          uploadStep++;
         }
 
         if (pdfFile) {
           setProgressLabel("📄 PDF uploading…");
           const pRef = ref(storage, `pdfs/${Date.now()}_${pdfFile.name}`);
           pdfURL = await uploadWithProgress(pRef, pdfFile, (p) => {
-            setProgress(Math.round((step / totalSteps) * 80 + (p / totalSteps) * 0.8));
+            setProgress(Math.round((uploadStep / totalSteps) * 80 + (p / totalSteps) * 0.8));
           });
-          step++;
+          uploadStep++;
         }
 
         setProgressLabel("💾 Saving…"); setProgress(90);
