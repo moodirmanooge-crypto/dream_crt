@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { auth, db } from "../firebase/config";
-import { doc, getDoc, setDoc, getDocs, collection } from "firebase/firestore";
+import { doc, getDoc, setDoc, getDocs, collection, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   FaLock, FaPlay, FaCheckCircle, FaMoneyBillWave,
   FaUser, FaEnvelope, FaShieldAlt, FaStar, FaArrowRight, FaClock,
+  FaFilePdf, FaVideo,
 } from "react-icons/fa";
 
-// ── Bundle map: course payId → Firestore categories to unlock ──
+// ── Bundle map ──
 const BUNDLE_CATEGORIES = {
   "basic-forex-course":      ["basic_forex"],
   "crt-course-60":           ["crt_course", "basic_forex"],
@@ -16,11 +17,22 @@ const BUNDLE_CATEGORIES = {
   "copy-trading-services":   ["copy_trading"],
 };
 
+// ── Device fingerprint ──
+const getDeviceFingerprint = () => {
+  const nav = window.navigator;
+  const scr = window.screen;
+  const raw = [nav.userAgent, nav.language, scr.colorDepth, scr.width + "x" + scr.height, nav.platform, new Date().getTimezoneOffset()].join("|");
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) { hash = ((hash << 5) - hash) + raw.charCodeAt(i); hash = hash & hash; }
+  return Math.abs(hash).toString(36);
+};
+
 export default function CoursePlayer() {
   const { id } = useParams();
 
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
+  const [deviceLocked, setDeviceLocked] = useState(false);
   const [sending, setSending] = useState(false);
   const [paid, setPaid] = useState(false);
   const [phone, setPhone] = useState("");
@@ -29,8 +41,10 @@ export default function CoursePlayer() {
 
   const [courseTitle, setCourseTitle] = useState("Dream Crt Master Class");
   const [courseVideo, setCourseVideo] = useState("");
+  const [coursePdf, setCoursePdf] = useState("");
   const [coursePrice, setCoursePrice] = useState("25");
   const [courseCategory, setCourseCategory] = useState("");
+  const [activeTab, setActiveTab] = useState("video"); // "video" | "pdf"
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -46,52 +60,39 @@ export default function CoursePlayer() {
     return () => unsubscribe();
   }, [id]);
 
+  const setCourseData = (data) => {
+    setCourseTitle(data.title || "Dream Crt Master Class");
+    setCoursePrice(String(data.price || "25"));
+    setCourseCategory(data.category || "");
+    setCoursePdf(data.pdfURL || "");
+    // Video URL: playlist lessons[0] ama fileURL
+    if (data.type === "Playlist" && data.lessons && data.lessons.length > 0) {
+      const sorted = [...data.lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
+      setCourseVideo(sorted[0].fileURL || "");
+      if (!sorted[0].fileURL && data.pdfURL) setActiveTab("pdf");
+    } else {
+      setCourseVideo(data.fileURL || "");
+      if (!data.fileURL && data.pdfURL) setActiveTab("pdf");
+    }
+  };
+
   const fetchCourseOnly = async () => {
     try {
       if (id) {
-        const courseRef = doc(db, "courses", id);
-        const courseSnap = await getDoc(courseRef);
-        if (courseSnap.exists()) {
-          const data = courseSnap.data();
-          setCourseTitle(data.title || "Dream Crt Master Class");
-          setCoursePrice(data.price || "25");
-          setCourseCategory(data.category || "");
-          // Hadduu Playlist yahay, lessons[0].fileURL isticmaal
-          if (data.type === "Playlist" && data.lessons && data.lessons.length > 0) {
-            const sorted = [...data.lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
-            setCourseVideo(sorted[0].fileURL || "");
-          } else {
-            setCourseVideo(data.fileURL || "");
-          }
-        }
+        const snap = await getDoc(doc(db, "courses", id));
+        if (snap.exists()) setCourseData(snap.data());
       }
-    } catch (err) {
-      console.log(err);
-    }
+    } catch (err) { console.log(err); }
   };
 
   const fetchCourseAndCheckAccess = async (userEmail) => {
     try {
       let courseData = null;
       if (id) {
-        const courseRef = doc(db, "courses", id);
-        const courseSnap = await getDoc(courseRef);
-        if (courseSnap.exists()) {
-          courseData = courseSnap.data();
-          setCourseTitle(courseData.title || "Dream Crt Master Class");
-          setCoursePrice(courseData.price || "25");
-          setCourseCategory(courseData.category || "");
-          // Hadduu Playlist yahay, lessons[0].fileURL isticmaal
-          if (courseData.type === "Playlist" && courseData.lessons && courseData.lessons.length > 0) {
-            const sorted = [...courseData.lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
-            setCourseVideo(sorted[0].fileURL || "");
-          } else {
-            setCourseVideo(courseData.fileURL || "");
-          }
-        }
+        const snap = await getDoc(doc(db, "courses", id));
+        if (snap.exists()) { courseData = snap.data(); setCourseData(courseData); }
       }
 
-      // ── Access check: hubi labada key oo dhan ──
       const categoryToPayId = {
         "basic_forex":  "basic-forex-course",
         "crt_course":   "crt-course-60",
@@ -99,163 +100,149 @@ export default function CoursePlayer() {
         "copy_trading": "copy-trading-services",
       };
 
-      // Key 1: email_FirestoreID
       const key1 = `${userEmail}_${id}`;
-      // Key 2: email_payId (e.g. email_basic-forex-course)
       const payId = courseData ? categoryToPayId[courseData.category] : null;
       const key2 = payId ? `${userEmail}_${payId}` : null;
 
+      let accessDocId = null;
+      let accessData = null;
+
       const snap1 = await getDoc(doc(db, "courseAccess", key1));
       if (snap1.exists() && snap1.data().approved === true) {
-        setHasAccess(true);
+        accessDocId = key1; accessData = snap1.data();
       } else if (key2) {
         const snap2 = await getDoc(doc(db, "courseAccess", key2));
         if (snap2.exists() && snap2.data().approved === true) {
-          setHasAccess(true);
+          accessDocId = key2; accessData = snap2.data();
         }
       }
 
-      // Haddaan course-ka access-ka lahayn, hubi hadduu price 0 yahay
       if (courseData && Number(courseData.price) === 0) {
         setHasAccess(true);
+      } else if (accessData && accessDocId) {
+        const currentFp = getDeviceFingerprint();
+        const savedFp = accessData.deviceFingerprint;
+        if (!savedFp) {
+          await updateDoc(doc(db, "courseAccess", accessDocId), {
+            deviceFingerprint: currentFp, deviceRegisteredAt: Date.now(),
+          });
+          setHasAccess(true);
+        } else if (savedFp === currentFp) {
+          setHasAccess(true);
+        } else {
+          setDeviceLocked(true);
+        }
       }
-    } catch (err) {
-      console.log(err);
-    }
+    } catch (err) { console.log(err); }
     setLoading(false);
   };
 
-  // ── Handle payment with bundle logic ──
   const handlePayment = async () => {
-    if (!phone || !email) {
-      alert("Fadlan buuxi dhammaan meelaha");
-      return;
-    }
+    if (!phone || !email) { alert("Fadlan buuxi dhammaan meelaha"); return; }
     setSending(true);
     try {
-      // Hel payId-ka course-ka category-ga ku salaysan
       const payIdMap = {
-        "basic_forex":   "basic-forex-course",
-        "crt_course":    "crt-course-60",
-        "mentorship":    "premium-mentorship-100",
-        "copy_trading":  "copy-trading-services",
+        "basic_forex":  "basic-forex-course",
+        "crt_course":   "crt-course-60",
+        "mentorship":   "premium-mentorship-100",
+        "copy_trading": "copy-trading-services",
       };
       const payId = payIdMap[courseCategory] || id;
       const categoriesToUnlock = BUNDLE_CATEGORIES[payId] || [courseCategory];
-
-      // Hel dhammaan courses Firestore-ka
       const coursesSnap = await getDocs(collection(db, "courses"));
       const allCourses = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      // Qor courseAccess document ugu horreeya (course-ka la iibsaday)
-      const mainAccessKey = `${email}_${id}`;
-      await setDoc(doc(db, "courseAccess", mainAccessKey), {
-        email,
-        phone,
-        courseId: id,
-        courseName: courseTitle,
-        paid: true,
-        approved: false,
-        createdAt: Date.now(),
+      await setDoc(doc(db, "courseAccess", `${email}_${id}`), {
+        email, phone, courseId: id, courseName: courseTitle,
+        paid: true, approved: false, createdAt: Date.now(),
       });
 
-      // Qor bundle courses-ka courseAccess documents
       for (const cat of categoriesToUnlock) {
-        const matchedCourse = allCourses.find(c => c.category === cat);
-        if (matchedCourse && matchedCourse.id !== id) {
-          const bundleKey = `${email}_${matchedCourse.id}`;
-          await setDoc(doc(db, "courseAccess", bundleKey), {
-            email,
-            phone,
-            courseId: matchedCourse.id,
-            courseName: matchedCourse.title || cat,
-            paid: true,
-            approved: false,
-            bundledWith: id,
-            createdAt: Date.now(),
+        const matched = allCourses.find(c => c.category === cat);
+        if (matched && matched.id !== id) {
+          await setDoc(doc(db, "courseAccess", `${email}_${matched.id}`), {
+            email, phone, courseId: matched.id,
+            courseName: matched.title || cat,
+            paid: true, approved: false, bundledWith: id, createdAt: Date.now(),
           });
         }
       }
-
       setPaid(true);
-      setSending(false);
-    } catch (err) {
-      alert(err.message);
-      setSending(false);
-    }
+    } catch (err) { alert(err.message); }
+    setSending(false);
   };
 
-  // ─── LOADING ───────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div style={{ background: "#0d0d0d" }} className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#f5c518", borderTopColor: "transparent" }} />
-          <p className="text-white font-semibold tracking-widest text-sm uppercase">Loading...</p>
-        </div>
+  // ─── LOADING ──────────────────────────────────────────────
+  if (loading) return (
+    <div style={{ background: "#0d0d0d" }} className="min-h-screen flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#f5c518", borderTopColor: "transparent" }} />
+        <p className="text-white font-semibold tracking-widest text-sm uppercase">Loading...</p>
       </div>
-    );
-  }
+    </div>
+  );
 
-  // ─── SUCCESS / PENDING APPROVAL UI ────────────────────────
-  if (paid) {
-    return (
-      <div style={{ background: "#0d0d0d" }} className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="relative mx-auto w-28 h-28 mb-8">
-            <div className="absolute inset-0 rounded-full border-4 animate-ping opacity-30" style={{ borderColor: "#f5c518" }} />
-            <div className="w-28 h-28 rounded-full flex items-center justify-center" style={{ background: "rgba(245,197,24,0.08)", border: "2px solid #f5c518" }}>
-              <FaClock className="text-5xl" style={{ color: "#f5c518" }} />
-            </div>
-          </div>
-          <h1 className="text-white text-4xl font-black mb-3 tracking-tight">
-            Order <span style={{ color: "#f5c518" }}>Received!</span>
-          </h1>
-          <p className="text-gray-400 text-lg mb-2">Waad ku mahadsan tahay!</p>
-          <p className="text-gray-500 text-sm mb-6">
-            Order-kaagu waa la helay. Admin-ku wuu fiirin doonaa oo course-ka wuu kuu furi doonaa.
-          </p>
-          <div className="mb-8 rounded-2xl p-6 text-left" style={{ background: "#111111", border: "1px solid rgba(245,197,24,0.2)" }}>
-            <div className="flex items-center gap-2 mb-4">
-              <FaShieldAlt style={{ color: "#f5c518" }} />
-              <span className="text-white font-bold text-sm uppercase tracking-widest">Receipt</span>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Course</span>
-                <span className="text-white font-semibold">{courseTitle}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Email</span>
-                <span className="text-white font-semibold truncate max-w-[200px]">{email}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Number</span>
-                <span className="text-white font-semibold">{phone}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Amount</span>
-                <span className="text-white font-semibold">${coursePrice}</span>
-              </div>
-              <div className="border-t border-white/5 pt-3 flex justify-between text-sm">
-                <span className="text-gray-500">Status</span>
-                <span className="font-bold" style={{ color: "#f5c518" }}>⏳ Pending Approval</span>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-2xl p-5 text-sm text-left" style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.2)" }}>
-            <p className="font-bold mb-1" style={{ color: "#f5c518" }}>⚠️ Xasuusin:</p>
-            <p className="text-gray-400">
-              Admin-ku wuu fiirin doonaa order-kaaga. Marka la approve gareeyo, course-ka isla markiiba wuu kuu furmayaa.
-              Fadlan dib u soo gal account-kaaga si aad u aragto.
-            </p>
+  // ─── DEVICE LOCKED ────────────────────────────────────────
+  if (deviceLocked) return (
+    <div style={{ background: "#0d0d0d" }} className="min-h-screen flex items-center justify-center px-4">
+      <div className="max-w-md w-full text-center">
+        <div className="w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-8"
+          style={{ background: "rgba(255,71,87,0.08)", border: "2px solid #ff4757" }}>
+          <FaLock className="text-5xl" style={{ color: "#ff4757" }} />
+        </div>
+        <h1 className="text-white text-3xl font-black mb-4">Device <span style={{ color: "#ff4757" }}>Locked</span></h1>
+        <p className="text-gray-400 text-base mb-4">Course-kan device kale ayaa lagu diwaan-geliyay. Kaliya device-kii aad ku iibsatay ayaad ku daawan kartaa.</p>
+        <div className="rounded-2xl p-5 text-sm text-left mb-6" style={{ background: "rgba(255,71,87,0.06)", border: "1px solid rgba(255,71,87,0.2)" }}>
+          <p className="font-bold mb-2" style={{ color: "#ff4757" }}>⚠️ Xasuusin:</p>
+          <p className="text-gray-400">Haddaad device-kaaga bedeshay ama browser kale isticmaaleysaa, fadlan admin-ka kala xiriir si loo cusboonaysiiyo.</p>
+        </div>
+        <a href="https://wa.me/252613887399" target="_blank" rel="noreferrer"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm"
+          style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e", textDecoration: "none" }}>
+          💬 Admin kala xiriir
+        </a>
+      </div>
+    </div>
+  );
+
+  // ─── PAID / PENDING ───────────────────────────────────────
+  if (paid) return (
+    <div style={{ background: "#0d0d0d" }} className="min-h-screen flex items-center justify-center px-4">
+      <div className="max-w-md w-full text-center">
+        <div className="relative mx-auto w-28 h-28 mb-8">
+          <div className="absolute inset-0 rounded-full border-4 animate-ping opacity-30" style={{ borderColor: "#f5c518" }} />
+          <div className="w-28 h-28 rounded-full flex items-center justify-center" style={{ background: "rgba(245,197,24,0.08)", border: "2px solid #f5c518" }}>
+            <FaClock className="text-5xl" style={{ color: "#f5c518" }} />
           </div>
         </div>
+        <h1 className="text-white text-4xl font-black mb-3">Order <span style={{ color: "#f5c518" }}>Received!</span></h1>
+        <p className="text-gray-400 text-lg mb-2">Waad ku mahadsan tahay!</p>
+        <p className="text-gray-500 text-sm mb-6">Order-kaagu waa la helay. Admin-ku wuu fiirin doonaa oo course-ka wuu kuu furi doonaa.</p>
+        <div className="mb-8 rounded-2xl p-6 text-left" style={{ background: "#111111", border: "1px solid rgba(245,197,24,0.2)" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <FaShieldAlt style={{ color: "#f5c518" }} />
+            <span className="text-white font-bold text-sm uppercase tracking-widest">Receipt</span>
+          </div>
+          {[{ label: "Course", value: courseTitle }, { label: "Email", value: email }, { label: "Number", value: phone }, { label: "Amount", value: `$${coursePrice}` }].map((r, i) => (
+            <div key={i} className="flex justify-between text-sm py-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <span className="text-gray-500">{r.label}</span>
+              <span className="text-white font-semibold truncate max-w-[200px]">{r.value}</span>
+            </div>
+          ))}
+          <div className="flex justify-between text-sm pt-3">
+            <span className="text-gray-500">Status</span>
+            <span className="font-bold" style={{ color: "#f5c518" }}>⏳ Pending Approval</span>
+          </div>
+        </div>
+        <div className="rounded-2xl p-5 text-sm text-left" style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.2)" }}>
+          <p className="font-bold mb-1" style={{ color: "#f5c518" }}>⚠️ Xasuusin:</p>
+          <p className="text-gray-400">Admin-ku wuu fiirin doonaa order-kaaga. Marka la approve gareeyo, course-ka isla markiiba wuu kuu furmayaa.</p>
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
 
-  // ─── MAIN UI ───────────────────────────────────────────────
+  // ─── MAIN UI ──────────────────────────────────────────────
   return (
     <div style={{ background: "#0d0d0d" }} className="min-h-screen text-white">
       {/* HEADER */}
@@ -269,29 +256,22 @@ export default function CoursePlayer() {
             <p className="text-xs font-semibold tracking-wider uppercase" style={{ color: "#f5c518" }}>Trading Academy</p>
           </div>
         </div>
-        <div className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest" style={{ border: "1px solid rgba(245,197,24,0.5)", color: "#f5c518" }}>
-          Premium
-        </div>
+        <div className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest" style={{ border: "1px solid rgba(245,197,24,0.5)", color: "#f5c518" }}>Premium</div>
       </div>
 
       <div className="max-w-6xl mx-auto p-6">
         {!hasAccess ? (
-          // ─── PAYMENT GATE ───────────────────────────────
+          // ─── PAYMENT GATE ──────────────────────────────
           <div className="grid lg:grid-cols-2 gap-10 items-center min-h-[80vh]">
-            {/* LEFT */}
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest" style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.2)", color: "#f5c518" }}>
-                <FaLock className="text-xs" />
-                Locked Course
+                <FaLock className="text-xs" /> Locked Course
               </div>
               <h1 className="text-5xl md:text-6xl font-black leading-[1.05] tracking-tight">
-                Unlock Your<br />
-                <span style={{ color: "#f5c518" }}>Forex</span><br />
-                Mastery
+                Unlock Your<br /><span style={{ color: "#f5c518" }}>Forex</span><br />Mastery
               </h1>
               <p className="text-gray-500 text-base leading-relaxed max-w-sm">
-                Course-kan ku baran dhammaan xeeladaha Forex trading.
-                Pay ka dib, admin-ku wuu approve garayaa oo course-ka wuu furmayaa.
+                Course-kan ku baran dhammaan xeeladaha Forex trading. Pay ka dib, admin-ku wuu approve garayaa oo course-ka wuu furmayaa.
               </p>
               <div className="grid grid-cols-2 gap-3 pt-2">
                 {[
@@ -300,7 +280,7 @@ export default function CoursePlayer() {
                   { icon: <FaShieldAlt />, label: "Secure Pay", sub: "EVC Plus" },
                   { icon: <FaStar />, label: "Pro Level", sub: "Xeel dheer" },
                 ].map((item, i) => (
-                  <div key={i} className="rounded-xl p-4 transition-colors" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div key={i} className="rounded-xl p-4" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.05)" }}>
                     <div className="text-xl mb-2" style={{ color: "#f5c518" }}>{item.icon}</div>
                     <p className="text-white font-bold text-sm">{item.label}</p>
                     <p className="text-gray-600 text-xs">{item.sub}</p>
@@ -309,91 +289,56 @@ export default function CoursePlayer() {
               </div>
             </div>
 
-            {/* RIGHT — PAYMENT FORM */}
             <div className="rounded-3xl p-8 shadow-2xl" style={{ background: "#080808", border: "1px solid rgba(245,197,24,0.12)" }}>
               <div className="flex items-end justify-between mb-8">
                 <div>
                   <p className="text-gray-600 text-sm mb-1">Course Price</p>
-                  <p className="text-white text-5xl font-black">
-                    ${coursePrice}
-                    <span className="text-gray-600 text-lg font-normal ml-1">/ once</span>
-                  </p>
+                  <p className="text-white text-5xl font-black">${coursePrice}<span className="text-gray-600 text-lg font-normal ml-1">/ once</span></p>
                 </div>
-                <div className="px-3 py-1.5 rounded-lg text-xs font-bold" style={{ background: "rgba(245,197,24,0.1)", border: "1px solid rgba(245,197,24,0.3)", color: "#f5c518" }}>
-                  One-time
-                </div>
+                <div className="px-3 py-1.5 rounded-lg text-xs font-bold" style={{ background: "rgba(245,197,24,0.1)", border: "1px solid rgba(245,197,24,0.3)", color: "#f5c518" }}>One-time</div>
               </div>
-
-              {/* PAYMENT NOTE */}
               <div className="rounded-2xl p-4 mb-6" style={{ background: "rgba(245,197,24,0.06)", border: "1px solid rgba(245,197,24,0.25)" }}>
                 <p className="font-black text-sm mb-2" style={{ color: "#f5c518" }}>📋 TILMAAN LACAG BIXINTA:</p>
                 <p className="text-gray-300 text-sm leading-relaxed">
                   KUDIR LACAGTA COURSE KA NUMARKAAN{" "}
                   <span className="font-black" style={{ color: "#f5c518" }}>252612515121</span>{" "}
-                  KASOO QAAD SCREENSHORT KADIBNA KU SOODIR WhatsApp NUMBARKEENA.
-                  252613887399
+                  KASOO QAAD SCREENSHORT KADIBNA KU SOODIR WhatsApp NUMBARKEENA. 252613887399
                 </p>
               </div>
-
-              <div className="space-y-4">
+              <div className="space-y-4 mb-6">
                 <div>
                   <label className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2 block">Email Address</label>
                   <div className="flex items-center rounded-xl px-4 gap-3" style={{ background: "#000", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <FaEnvelope style={{ color: "#f5c518" }} className="flex-shrink-0" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      className="bg-transparent outline-none w-full py-4 text-white placeholder-gray-700 text-sm"
-                    />
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
+                      className="bg-transparent outline-none w-full py-4 text-white placeholder-gray-700 text-sm" />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2 block">EVC Number</label>
                   <div className="flex items-center rounded-xl px-4 gap-3" style={{ background: "#000", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <FaUser style={{ color: "#f5c518" }} className="flex-shrink-0" />
-                    <input
-                      type="text"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="61xxxxxxx"
-                      className="bg-transparent outline-none w-full py-4 text-white placeholder-gray-700 text-sm"
-                    />
+                    <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="61xxxxxxx"
+                      className="bg-transparent outline-none w-full py-4 text-white placeholder-gray-700 text-sm" />
                   </div>
                 </div>
               </div>
-
-              <button
-                onClick={handlePayment}
-                disabled={sending}
-                className="mt-6 w-full disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98] transition-all duration-200 rounded-2xl py-4 font-black text-black text-base flex items-center justify-center gap-3"
-                style={{ background: "#f5c518" }}
-              >
-                {sending ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <FaMoneyBillWave />
-                    Confirm Order
-                    <FaArrowRight className="text-sm" />
-                  </>
-                )}
+              <button onClick={handlePayment} disabled={sending}
+                className="w-full disabled:opacity-60 disabled:cursor-not-allowed rounded-2xl py-4 font-black text-black text-base flex items-center justify-center gap-3"
+                style={{ background: "#f5c518" }}>
+                {sending ? <><div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />Processing...</>
+                  : <><FaMoneyBillWave />Confirm Order<FaArrowRight className="text-sm" /></>}
               </button>
-
               <div className="mt-5 flex items-center justify-center gap-2 text-gray-700 text-xs">
-                <FaShieldAlt />
-                <span>Secure • EVC Plus • Dream Crt</span>
+                <FaShieldAlt /><span>Secure • EVC Plus • Dream Crt</span>
               </div>
             </div>
           </div>
 
         ) : (
-          // ─── VIDEO PLAYER ────────────────────────────────
+          // ─── CONTENT PLAYER ────────────────────────────
           <div>
+            {/* Header */}
             <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#f5c518" }}>Premium Course</p>
@@ -401,31 +346,62 @@ export default function CoursePlayer() {
                 <p className="text-gray-600 mt-1 text-sm">Access granted • Wax barashada ku bilow</p>
               </div>
               <div className="px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2" style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.3)", color: "#f5c518" }}>
-                <FaCheckCircle />
-                Access Granted
+                <FaCheckCircle /> Access Granted
               </div>
             </div>
-            <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-              {courseVideo ? (
-                <video
-                  key={courseVideo}
-                  src={courseVideo}
-                  controls
-                  autoPlay
-                  controlsList="nodownload"
-                  onContextMenu={(e) => e.preventDefault()}
-                  className="w-full bg-black"
-                  style={{ height: "65vh" }}
+
+            {/* Tab switcher — only show if both video and pdf exist */}
+            {courseVideo && coursePdf && (
+              <div className="flex gap-3 mb-4">
+                {[
+                  { id: "video", icon: <FaVideo />, label: "Video" },
+                  { id: "pdf",   icon: <FaFilePdf />, label: "PDF" },
+                ].map(tab => (
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
+                    style={{
+                      background: activeTab === tab.id ? "#f5c518" : "rgba(255,255,255,0.05)",
+                      color: activeTab === tab.id ? "#000" : "#888",
+                      border: activeTab === tab.id ? "none" : "1px solid rgba(255,255,255,0.1)",
+                    }}>
+                    {tab.icon} {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Video Player */}
+            {(activeTab === "video" || !coursePdf) && (
+              <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                {courseVideo ? (
+                  <video key={courseVideo} src={courseVideo} controls autoPlay
+                    controlsList="nodownload" onContextMenu={e => e.preventDefault()}
+                    className="w-full bg-black" style={{ height: "65vh" }} />
+                ) : (
+                  <div className="w-full bg-black flex items-center justify-center" style={{ height: "65vh" }}>
+                    <p className="text-gray-500 text-sm">⏳ Video loading...</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* PDF Viewer */}
+            {(activeTab === "pdf" || !courseVideo) && coursePdf && (
+              <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                <iframe
+                  key={coursePdf}
+                  src={`${coursePdf}#toolbar=0&navpanes=0`}
+                  title="Course PDF"
+                  className="w-full"
+                  style={{ height: "80vh", border: "none", background: "#1a1a1a" }}
+                  onContextMenu={e => e.preventDefault()}
                 />
-              ) : (
-                <div className="w-full bg-black flex items-center justify-center" style={{ height: "65vh" }}>
-                  <p className="text-gray-500 text-sm">⏳ Video loading...</p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
+
             <div className="mt-4 flex items-center gap-2 text-gray-700 text-xs justify-center">
               <FaShieldAlt />
-              <span>Video-gan waa protected • downloading laguma ogola</span>
+              <span>Content-gan waa protected • downloading laguma ogola</span>
             </div>
           </div>
         )}
