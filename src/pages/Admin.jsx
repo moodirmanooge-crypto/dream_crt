@@ -784,7 +784,9 @@ function UploadContentPage() {
   const [price, setPrice] = useState("");
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
-  const [singleFile, setSingleFile] = useState(null);
+  const [singleFile, setSingleFile] = useState(null);       // video ama single pdf
+  const [pdfFile, setPdfFile] = useState(null);             // PDF (course categories)
+  const [videoFile, setVideoFile] = useState(null);         // Video (course categories)
   const [lessons, setLessons] = useState([]);
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonFile, setLessonFile] = useState(null);
@@ -796,9 +798,14 @@ function UploadContentPage() {
   const [msg, setMsg] = useState("");
   const thumbRef = useRef(null);
   const singleFileRef = useRef(null);
+  const pdfFileRef = useRef(null);
+  const videoFileRef = useRef(null);
   const lessonFileRef = useRef(null);
 
+  // Playlist kaliya
   const PLAYLIST_TYPES = ["playlist"];
+  // Course categories (labadaba PDF + Video)
+  const COURSE_TYPES = ["basic_forex", "crt_course", "mentorship", "copy_trading"];
 
   const uploadWithProgress = (storageRef, file, onProg) =>
     new Promise((resolve, reject) => {
@@ -846,21 +853,30 @@ function UploadContentPage() {
 
   const handleUpload = async () => {
     if (!title.trim()) { setMsg("⚠️ Course title buuxi"); return; }
+
+    // Validation
     if (PLAYLIST_TYPES.includes(category) && lessons.length === 0) {
       setMsg("⚠️ Ugu yaraan 1 lesson ku dar"); return;
     }
-    if ((category === "single_video" || category === "single_pdf") && !singleFile) {
-      setMsg("⚠️ File-ka dooro"); return;
+    if (category === "single_video" && !singleFile) { setMsg("⚠️ Video file-ka dooro"); return; }
+    if (category === "single_pdf" && !singleFile) { setMsg("⚠️ PDF file-ka dooro"); return; }
+    if (COURSE_TYPES.includes(category) && !videoFile && !pdfFile) {
+      setMsg("⚠️ Ugu yaraan video ama PDF mid ku dar"); return;
     }
+
     setUploading(true); setProgress(0); setMsg("");
     const coursePrice = Number(price) || 0;
+
     try {
+      // ── Thumbnail ──
       setProgressLabel("🖼️ Thumbnail uploading…");
       let thumbnailURL = "";
       if (thumbnail) {
         const tRef = ref(storage, `thumbnails/${Date.now()}_${thumbnail.name}`);
         thumbnailURL = await uploadWithProgress(tRef, thumbnail, () => {});
       }
+
+      // ── PLAYLIST ──
       if (PLAYLIST_TYPES.includes(category)) {
         const uploadedLessons = [];
         for (let i = 0; i < lessons.length; i++) {
@@ -871,53 +887,95 @@ function UploadContentPage() {
           const lRef = ref(storage, `${folder}/lessons/${Date.now()}_${lesson.file.name}`);
           const fileURL = await uploadWithProgress(lRef, lesson.file, () => {});
           uploadedLessons.push({
-            title: lesson.title,
-            fileURL,
+            title: lesson.title, fileURL,
             fileType: lesson.fileType === "pdf" ? "PDF" : "Video",
             order: lesson.order
           });
         }
         setProgressLabel("💾 Saving…"); setProgress(90);
         await addDoc(collection(db, "courses"), {
-          title: title.trim(),
-          description: description.trim(),
-          price: coursePrice,
-          thumbnailURL,
-          category,
-          type: "Playlist",
-          lessons: uploadedLessons,
+          title: title.trim(), description: description.trim(),
+          price: coursePrice, thumbnailURL, category,
+          type: "Playlist", lessons: uploadedLessons,
           lessonCount: uploadedLessons.length,
-          createdAt: Date.now(),
-          status: "Published",
-          locked: coursePrice > 0,
-          isPaid: false
+          createdAt: Date.now(), status: "Published",
+          locked: coursePrice > 0, isPaid: false
         });
-      } else {
-        const folder = category === "single_pdf" ? "pdfs" : "videos";
-        setProgressLabel(`📤 ${category === "single_pdf" ? "PDF" : "Video"} uploading…`);
-        const fRef = ref(storage, `${folder}/${Date.now()}_${singleFile.name}`);
+
+      // ── SINGLE VIDEO ──
+      } else if (category === "single_video") {
+        setProgressLabel("📤 Video uploading…");
+        const fRef = ref(storage, `videos/${Date.now()}_${singleFile.name}`);
         const fileURL = await uploadWithProgress(fRef, singleFile, (p) => setProgress(Math.round(p * 0.85)));
         setProgressLabel("💾 Saving…"); setProgress(90);
         await addDoc(collection(db, "courses"), {
-          title: title.trim(),
-          description: description.trim(),
-          price: coursePrice,
-          thumbnailURL,
-          fileURL,
-          category: category === "single_pdf" ? "single_pdf" : "single_video",
-          type: category === "single_pdf" ? "PDF" : "Video",
-          createdAt: Date.now(),
-          status: "Published",
-          locked: coursePrice > 0,
-          isPaid: false
+          title: title.trim(), description: description.trim(),
+          price: coursePrice, thumbnailURL, fileURL,
+          category: "single_video", type: "Video",
+          createdAt: Date.now(), status: "Published",
+          locked: coursePrice > 0, isPaid: false
+        });
+
+      // ── SINGLE PDF ──
+      } else if (category === "single_pdf") {
+        setProgressLabel("📤 PDF uploading…");
+        const fRef = ref(storage, `pdfs/${Date.now()}_${singleFile.name}`);
+        const fileURL = await uploadWithProgress(fRef, singleFile, (p) => setProgress(Math.round(p * 0.85)));
+        setProgressLabel("💾 Saving…"); setProgress(90);
+        await addDoc(collection(db, "courses"), {
+          title: title.trim(), description: description.trim(),
+          price: coursePrice, thumbnailURL, fileURL,
+          category: "single_pdf", type: "PDF",
+          createdAt: Date.now(), status: "Published",
+          locked: coursePrice > 0, isPaid: false
+        });
+
+      // ── COURSE TYPES (basic_forex, crt_course, mentorship, copy_trading) ──
+      // Labadaba PDF + Video upload karaa
+      } else if (COURSE_TYPES.includes(category)) {
+        let fileURL = "";
+        let pdfURL = "";
+        let totalSteps = (videoFile ? 1 : 0) + (pdfFile ? 1 : 0);
+        let step = 0;
+
+        if (videoFile) {
+          setProgressLabel("🎬 Video uploading…");
+          const vRef = ref(storage, `videos/${Date.now()}_${videoFile.name}`);
+          fileURL = await uploadWithProgress(vRef, videoFile, (p) => {
+            setProgress(Math.round((step / totalSteps) * 80 + (p / totalSteps) * 0.8));
+          });
+          step++;
+        }
+
+        if (pdfFile) {
+          setProgressLabel("📄 PDF uploading…");
+          const pRef = ref(storage, `pdfs/${Date.now()}_${pdfFile.name}`);
+          pdfURL = await uploadWithProgress(pRef, pdfFile, (p) => {
+            setProgress(Math.round((step / totalSteps) * 80 + (p / totalSteps) * 0.8));
+          });
+          step++;
+        }
+
+        setProgressLabel("💾 Saving…"); setProgress(90);
+        await addDoc(collection(db, "courses"), {
+          title: title.trim(), description: description.trim(),
+          price: coursePrice, thumbnailURL,
+          category,
+          type: fileURL ? (pdfURL ? "Video+PDF" : "Video") : "PDF",
+          fileURL: fileURL || "",
+          pdfURL: pdfURL || "",
+          createdAt: Date.now(), status: "Published",
+          locked: coursePrice > 0, isPaid: false
         });
       }
+
       setProgress(100); setProgressLabel("✅ Done!");
       setMsg("✅ Course si guul leh ayaa loo upload garey!");
       setTimeout(() => {
         setTitle(""); setDescription(""); setPrice("");
         setThumbnail(null); setThumbnailPreview(null);
-        setSingleFile(null); setLessons([]);
+        setSingleFile(null); setPdfFile(null); setVideoFile(null);
+        setLessons([]);
         setStep(1); setCategory("");
         setProgress(0); setProgressLabel("");
       }, 2000);
@@ -935,6 +993,38 @@ function UploadContentPage() {
     boxSizing: "border-box", fontFamily: "inherit"
   };
 
+  // ── File zone reusable component ──
+  const FileZone = ({ file, onClear, onClickRef, accept, icon, label, sub, color }) => (
+    <div>
+      <div onClick={() => onClickRef.current?.click()}
+        style={{ border: `2px dashed ${file ? C.green : C.borderRed}`, borderRadius: 12, padding: "20px", cursor: "pointer", background: C.redFaint, textAlign: "center", transition: "all .2s" }}
+        onMouseEnter={e => (e.currentTarget.style.borderColor = color)}
+        onMouseLeave={e => (e.currentTarget.style.borderColor = file ? C.green : C.borderRed)}>
+        {file ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
+            <div style={{ fontSize: 28 }}>{icon}</div>
+            <div>
+              <p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {file.name}</p>
+              <p style={{ color: C.textMuted, fontSize: 11 }}>{(file.size / 1048576).toFixed(1)} MB</p>
+            </div>
+            <button onClick={e => { e.stopPropagation(); onClear(); }}
+              style={{ marginLeft: "auto", background: C.errorDim, color: C.errorRed, border: "none", borderRadius: 8, padding: "6px 8px", cursor: "pointer" }}>
+              <Icon.Trash />
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: 32, marginBottom: 6 }}>{icon}</div>
+            <p style={{ color: C.textMuted, fontSize: 13, marginBottom: 3 }}>{label}</p>
+            <p style={{ color: C.textSub, fontSize: 11 }}>{sub}</p>
+          </>
+        )}
+      </div>
+      <input ref={onClickRef} type="file" accept={accept} style={{ display: "none" }}
+        onChange={e => { if (e.target.files[0]) { onClear(); setTimeout(() => {}, 0); } }} />
+    </div>
+  );
+
   // ── STEP 1: Choose category ──
   if (step === 1) {
     return (
@@ -945,20 +1035,16 @@ function UploadContentPage() {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
           {[
-            { id: "single_video", icon: "🎬", label: "Single Video Lesson",      sub: "Cashar keliya oo muuqaal ah",               color: C.amber,      colorDim: C.amberDim },
-            { id: "single_pdf",   icon: "📄", label: "Single PDF Lesson",         sub: "Cashar keliya oo PDF ah",                   color: C.errorRed,   colorDim: C.errorDim },
-            { id: "playlist",     icon: "🎓", label: "Full Course (Playlist)",     sub: "Cashar badan oo is-xiga",                   color: C.blue,       colorDim: C.blueDim },
-            { id: "basic_forex",  icon: "📈", label: "Basic Forex Course 35$",     sub: "Bilowga Ganacsiga",                         color: "#f5c518",    colorDim: "rgba(245,197,24,0.15)" },
-            { id: "crt_course",   icon: "⭐", label: "CRT Course 75$",             sub: "Barashada CRT (Mudo Kooban)",               color: "#a78bfa",    colorDim: "rgba(167,139,250,0.15)" },
-            { id: "mentorship",   icon: "🤝", label: "Premium Mentorship 125$",    sub: "Hagidda Shakhsiyadeed & Maareynta",         color: "#22c55e",    colorDim: "rgba(34,197,94,0.15)" },
-            { id: "copy_trading", icon: "💹", label: "Copy Trading Services",      sub: "Maalgashi Toos Ah",                         color: "#f97316",    colorDim: "rgba(249,115,22,0.15)" },
+            { id: "single_video", icon: "🎬", label: "Single Video Lesson",   sub: "Cashar keliya oo muuqaal ah",       color: C.amber,    colorDim: C.amberDim },
+            { id: "single_pdf",   icon: "📄", label: "Single PDF Lesson",      sub: "Cashar keliya oo PDF ah",           color: C.errorRed, colorDim: C.errorDim },
+            { id: "playlist",     icon: "🎓", label: "Full Course (Playlist)", sub: "Cashar badan oo is-xiga",           color: C.blue,     colorDim: C.blueDim },
+            { id: "basic_forex",  icon: "📈", label: "Basic Forex Course 35$", sub: "Video + PDF • Bilowga Ganacsiga",   color: "#f5c518",  colorDim: "rgba(245,197,24,0.15)" },
+            { id: "crt_course",   icon: "⭐", label: "CRT Course 75$",         sub: "Video + PDF • Barashada CRT",       color: "#a78bfa",  colorDim: "rgba(167,139,250,0.15)" },
+            { id: "mentorship",   icon: "🤝", label: "Premium Mentorship 125$",sub: "Video + PDF • Hagidda Shakhsiga",   color: "#22c55e",  colorDim: "rgba(34,197,94,0.15)" },
+            { id: "copy_trading", icon: "💹", label: "Copy Trading Services",  sub: "Video + PDF • Maalgashi Toos Ah",   color: "#f97316",  colorDim: "rgba(249,115,22,0.15)" },
           ].map(opt => (
             <button key={opt.id} onClick={() => { setCategory(opt.id); setStep(2); }}
-              style={{
-                textAlign: "left", cursor: "pointer", background: C.surfaceCard,
-                border: `2px solid ${C.border}`, borderRadius: 18, padding: 24,
-                transition: "all .2s", display: "flex", flexDirection: "column", gap: 14
-              }}
+              style={{ textAlign: "left", cursor: "pointer", background: C.surfaceCard, border: `2px solid ${C.border}`, borderRadius: 18, padding: 24, transition: "all .2s", display: "flex", flexDirection: "column", gap: 14 }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = opt.color; e.currentTarget.style.boxShadow = `0 8px 24px ${opt.colorDim}`; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = "none"; }}>
               <div style={{ fontSize: 40 }}>{opt.icon}</div>
@@ -976,22 +1062,21 @@ function UploadContentPage() {
     );
   }
 
-  // ── catInfo for step 2 ──
   const catInfo = {
-    single_video: { icon: "🎬", label: "Single Video Lesson",      color: C.amber    },
-    single_pdf:   { icon: "📄", label: "Single PDF Lesson",         color: C.errorRed },
-    playlist:     { icon: "🎓", label: "Full Course (Playlist)",    color: C.blue     },
-    basic_forex:  { icon: "📈", label: "Basic Forex Course 35$",    color: "#f5c518"  },
-    crt_course:   { icon: "⭐", label: "CRT Course 75$",            color: "#a78bfa"  },
-    mentorship:   { icon: "🤝", label: "Premium Mentorship 125$",   color: "#22c55e"  },
-    copy_trading: { icon: "💹", label: "Copy Trading Services",     color: "#f97316"  },
+    single_video: { icon: "🎬", label: "Single Video Lesson",   color: C.amber    },
+    single_pdf:   { icon: "📄", label: "Single PDF Lesson",      color: C.errorRed },
+    playlist:     { icon: "🎓", label: "Full Course (Playlist)", color: C.blue     },
+    basic_forex:  { icon: "📈", label: "Basic Forex Course 35$", color: "#f5c518"  },
+    crt_course:   { icon: "⭐", label: "CRT Course 75$",         color: "#a78bfa"  },
+    mentorship:   { icon: "🤝", label: "Premium Mentorship 125$",color: "#22c55e"  },
+    copy_trading: { icon: "💹", label: "Copy Trading Services",  color: "#f97316"  },
   }[category];
 
   // ── STEP 2: Upload form ──
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-        <button onClick={() => { setStep(1); setMsg(""); }}
+        <button onClick={() => { setStep(1); setMsg(""); setPdfFile(null); setVideoFile(null); setSingleFile(null); }}
           style={{ background: "none", border: "none", color: C.textMuted, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
           ← Back
         </button>
@@ -1001,6 +1086,7 @@ function UploadContentPage() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: PLAYLIST_TYPES.includes(category) ? "1fr" : "1fr 1fr", gap: 22 }}>
+
         {/* ── LEFT: Course Details ── */}
         <div style={{ ...CARD }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
@@ -1011,26 +1097,23 @@ function UploadContentPage() {
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Course Title *</label>
             <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Basic Forex Somali" style={iS}
-              onFocus={e => (e.target.style.borderColor = catInfo.color)}
-              onBlur={e => (e.target.style.borderColor = C.border)} />
+              onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
           </div>
 
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Description</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)}
-              placeholder="Maxaa ardaygu ka baran doonaa course-kan?" rows={3}
-              style={{ ...iS, resize: "vertical" }}
-              onFocus={e => (e.target.style.borderColor = catInfo.color)}
-              onBlur={e => (e.target.style.borderColor = C.border)} />
+              placeholder="Maxaa ardaygu ka baran doonaa course-kan?" rows={3} style={{ ...iS, resize: "vertical" }}
+              onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
           </div>
 
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Price (USD) — 0 = bilaash</label>
             <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" style={iS}
-              onFocus={e => (e.target.style.borderColor = catInfo.color)}
-              onBlur={e => (e.target.style.borderColor = C.border)} />
+              onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
           </div>
 
+          {/* Thumbnail */}
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Thumbnail (optional)</label>
             <div onClick={() => thumbRef.current?.click()}
@@ -1038,65 +1121,97 @@ function UploadContentPage() {
               onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
               onMouseLeave={e => (e.currentTarget.style.borderColor = thumbnail ? C.green : C.border)}>
               {thumbnailPreview
-                ? <>
-                    <img src={thumbnailPreview} alt="" style={{ width: 60, height: 60, borderRadius: 8, objectFit: "cover" }} />
-                    <div>
-                      <p style={{ color: C.green, fontWeight: 600, fontSize: 13 }}>✓ {thumbnail.name}</p>
-                      <p style={{ color: C.textMuted, fontSize: 11 }}>{(thumbnail.size / 1048576).toFixed(1)} MB</p>
-                    </div>
-                  </>
-                : <>
-                    <div style={{ fontSize: 28 }}>🖼️</div>
-                    <span style={{ color: C.textMuted, fontSize: 13 }}>Click to upload thumbnail image</span>
-                  </>}
+                ? <><img src={thumbnailPreview} alt="" style={{ width: 60, height: 60, borderRadius: 8, objectFit: "cover" }} />
+                    <div><p style={{ color: C.green, fontWeight: 600, fontSize: 13 }}>✓ {thumbnail.name}</p><p style={{ color: C.textMuted, fontSize: 11 }}>{(thumbnail.size / 1048576).toFixed(1)} MB</p></div></>
+                : <><div style={{ fontSize: 28 }}>🖼️</div><span style={{ color: C.textMuted, fontSize: 13 }}>Click to upload thumbnail image</span></>}
             </div>
             <input ref={thumbRef} type="file" accept="image/*" style={{ display: "none" }}
               onChange={e => { const f = e.target.files[0]; if (f) { setThumbnail(f); setThumbnailPreview(URL.createObjectURL(f)); } }} />
           </div>
 
-          {/* Single file upload — only for single_video / single_pdf */}
-          {!PLAYLIST_TYPES.includes(category) && (
+          {/* ── SINGLE VIDEO ── */}
+          {category === "single_video" && (
             <div>
-              <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>
-                {category === "single_pdf" ? "PDF File *" : "Video File *"}
-              </label>
+              <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Video File *</label>
               <div onClick={() => singleFileRef.current?.click()}
                 style={{ border: `2px dashed ${singleFile ? C.green : C.borderRed}`, borderRadius: 12, padding: "24px 20px", cursor: "pointer", background: C.redFaint, textAlign: "center", transition: "all .2s" }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = singleFile ? C.green : C.borderRed)}>
                 {singleFile ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
-                    <div style={{ fontSize: 28 }}>{category === "single_pdf" ? "📄" : "🎬"}</div>
-                    <div>
-                      <p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {singleFile.name}</p>
-                      <p style={{ color: C.textMuted, fontSize: 11 }}>{(singleFile.size / 1048576).toFixed(1)} MB</p>
-                    </div>
-                    <button onClick={e => { e.stopPropagation(); setSingleFile(null); }}
-                      style={{ marginLeft: "auto", background: C.errorDim, color: C.errorRed, border: "none", borderRadius: 8, padding: "6px 8px", cursor: "pointer" }}>
-                      <Icon.Trash />
-                    </button>
+                    <div style={{ fontSize: 28 }}>🎬</div>
+                    <div><p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {singleFile.name}</p><p style={{ color: C.textMuted, fontSize: 11 }}>{(singleFile.size / 1048576).toFixed(1)} MB</p></div>
+                    <button onClick={e => { e.stopPropagation(); setSingleFile(null); }} style={{ marginLeft: "auto", background: C.errorDim, color: C.errorRed, border: "none", borderRadius: 8, padding: "6px 8px", cursor: "pointer" }}><Icon.Trash /></button>
                   </div>
-                ) : (
-                  <>
-                    <div style={{ fontSize: 36, marginBottom: 8 }}>{category === "single_pdf" ? "📄" : "🎬"}</div>
-                    <p style={{ color: C.textMuted, fontSize: 13, marginBottom: 4 }}>
-                      {category === "single_pdf" ? "Drag & drop PDF file here" : "Drag & drop Video file here"}
-                    </p>
-                    <p style={{ color: C.textSub, fontSize: 11 }}>
-                      {category === "single_pdf" ? "PDF only • Max 50MB" : "MP4, MOV, AVI • Max 2GB"}
-                    </p>
-                  </>
-                )}
+                ) : (<><div style={{ fontSize: 36, marginBottom: 8 }}>🎬</div><p style={{ color: C.textMuted, fontSize: 13, marginBottom: 4 }}>Drag & drop Video file here</p><p style={{ color: C.textSub, fontSize: 11 }}>MP4, MOV, AVI • Max 2GB</p></>)}
               </div>
-              <input ref={singleFileRef} type="file"
-                accept={category === "single_pdf" ? ".pdf" : "video/*"}
-                style={{ display: "none" }}
-                onChange={e => { if (e.target.files[0]) setSingleFile(e.target.files[0]); }} />
+              <input ref={singleFileRef} type="file" accept="video/*" style={{ display: "none" }} onChange={e => { if (e.target.files[0]) setSingleFile(e.target.files[0]); }} />
+            </div>
+          )}
+
+          {/* ── SINGLE PDF ── */}
+          {category === "single_pdf" && (
+            <div>
+              <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>PDF File *</label>
+              <div onClick={() => singleFileRef.current?.click()}
+                style={{ border: `2px dashed ${singleFile ? C.green : C.borderRed}`, borderRadius: 12, padding: "24px 20px", cursor: "pointer", background: C.redFaint, textAlign: "center", transition: "all .2s" }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = singleFile ? C.green : C.borderRed)}>
+                {singleFile ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
+                    <div style={{ fontSize: 28 }}>📄</div>
+                    <div><p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {singleFile.name}</p><p style={{ color: C.textMuted, fontSize: 11 }}>{(singleFile.size / 1048576).toFixed(1)} MB</p></div>
+                    <button onClick={e => { e.stopPropagation(); setSingleFile(null); }} style={{ marginLeft: "auto", background: C.errorDim, color: C.errorRed, border: "none", borderRadius: 8, padding: "6px 8px", cursor: "pointer" }}><Icon.Trash /></button>
+                  </div>
+                ) : (<><div style={{ fontSize: 36, marginBottom: 8 }}>📄</div><p style={{ color: C.textMuted, fontSize: 13, marginBottom: 4 }}>Drag & drop PDF file here</p><p style={{ color: C.textSub, fontSize: 11 }}>PDF only • Max 50MB</p></>)}
+              </div>
+              <input ref={singleFileRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={e => { if (e.target.files[0]) setSingleFile(e.target.files[0]); }} />
+            </div>
+          )}
+
+          {/* ── COURSE TYPES: Video + PDF labadaba ── */}
+          {COURSE_TYPES.includes(category) && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Video Upload */}
+              <div>
+                <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>🎬 Video File (optional)</label>
+                <div onClick={() => videoFileRef.current?.click()}
+                  style={{ border: `2px dashed ${videoFile ? C.green : C.border}`, borderRadius: 12, padding: "18px 16px", cursor: "pointer", background: C.bgDeep, textAlign: "center", transition: "all .2s" }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = videoFile ? C.green : C.border)}>
+                  {videoFile ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
+                      <div style={{ fontSize: 24 }}>🎬</div>
+                      <div><p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {videoFile.name}</p><p style={{ color: C.textMuted, fontSize: 11 }}>{(videoFile.size / 1048576).toFixed(1)} MB</p></div>
+                      <button onClick={e => { e.stopPropagation(); setVideoFile(null); }} style={{ marginLeft: "auto", background: C.errorDim, color: C.errorRed, border: "none", borderRadius: 8, padding: "5px 7px", cursor: "pointer" }}><Icon.Trash /></button>
+                    </div>
+                  ) : (<><div style={{ fontSize: 28, marginBottom: 4 }}>🎬</div><p style={{ color: C.textMuted, fontSize: 12 }}>Click to select Video • MP4, MOV, AVI • Max 2GB</p></>)}
+                </div>
+                <input ref={videoFileRef} type="file" accept="video/*" style={{ display: "none" }} onChange={e => { if (e.target.files[0]) setVideoFile(e.target.files[0]); }} />
+              </div>
+
+              {/* PDF Upload */}
+              <div>
+                <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>📄 PDF File (optional)</label>
+                <div onClick={() => pdfFileRef.current?.click()}
+                  style={{ border: `2px dashed ${pdfFile ? C.green : C.border}`, borderRadius: 12, padding: "18px 16px", cursor: "pointer", background: C.bgDeep, textAlign: "center", transition: "all .2s" }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = pdfFile ? C.green : C.border)}>
+                  {pdfFile ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
+                      <div style={{ fontSize: 24 }}>📄</div>
+                      <div><p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {pdfFile.name}</p><p style={{ color: C.textMuted, fontSize: 11 }}>{(pdfFile.size / 1048576).toFixed(1)} MB</p></div>
+                      <button onClick={e => { e.stopPropagation(); setPdfFile(null); }} style={{ marginLeft: "auto", background: C.errorDim, color: C.errorRed, border: "none", borderRadius: 8, padding: "5px 7px", cursor: "pointer" }}><Icon.Trash /></button>
+                    </div>
+                  ) : (<><div style={{ fontSize: 28, marginBottom: 4 }}>📄</div><p style={{ color: C.textMuted, fontSize: 12 }}>Click to select PDF • Max 50MB</p></>)}
+                </div>
+                <input ref={pdfFileRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={e => { if (e.target.files[0]) setPdfFile(e.target.files[0]); }} />
+              </div>
             </div>
           )}
         </div>
 
-        {/* ── RIGHT: Lessons (playlist types) ── */}
+        {/* ── RIGHT: Lessons (playlist only) ── */}
         {PLAYLIST_TYPES.includes(category) && (
           <div style={{ ...CARD }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 20 }}>
@@ -1118,10 +1233,8 @@ function UploadContentPage() {
                 <p style={{ color: catInfo.color, fontWeight: 700, fontSize: 13, marginBottom: 14 }}>✚ New Lesson</p>
                 <div style={{ marginBottom: 12 }}>
                   <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>Lesson Title *</label>
-                  <input value={lessonTitle} onChange={e => setLessonTitle(e.target.value)}
-                    placeholder="e.g. Introduction to Forex" style={iS}
-                    onFocus={e => (e.target.style.borderColor = catInfo.color)}
-                    onBlur={e => (e.target.style.borderColor = C.border)} />
+                  <input value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} placeholder="e.g. Introduction to Forex" style={iS}
+                    onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
                 </div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                   {["video", "pdf"].map(t => (
@@ -1139,19 +1252,11 @@ function UploadContentPage() {
                     ? <p style={{ color: C.green, fontWeight: 600, fontSize: 13 }}>✓ {lessonFile.name} ({(lessonFile.size / 1048576).toFixed(1)} MB)</p>
                     : <p style={{ color: C.textMuted, fontSize: 13 }}>{lessonFileType === "video" ? "Click to select video file" : "Click to select PDF file"}</p>}
                 </div>
-                <input ref={lessonFileRef} type="file"
-                  accept={lessonFileType === "pdf" ? ".pdf" : "video/*"}
-                  style={{ display: "none" }}
+                <input ref={lessonFileRef} type="file" accept={lessonFileType === "pdf" ? ".pdf" : "video/*"} style={{ display: "none" }}
                   onChange={e => { if (e.target.files[0]) setLessonFile(e.target.files[0]); }} />
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={addLesson}
-                    style={{ flex: 1, padding: "10px 0", background: catInfo.color, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                    ✓ Add Lesson
-                  </button>
-                  <button onClick={() => { setAddingLesson(false); setLessonTitle(""); setLessonFile(null); }}
-                    style={{ padding: "10px 16px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-                    Cancel
-                  </button>
+                  <button onClick={addLesson} style={{ flex: 1, padding: "10px 0", background: catInfo.color, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>✓ Add Lesson</button>
+                  <button onClick={() => { setAddingLesson(false); setLessonTitle(""); setLessonFile(null); }} style={{ padding: "10px 16px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancel</button>
                 </div>
               </div>
             )}
@@ -1164,28 +1269,17 @@ function UploadContentPage() {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {lessons.map((lesson, idx) => (
-                  <div key={lesson.id} style={{ background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", display: "flex", alignItems: "center", gap: 12, transition: "background .15s" }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: C.blueDim, color: C.blue, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 13, flexShrink: 0 }}>
-                      {lesson.order}
-                    </div>
+                  <div key={lesson.id} style={{ background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: C.blueDim, color: C.blue, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 13, flexShrink: 0 }}>{lesson.order}</div>
                     <div style={{ fontSize: 18, flexShrink: 0 }}>{lesson.fileType === "pdf" ? "📄" : "🎬"}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ color: C.text, fontWeight: 700, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{lesson.title}</p>
                       <p style={{ color: C.textSub, fontSize: 11, marginTop: 2 }}>{lesson.file.name} • {(lesson.file.size / 1048576).toFixed(1)} MB</p>
                     </div>
                     <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                      <button onClick={() => moveLessonUp(idx)} disabled={idx === 0}
-                        style={{ background: "none", border: `1px solid ${C.border}`, color: idx === 0 ? C.textSub : C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === 0 ? "not-allowed" : "pointer", opacity: idx === 0 ? 0.4 : 1 }}>
-                        <Icon.ChevronUp />
-                      </button>
-                      <button onClick={() => moveLessonDown(idx)} disabled={idx === lessons.length - 1}
-                        style={{ background: "none", border: `1px solid ${C.border}`, color: idx === lessons.length-1 ? C.textSub : C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === lessons.length-1 ? "not-allowed" : "pointer", opacity: idx === lessons.length-1 ? 0.4 : 1 }}>
-                        <Icon.ChevronDown />
-                      </button>
-                      <button onClick={() => removeLesson(lesson.id)}
-                        style={{ background: C.errorDim, border: "none", color: C.errorRed, borderRadius: 7, padding: "5px 7px", cursor: "pointer" }}>
-                        <Icon.Trash />
-                      </button>
+                      <button onClick={() => moveLessonUp(idx)} disabled={idx === 0} style={{ background: "none", border: `1px solid ${C.border}`, color: C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === 0 ? "not-allowed" : "pointer", opacity: idx === 0 ? 0.4 : 1 }}><Icon.ChevronUp /></button>
+                      <button onClick={() => moveLessonDown(idx)} disabled={idx === lessons.length - 1} style={{ background: "none", border: `1px solid ${C.border}`, color: C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === lessons.length-1 ? "not-allowed" : "pointer", opacity: idx === lessons.length-1 ? 0.4 : 1 }}><Icon.ChevronDown /></button>
+                      <button onClick={() => removeLesson(lesson.id)} style={{ background: C.errorDim, border: "none", color: C.errorRed, borderRadius: 7, padding: "5px 7px", cursor: "pointer" }}><Icon.Trash /></button>
                     </div>
                   </div>
                 ))}
@@ -1224,7 +1318,7 @@ function UploadContentPage() {
               : <><Icon.Upload /> {catInfo.icon} Upload {catInfo.label}</>}
           </button>
           {!uploading && (
-            <button onClick={() => { setStep(1); setCategory(""); setMsg(""); }}
+            <button onClick={() => { setStep(1); setCategory(""); setMsg(""); setPdfFile(null); setVideoFile(null); setSingleFile(null); }}
               style={{ padding: "14px 20px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               Cancel
             </button>
