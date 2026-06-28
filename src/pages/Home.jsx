@@ -220,9 +220,14 @@ export default function Home() {
     },
   ];
 
-  // Tus course-ka basic_forex category-ga leh marka hore, haddaan jirin courses[0]
+  // Tus course-ka basic_forex-ga ugu dambeeyay (createdAt by desc), haddaan jirin courses[0]
   const displayCourse = courses.length > 0
-    ? [courses.find(c => c.category === "basic_forex") || courses[0]]
+    ? (() => {
+        const basicForex = courses
+          .filter(c => c.category === "basic_forex")
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        return [basicForex[0] || courses[0]];
+      })()
     : [];
 
   const desktopLinks = [
