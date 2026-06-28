@@ -45,10 +45,40 @@ export default function Home() {
         setEmail(currentUser.email || "");
         setPayEmail(currentUser.email || "");
         getDocs(collection(db, "courseAccess")).then((accessSnap) => {
-          const approved = accessSnap.docs
-            .filter(d => d.data().email === currentUser.email && d.data().approved === true)
-            .map(d => d.data().courseId);
-          setUserApprovedCourses(approved);
+          const approvedDocs = accessSnap.docs.filter(
+            d => d.data().email === currentUser.email && d.data().approved === true
+          );
+          // Labada ID oo dhan ku dar: Firestore doc ID iyo courseId field-ka (payId)
+          const approvedIds = [];
+          approvedDocs.forEach(d => {
+            const data = d.data();
+            if (data.courseId) approvedIds.push(data.courseId); // Firestore auto-ID
+            // Map category → payId si services array-ga u shaqeeyo
+            const categoryToPayId = {
+              "basic_forex":  "basic-forex-course",
+              "crt_course":   "crt-course-60",
+              "mentorship":   "premium-mentorship-100",
+              "copy_trading": "copy-trading-services",
+            };
+            // Hel course-ka category-ga ka fiiri
+          });
+          // Sidoo kale ku dar payIds-ka category-based
+          getDocs(collection(db, "courses")).then(coursesSnap => {
+            const categoryToPayId = {
+              "basic_forex":  "basic-forex-course",
+              "crt_course":   "crt-course-60",
+              "mentorship":   "premium-mentorship-100",
+              "copy_trading": "copy-trading-services",
+            };
+            const approvedDocIds = approvedDocs.map(d => d.data().courseId);
+            coursesSnap.docs.forEach(c => {
+              if (approvedDocIds.includes(c.id)) {
+                const payId = categoryToPayId[c.data().category];
+                if (payId) approvedIds.push(payId);
+              }
+            });
+            setUserApprovedCourses([...new Set(approvedIds)]);
+          }).catch(() => setUserApprovedCourses([...new Set(approvedIds)]));
         }).catch(e => console.log(e));
       }
     });
