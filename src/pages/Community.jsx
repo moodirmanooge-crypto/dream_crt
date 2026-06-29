@@ -12,20 +12,20 @@ import { db, auth, storage } from "../firebase/config.js";
 import { onAuthStateChanged } from "firebase/auth";
 
 // ── THEME ────────────────────────────────────────────────────────────
-const GOLD       = "#d4af37";
-const GOLD2      = "#f5d060";
-const MAIN_BG    = "#060d1f";
-const CARD_BG    = "linear-gradient(145deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 100%)";
+const GOLD        = "#d4af37";
+const GOLD2       = "#f5d060";
+const MAIN_BG     = "#060d1f";
+const CARD_BG     = "linear-gradient(145deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 100%)";
 const CARD_BORDER = "1px solid rgba(212,175,55,0.2)";
 
 // ── REACTION TYPES ───────────────────────────────────────────────────
 const REACTIONS = [
-  { emoji: "👍", label: "Like",     color: "#2078f4" },
-  { emoji: "❤️", label: "Love",     color: "#f33e58" },
-  { emoji: "😂", label: "Haha",     color: "#f7b125" },
-  { emoji: "😮", label: "Wow",      color: "#f7b125" },
-  { emoji: "😭", label: "Sad",      color: "#f7b125" },
-  { emoji: "😡", label: "Angry",    color: "#e9710f" },
+  { emoji: "👍", label: "Like",  color: "#2078f4" },
+  { emoji: "❤️", label: "Love",  color: "#f33e58" },
+  { emoji: "😂", label: "Haha",  color: "#f7b125" },
+  { emoji: "😮", label: "Wow",   color: "#f7b125" },
+  { emoji: "😭", label: "Sad",   color: "#f7b125" },
+  { emoji: "😡", label: "Angry", color: "#e9710f" },
 ];
 
 function formatCount(n) {
@@ -35,9 +35,207 @@ function formatCount(n) {
   return n;
 }
 
-// ── LIKES LIST MODAL (Facebook-style: who liked) ─────────────────────
+// ── FACEBOOK-STYLE MEDIA GRID ─────────────────────────────────────────
+function MediaGrid({ mediaItems, onImageClick }) {
+  if (!mediaItems || mediaItems.length === 0) return null;
+  const count = mediaItems.length;
+
+  const cellStyle = (extra = {}) => ({
+    overflow: "hidden",
+    position: "relative",
+    background: "#0a0f1e",
+    cursor: "pointer",
+    ...extra,
+  });
+
+  const imgStyle = {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+    transition: "transform 0.2s",
+  };
+
+  const hoverScale = (e) => { e.currentTarget.querySelector("img") && (e.currentTarget.querySelector("img").style.transform = "scale(1.04)"); };
+  const hoverReset = (e) => { e.currentTarget.querySelector("img") && (e.currentTarget.querySelector("img").style.transform = "scale(1)"); };
+
+  // ── 1 item ──────────────────────────────────────────────────────────
+  if (count === 1) {
+    const item = mediaItems[0];
+    return (
+      <div style={{ marginBottom: 14 }}>
+        {item.type === "video" ? (
+          <video src={item.url} controls style={{ width: "100%", maxHeight: 460, objectFit: "cover", display: "block" }} />
+        ) : (
+          <div style={cellStyle({ maxHeight: 460 })} onClick={() => onImageClick(0)}
+            onMouseEnter={hoverScale} onMouseLeave={hoverReset}>
+            <img src={item.url} alt="" style={{ ...imgStyle, maxHeight: 460 }} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── 2 items ─────────────────────────────────────────────────────────
+  if (count === 2) {
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, height: 300, marginBottom: 14 }}>
+        {mediaItems.map((item, i) => (
+          <div key={i} style={cellStyle()} onClick={() => onImageClick(i)}
+            onMouseEnter={hoverScale} onMouseLeave={hoverReset}>
+            {item.type === "video"
+              ? <video src={item.url} controls style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : <img src={item.url} alt="" style={imgStyle} />}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // ── 3 items ─────────────────────────────────────────────────────────
+  if (count === 3) {
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "200px 200px", gap: 2, marginBottom: 14 }}>
+        {/* Left big image */}
+        <div style={cellStyle({ gridRow: "1 / 3" })} onClick={() => onImageClick(0)}
+          onMouseEnter={hoverScale} onMouseLeave={hoverReset}>
+          <img src={mediaItems[0].url} alt="" style={imgStyle} />
+        </div>
+        {/* Right 2 stacked */}
+        {[1, 2].map(i => (
+          <div key={i} style={cellStyle()} onClick={() => onImageClick(i)}
+            onMouseEnter={hoverScale} onMouseLeave={hoverReset}>
+            <img src={mediaItems[i].url} alt="" style={imgStyle} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // ── 4 items ─────────────────────────────────────────────────────────
+  if (count === 4) {
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "200px 200px", gap: 2, marginBottom: 14 }}>
+        {mediaItems.map((item, i) => (
+          <div key={i} style={cellStyle()} onClick={() => onImageClick(i)}
+            onMouseEnter={hoverScale} onMouseLeave={hoverReset}>
+            <img src={item.url} alt="" style={imgStyle} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // ── 5+ items ─────────────────────────────────────────────────────────
+  // Layout: top row = 2 big, bottom row = 3 small
+  const visible   = mediaItems.slice(0, 5);
+  const remaining = count - 5;
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gridTemplateRows: "220px 160px", gap: 2, marginBottom: 14 }}>
+      {/* Top row: 2 images, each spans 1.5 cols -> use col-span trick */}
+      <div style={cellStyle({ gridColumn: "1 / 3", gridRow: "1 / 2" })} onClick={() => onImageClick(0)}
+        onMouseEnter={hoverScale} onMouseLeave={hoverReset}>
+        <img src={visible[0].url} alt="" style={imgStyle} />
+      </div>
+      <div style={cellStyle({ gridColumn: "3 / 4", gridRow: "1 / 2" })} onClick={() => onImageClick(1)}
+        onMouseEnter={hoverScale} onMouseLeave={hoverReset}>
+        <img src={visible[1].url} alt="" style={imgStyle} />
+      </div>
+      {/* Bottom row: 3 images */}
+      {visible.slice(2, 5).map((item, i) => (
+        <div key={i + 2} style={cellStyle({ position: "relative" })} onClick={() => onImageClick(i + 2)}
+          onMouseEnter={hoverScale} onMouseLeave={hoverReset}>
+          <img src={item.url} alt="" style={imgStyle} />
+          {/* "+X more" overlay on the last visible cell */}
+          {i === 2 && remaining > 0 && (
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "rgba(0,0,0,0.6)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <span style={{ color: "#fff", fontSize: 30, fontWeight: 900 }}>+{remaining}</span>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── IMAGE LIGHTBOX ────────────────────────────────────────────────────
+function ImageLightbox({ items, startIndex, onClose }) {
+  const [idx, setIdx] = useState(startIndex);
+  const total = items.length;
+
+  useEffect(() => {
+    const h = (e) => {
+      if (e.key === "ArrowRight") setIdx(i => (i + 1) % total);
+      if (e.key === "ArrowLeft")  setIdx(i => (i - 1 + total) % total);
+      if (e.key === "Escape")     onClose();
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [total, onClose]);
+
+  const item = items[idx];
+
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 110,
+      background: "rgba(0,0,0,0.96)", backdropFilter: "blur(6px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{ position: "relative", display: "flex", alignItems: "center" }}>
+        {/* Prev */}
+        {total > 1 && (
+          <button onClick={() => setIdx(i => (i - 1 + total) % total)} style={{
+            position: "absolute", left: -64, top: "50%", transform: "translateY(-50%)",
+            width: 48, height: 48, borderRadius: "50%", background: "rgba(255,255,255,0.12)",
+            border: "none", color: "#fff", fontSize: 26, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>‹</button>
+        )}
+
+        {/* Media */}
+        {item.type === "video"
+          ? <video src={item.url} controls autoPlay style={{ maxWidth: "88vw", maxHeight: "88vh", borderRadius: 14 }} />
+          : <img src={item.url} alt="" style={{ maxWidth: "88vw", maxHeight: "88vh", borderRadius: 14, objectFit: "contain" }} />
+        }
+
+        {/* Next */}
+        {total > 1 && (
+          <button onClick={() => setIdx(i => (i + 1) % total)} style={{
+            position: "absolute", right: -64, top: "50%", transform: "translateY(-50%)",
+            width: 48, height: 48, borderRadius: "50%", background: "rgba(255,255,255,0.12)",
+            border: "none", color: "#fff", fontSize: 26, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>›</button>
+        )}
+
+        {/* Close */}
+        <button onClick={onClose} style={{
+          position: "absolute", top: -52, right: 0,
+          background: "rgba(255,255,255,0.1)", border: "none", color: "#fff",
+          fontSize: 20, cursor: "pointer", borderRadius: "50%",
+          width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
+        }}><FaTimes /></button>
+
+        {/* Counter */}
+        {total > 1 && (
+          <div style={{
+            position: "absolute", bottom: -44, left: "50%", transform: "translateX(-50%)",
+            color: "#bbb", fontSize: 13, background: "rgba(0,0,0,0.5)",
+            padding: "4px 16px", borderRadius: 20,
+          }}>{idx + 1} / {total}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── LIKES LIST MODAL ──────────────────────────────────────────────────
 function LikesModal({ reactions, onClose }) {
-  // reactions = { uid: { emoji, name, photo } }
   const entries = Object.values(reactions || {});
   const grouped = REACTIONS.map(r => ({
     ...r,
@@ -51,12 +249,10 @@ function LikesModal({ reactions, onClose }) {
   return (
     <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:70, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0.85)", backdropFilter:"blur(8px)", padding:16 }}>
       <div onClick={e => e.stopPropagation()} style={{ width:"100%", maxWidth:420, borderRadius:20, background:"#0d1b35", border:CARD_BORDER, overflow:"hidden" }}>
-        {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"16px 20px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
           <h3 style={{ color:GOLD2, fontWeight:900, fontSize:17, margin:0 }}>Reactions</h3>
           <button onClick={onClose} style={{ color:"#6688aa", background:"none", border:"none", cursor:"pointer", fontSize:18 }}><FaTimes/></button>
         </div>
-        {/* Tabs */}
         <div style={{ display:"flex", gap:4, padding:"10px 16px", borderBottom:"1px solid rgba(255,255,255,0.05)", overflowX:"auto" }}>
           {tabs.map(t => (
             <button key={t} onClick={() => setTab(t)}
@@ -68,7 +264,6 @@ function LikesModal({ reactions, onClose }) {
             </button>
           ))}
         </div>
-        {/* List */}
         <div style={{ maxHeight:360, overflowY:"auto", padding:"8px 0" }}>
           {displayed.length === 0 ? (
             <p style={{ color:"#445", textAlign:"center", padding:"32px 0", fontSize:14 }}>No reactions yet</p>
@@ -76,9 +271,7 @@ function LikesModal({ reactions, onClose }) {
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 20px" }}>
               <div style={{ position:"relative" }}>
                 <div style={{ width:42, height:42, borderRadius:"50%", overflow:"hidden", background:"rgba(212,175,55,0.15)", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, color:GOLD2, fontSize:16 }}>
-                  {entry.photo
-                    ? <img src={entry.photo} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
-                    : entry.name?.[0]?.toUpperCase()}
+                  {entry.photo ? <img src={entry.photo} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/> : entry.name?.[0]?.toUpperCase()}
                 </div>
                 <span style={{ position:"absolute", bottom:-2, right:-2, fontSize:14, lineHeight:1 }}>{entry.emoji}</span>
               </div>
@@ -91,19 +284,17 @@ function LikesModal({ reactions, onClose }) {
   );
 }
 
-// ── REACTION PICKER (hover popup) ────────────────────────────────────
+// ── REACTION PICKER ───────────────────────────────────────────────────
 function ReactionPicker({ onSelect }) {
   return (
     <div style={{
       position:"absolute", bottom:"calc(100% + 8px)", left:0,
       background:"linear-gradient(145deg,#0d1b35,#07111f)", border:CARD_BORDER,
       borderRadius:40, padding:"8px 12px", display:"flex", gap:4, zIndex:50,
-      boxShadow:"0 8px 32px rgba(0,0,0,0.6)",
-      animation:"popIn .15s ease",
+      boxShadow:"0 8px 32px rgba(0,0,0,0.6)", animation:"popIn .15s ease",
     }}>
       {REACTIONS.map(r => (
-        <button key={r.emoji} onClick={() => onSelect(r.emoji)}
-          title={r.label}
+        <button key={r.emoji} onClick={() => onSelect(r.emoji)} title={r.label}
           style={{ background:"none", border:"none", cursor:"pointer", fontSize:24, lineHeight:1, transition:"transform .1s", padding:"4px 6px", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}
           onMouseEnter={e => e.currentTarget.style.transform="scale(1.4) translateY(-4px)"}
           onMouseLeave={e => e.currentTarget.style.transform="scale(1)"}>
@@ -115,7 +306,7 @@ function ReactionPicker({ onSelect }) {
   );
 }
 
-// ── SHARE MODAL ──────────────────────────────────────────────────────
+// ── SHARE MODAL ───────────────────────────────────────────────────────
 function ShareModal({ post, onClose }) {
   const shareUrl = `${window.location.origin}/post/${post.id}`;
   const text = encodeURIComponent(post.caption || "Check out this post!");
@@ -155,7 +346,7 @@ function ShareModal({ post, onClose }) {
   );
 }
 
-// ── PROFILE MODAL ────────────────────────────────────────────────────
+// ── PROFILE MODAL ─────────────────────────────────────────────────────
 function ProfileModal({ uid, onClose }) {
   const [profile, setProfile] = useState(null);
   const [trades,  setTrades]  = useState([]);
@@ -176,9 +367,9 @@ function ProfileModal({ uid, onClose }) {
     load();
   }, [uid]);
 
-  const wins     = trades.filter(t=>t.status==="Win").length;
-  const closed   = trades.filter(t=>t.status!=="Open").length;
-  const winRate  = closed ? Math.round((wins/closed)*100) : 0;
+  const wins    = trades.filter(t=>t.status==="Win").length;
+  const closed  = trades.filter(t=>t.status!=="Open").length;
+  const winRate = closed ? Math.round((wins/closed)*100) : 0;
   const totalPnL = trades.reduce((a,b)=>a+Number(b.profit_loss||0),0);
   const avatarURL = profile?.photoURL || `https://ui-avatars.com/api/?name=${profile?.displayName||"T"}&background=d4af37&color=000&bold=true`;
 
@@ -222,7 +413,7 @@ function ProfileModal({ uid, onClose }) {
   );
 }
 
-// ── REPLY REACTION PICKER (small, inline) ────────────────────────────
+// ── REPLY REACTION PICKER ─────────────────────────────────────────────
 function ReplyReactionPicker({ onSelect, onClose }) {
   const ref = useRef();
   useEffect(() => {
@@ -250,13 +441,13 @@ function ReplyReactionPicker({ onSelect, onClose }) {
   );
 }
 
-// ── COMMENTS SECTION ─────────────────────────────────────────────────
+// ── COMMENTS SECTION ──────────────────────────────────────────────────
 function CommentsSection({ postId, currentUser }) {
   const [comments,  setComments]  = useState([]);
   const [text,      setText]      = useState("");
-  const [replyTo,   setReplyTo]   = useState(null);   // { commentId, userName }
+  const [replyTo,   setReplyTo]   = useState(null);
   const [replyText, setReplyText] = useState("");
-  const [pickerFor, setPickerFor] = useState(null);   // commentId | "reply-{commentId}-{idx}"
+  const [pickerFor, setPickerFor] = useState(null);
 
   useEffect(() => {
     const q = query(collection(db,"posts",postId,"comments"), orderBy("createdAt","asc"));
@@ -266,7 +457,6 @@ function CommentsSection({ postId, currentUser }) {
     return () => unsub();
   }, [postId]);
 
-  // ── Post comment ──
   const submitComment = async () => {
     if (!text.trim() || !currentUser) return;
     await addDoc(collection(db,"posts",postId,"comments"), {
@@ -275,14 +465,13 @@ function CommentsSection({ postId, currentUser }) {
       userId:    currentUser.uid,
       text:      text.trim(),
       createdAt: Date.now(),
-      reactions: {},  // { uid: { emoji, name, photo } }
+      reactions: {},
       replies:   [],
     });
     await updateDoc(doc(db,"posts",postId),{ commentCount: increment(1) });
     setText("");
   };
 
-  // ── Post reply ──
   const submitReply = async (commentId) => {
     if (!replyText.trim() || !currentUser) return;
     const cRef = doc(db,"posts",postId,"comments",commentId);
@@ -294,14 +483,13 @@ function CommentsSection({ postId, currentUser }) {
       userId:    currentUser.uid,
       text:      replyText.trim(),
       createdAt: Date.now(),
-      reactions: {},  // { uid: { emoji, name, photo } }
+      reactions: {},
     };
     await updateDoc(cRef, { replies: [...existingReplies, newReply] });
     setReplyText("");
     setReplyTo(null);
   };
 
-  // ── React to comment ──
   const reactToComment = async (commentId, emoji) => {
     if (!currentUser) return;
     setPickerFor(null);
@@ -310,15 +498,11 @@ function CommentsSection({ postId, currentUser }) {
     const existing = cSnap.data()?.reactions || {};
     const uid = currentUser.uid;
     const updated = { ...existing };
-    if (updated[uid]?.emoji === emoji) {
-      delete updated[uid];
-    } else {
-      updated[uid] = { emoji, name: currentUser.displayName || "Trader", photo: currentUser.photoURL || null };
-    }
+    if (updated[uid]?.emoji === emoji) { delete updated[uid]; }
+    else { updated[uid] = { emoji, name: currentUser.displayName || "Trader", photo: currentUser.photoURL || null }; }
     await updateDoc(cRef, { reactions: updated });
   };
 
-  // ── React to reply ──
   const reactToReply = async (commentId, replyIdx, emoji) => {
     if (!currentUser) return;
     setPickerFor(null);
@@ -328,11 +512,8 @@ function CommentsSection({ postId, currentUser }) {
     const reply = { ...replies[replyIdx] };
     const existing = reply.reactions || {};
     const uid = currentUser.uid;
-    if (existing[uid]?.emoji === emoji) {
-      delete existing[uid];
-    } else {
-      existing[uid] = { emoji, name: currentUser.displayName || "Trader", photo: currentUser.photoURL || null };
-    }
+    if (existing[uid]?.emoji === emoji) { delete existing[uid]; }
+    else { existing[uid] = { emoji, name: currentUser.displayName || "Trader", photo: currentUser.photoURL || null }; }
     reply.reactions = existing;
     replies[replyIdx] = reply;
     await updateDoc(cRef, { replies });
@@ -344,7 +525,6 @@ function CommentsSection({ postId, currentUser }) {
     </div>
   );
 
-  // Summarize reactions: top 3 emojis + total count
   const ReactSummary = ({ reactions={}, onClick }) => {
     const entries = Object.values(reactions);
     if (entries.length === 0) return null;
@@ -361,7 +541,6 @@ function CommentsSection({ postId, currentUser }) {
 
   return (
     <div style={{ borderTop:"1px solid rgba(212,175,55,0.1)", paddingTop:8, marginTop:4 }}>
-      {/* Comment input */}
       <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 16px 12px" }}>
         <Avatar photo={currentUser?.photoURL} name={currentUser?.displayName||"U"} size={34}/>
         <div style={{ flex:1, display:"flex", gap:8 }}>
@@ -375,7 +554,6 @@ function CommentsSection({ postId, currentUser }) {
         </div>
       </div>
 
-      {/* Comments list */}
       <div style={{ display:"flex", flexDirection:"column", gap:16, padding:"0 16px 16px" }}>
         {comments.map(c => {
           const myCommentReaction = currentUser ? c.reactions?.[currentUser.uid]?.emoji : null;
@@ -385,21 +563,17 @@ function CommentsSection({ postId, currentUser }) {
               <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
                 <Avatar photo={c.userPhoto} name={c.userName} size={34}/>
                 <div style={{ flex:1 }}>
-                  {/* Bubble */}
                   <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:"0 18px 18px 18px", padding:"10px 14px", display:"inline-block", maxWidth:"100%", position:"relative" }}>
                     <span style={{ color:GOLD2, fontWeight:700, fontSize:12, marginRight:8 }}>{c.userName}</span>
                     <span style={{ color:"#ccd", fontSize:13 }}>{c.text}</span>
-                    {/* Reaction summary badge on bubble */}
                     {commentReactionEntries.length > 0 && (
                       <div style={{ position:"absolute", bottom:-10, right:8 }}>
                         <ReactSummary reactions={c.reactions} onClick={()=>{}}/>
                       </div>
                     )}
                   </div>
-                  {/* Meta row */}
                   <div style={{ display:"flex", alignItems:"center", gap:12, marginTop:14, paddingLeft:4 }}>
                     <span style={{ color:"#445", fontSize:11 }}>{new Date(c.createdAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span>
-                    {/* Like comment */}
                     <div style={{ position:"relative" }}>
                       {pickerFor === c.id && (
                         <ReplyReactionPicker onSelect={e=>reactToComment(c.id,e)} onClose={()=>setPickerFor(null)}/>
@@ -408,8 +582,7 @@ function CommentsSection({ postId, currentUser }) {
                         onClick={() => reactToComment(c.id, myCommentReaction ? myCommentReaction : "👍")}
                         onMouseEnter={() => { const t = setTimeout(()=>setPickerFor(c.id),400); return ()=>clearTimeout(t); }}
                         style={{ background:"none", border:"none", color: myCommentReaction ? "#2078f4" : "#6688aa", fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
-                        {myCommentReaction || <FaThumbsUp size={11}/>}
-                        {myCommentReaction ? " Like" : " Like"}
+                        {myCommentReaction || <FaThumbsUp size={11}/>} Like
                       </button>
                     </div>
                     <button
@@ -422,7 +595,6 @@ function CommentsSection({ postId, currentUser }) {
                     )}
                   </div>
 
-                  {/* Replies */}
                   {(c.replies||[]).length > 0 && (
                     <div style={{ marginTop:12, paddingLeft:14, borderLeft:"2px solid rgba(212,175,55,0.15)", display:"flex", flexDirection:"column", gap:12 }}>
                       {(c.replies||[]).map((r,i) => {
@@ -436,17 +608,14 @@ function CommentsSection({ postId, currentUser }) {
                               <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:"0 14px 14px 14px", padding:"8px 12px", display:"inline-block", position:"relative" }}>
                                 <span style={{ color:GOLD2, fontWeight:700, fontSize:11, marginRight:6 }}>{r.userName}</span>
                                 <span style={{ color:"#aab", fontSize:12 }}>{r.text}</span>
-                                {/* Reaction badge on reply bubble */}
                                 {replyReactionEntries.length > 0 && (
                                   <div style={{ position:"absolute", bottom:-10, right:8 }}>
                                     <ReactSummary reactions={r.reactions} onClick={()=>{}}/>
                                   </div>
                                 )}
                               </div>
-                              {/* Reply meta row */}
                               <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:14, paddingLeft:4 }}>
                                 <span style={{ color:"#334", fontSize:10 }}>{new Date(r.createdAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span>
-                                {/* Like reply */}
                                 <div style={{ position:"relative" }}>
                                   {pickerFor === pickerKey && (
                                     <ReplyReactionPicker onSelect={e=>reactToReply(c.id,i,e)} onClose={()=>setPickerFor(null)}/>
@@ -469,7 +638,6 @@ function CommentsSection({ postId, currentUser }) {
                     </div>
                   )}
 
-                  {/* Reply input */}
                   {replyTo?.commentId === c.id && (
                     <div style={{ display:"flex", gap:8, marginTop:10, paddingLeft:14 }}>
                       <Avatar photo={currentUser?.photoURL} name={currentUser?.displayName||"U"} size={26}/>
@@ -497,23 +665,23 @@ function CommentsSection({ postId, currentUser }) {
 
 // ── POST CARD ─────────────────────────────────────────────────────────
 function PostCard({ post, currentUser }) {
-  const [showComments,  setShowComments]  = useState(false);
-  const [shareModal,    setShareModal]    = useState(false);
-  const [profileModal,  setProfileModal]  = useState(false);
-  const [showPicker,    setShowPicker]    = useState(false);
-  const [showLikesModal,setShowLikesModal]= useState(false);
-  const pickerRef = useRef(null);
+  const [showComments,   setShowComments]   = useState(false);
+  const [shareModal,     setShareModal]     = useState(false);
+  const [profileModal,   setProfileModal]   = useState(false);
+  const [showPicker,     setShowPicker]     = useState(false);
+  const [showLikesModal, setShowLikesModal] = useState(false);
+  const [lightboxIndex,  setLightboxIndex]  = useState(null); // null = closed
+  const pickerRef  = useRef(null);
   const hoverTimer = useRef(null);
 
   const [localPost, setLocalPost] = useState({
     ...post,
     followers:    Array.isArray(post.followers) ? post.followers : [],
-    reactions:    post.reactions    || {},   // { uid: { emoji, name, photo } }
+    reactions:    post.reactions    || {},
     commentCount: post.commentCount || 0,
     shareCount:   post.shareCount   || 0,
   });
 
-  // Close picker on outside click
   useEffect(() => {
     const h = (e) => { if (pickerRef.current && !pickerRef.current.contains(e.target)) setShowPicker(false); };
     document.addEventListener("mousedown", h);
@@ -524,12 +692,21 @@ function PostCard({ post, currentUser }) {
   const myReaction = myUid ? localPost.reactions?.[myUid]?.emoji : null;
   const reactionEntries = Object.values(localPost.reactions || {});
   const totalReactions  = reactionEntries.length;
+  const reactionCounts  = reactionEntries.reduce((acc,r) => { acc[r.emoji]=(acc[r.emoji]||0)+1; return acc; }, {});
+  const topEmojis       = Object.entries(reactionCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([e])=>e);
+  const isFollowing     = localPost.followers.includes(myUid);
 
-  // Top 3 emoji counts for summary bar
-  const reactionCounts = reactionEntries.reduce((acc,r) => { acc[r.emoji]=(acc[r.emoji]||0)+1; return acc; }, {});
-  const topEmojis = Object.entries(reactionCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([e])=>e);
-
-  const isFollowing = localPost.followers.includes(myUid);
+  // ── Build mediaItems array ──
+  // Support both old single mediaURL and new multi-image mediaItems array
+  const mediaItems = (() => {
+    if (Array.isArray(localPost.mediaItems) && localPost.mediaItems.length > 0) {
+      return localPost.mediaItems;
+    }
+    if (localPost.mediaURL) {
+      return [{ url: localPost.mediaURL, type: localPost.mediaType || "image" }];
+    }
+    return [];
+  })();
 
   const handleReact = async (emoji) => {
     if (!currentUser) return;
@@ -537,13 +714,10 @@ function PostCard({ post, currentUser }) {
     const pRef = doc(db,"posts",localPost.id);
     const uid  = currentUser.uid;
     const updated = { ...localPost.reactions };
-
     if (updated[uid]?.emoji === emoji) {
-      // Remove
       delete updated[uid];
       await updateDoc(pRef, { [`reactions.${uid}`]: null });
     } else {
-      // Add / change
       const entry = { emoji, name: currentUser.displayName||"Trader", photo: currentUser.photoURL||null };
       updated[uid] = entry;
       await updateDoc(pRef, { [`reactions.${uid}`]: entry });
@@ -551,10 +725,7 @@ function PostCard({ post, currentUser }) {
     setLocalPost(p => ({ ...p, reactions: updated }));
   };
 
-  const quickLike = () => {
-    clearTimeout(hoverTimer.current);
-    handleReact(myReaction || "👍");
-  };
+  const quickLike = () => { clearTimeout(hoverTimer.current); handleReact(myReaction || "👍"); };
 
   const followTrader = async () => {
     if (!currentUser || isFollowing) return;
@@ -571,20 +742,21 @@ function PostCard({ post, currentUser }) {
   };
 
   const avatarURL = localPost.profileImage || `https://ui-avatars.com/api/?name=${localPost.userName||"T"}&background=d4af37&color=000&bold=true`;
-
-  // Like button label & color
-  const likeLabel = myReaction
-    ? REACTIONS.find(r=>r.emoji===myReaction)?.label || "Like"
-    : "Like";
-  const likeColor = myReaction
-    ? (REACTIONS.find(r=>r.emoji===myReaction)?.color || "#6688aa")
-    : "#6688aa";
+  const likeLabel = myReaction ? REACTIONS.find(r=>r.emoji===myReaction)?.label || "Like" : "Like";
+  const likeColor = myReaction ? (REACTIONS.find(r=>r.emoji===myReaction)?.color || "#6688aa") : "#6688aa";
 
   return (
     <>
       {shareModal    && <ShareModal post={localPost} onClose={()=>setShareModal(false)}/>}
       {profileModal  && <ProfileModal uid={localPost.uid} onClose={()=>setProfileModal(false)}/>}
       {showLikesModal && <LikesModal reactions={localPost.reactions} onClose={()=>setShowLikesModal(false)}/>}
+      {lightboxIndex !== null && (
+        <ImageLightbox
+          items={mediaItems}
+          startIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
 
       <article style={{ background:CARD_BG, border:CARD_BORDER, borderRadius:24, overflow:"hidden", backdropFilter:"blur(12px)", boxShadow:"0 4px 32px rgba(0,0,0,0.35)", transition:"transform .2s" }}
         onMouseEnter={e=>e.currentTarget.style.transform="scale(1.005)"}
@@ -629,19 +801,13 @@ function PostCard({ post, currentUser }) {
           </div>
         )}
 
-        {/* Media */}
-        {localPost.mediaURL && localPost.mediaType==="image" && (
-          <div style={{ padding:"0 16px 14px" }}>
-            <img src={localPost.mediaURL} alt="" style={{ width:"100%", borderRadius:18, objectFit:"cover", maxHeight:400 }}/>
-          </div>
-        )}
-        {localPost.mediaURL && localPost.mediaType==="video" && (
-          <div style={{ padding:"0 16px 14px" }}>
-            <video src={localPost.mediaURL} controls style={{ width:"100%", borderRadius:18, maxHeight:400 }}/>
-          </div>
-        )}
+        {/* ── FACEBOOK-STYLE MEDIA GRID ── */}
+        <MediaGrid
+          mediaItems={mediaItems}
+          onImageClick={(i) => setLightboxIndex(i)}
+        />
 
-        {/* ── Reaction summary bar (Facebook-style) ── */}
+        {/* Reaction summary bar */}
         {totalReactions > 0 && (
           <button onClick={()=>setShowLikesModal(true)}
             style={{ display:"flex", alignItems:"center", gap:6, padding:"0 20px 10px", background:"none", border:"none", cursor:"pointer" }}>
@@ -657,14 +823,10 @@ function PostCard({ post, currentUser }) {
         {/* Divider */}
         <div style={{ borderTop:"1px solid rgba(255,255,255,0.05)", margin:"0 16px" }}/>
 
-        {/* ── Action bar ── */}
+        {/* Action bar */}
         <div style={{ display:"flex", alignItems:"center", padding:"2px 0" }}>
-
-          {/* Like button with hover-to-expand picker */}
           <div ref={pickerRef} style={{ flex:1, position:"relative" }}>
-            {showPicker && (
-              <ReactionPicker onSelect={handleReact}/>
-            )}
+            {showPicker && <ReactionPicker onSelect={handleReact}/>}
             <button
               onClick={quickLike}
               onMouseEnter={() => { hoverTimer.current = setTimeout(()=>setShowPicker(true), 500); }}
@@ -675,14 +837,12 @@ function PostCard({ post, currentUser }) {
             </button>
           </div>
 
-          {/* Comment */}
           <button onClick={()=>setShowComments(!showComments)}
             style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"12px 0", background:"none", border:"none", cursor:"pointer", color: showComments?GOLD2:"#6688aa", fontSize:13, fontWeight:700 }}>
             <FaComment style={{ fontSize:15 }}/>
             <span>{formatCount(localPost.commentCount||0)}</span>
           </button>
 
-          {/* Share */}
           <button onClick={handleShare}
             style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"12px 0", background:"none", border:"none", cursor:"pointer", color:"#6688aa", fontSize:13, fontWeight:700 }}>
             <FaShare style={{ fontSize:15 }}/>
@@ -690,7 +850,6 @@ function PostCard({ post, currentUser }) {
           </button>
         </div>
 
-        {/* Comments section */}
         {showComments && (
           <CommentsSection postId={localPost.id} currentUser={currentUser}/>
         )}
