@@ -1213,9 +1213,8 @@ export default function JournalTrading() {
   const [nameError, setNameError] = useState("");
   const photoInputRef = useRef(null);
   const [postCaption, setPostCaption] = useState("");
-  const [postFile, setPostFile] = useState(null);
-  const [postFilePreview, setPostFilePreview] = useState(null);
-  const [postType, setPostType] = useState("image");
+ const [postFiles, setPostFiles] = useState([]);
+const [postFilePreviews, setPostFilePreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
   const photoRef = useRef(null);
   const videoRef = useRef(null);
@@ -1312,9 +1311,33 @@ export default function JournalTrading() {
   const pairStats = CURRENCY_PAIRS.map(p => { const pt = trades.filter(t => t.pair === p); return { pair: p, trades: pt.length, pnl: pt.reduce((a, b) => a + Number(b.profit_loss || 0), 0) }; }).filter(p => p.trades > 0).sort((a, b) => b.pnl - a.pnl);
   const maxDD = (() => { let peak = 10000, maxD = 0, r = 10000; for (const t of [...trades].filter(t => t.profit_loss !== "").sort((a, b) => a.createdAt - b.createdAt)) { r += Number(t.profit_loss || 0); if (r > peak) peak = r; const d = peak - r; if (d > maxD) maxD = d; } return maxD.toFixed(2); })();
 
+const createPost = async () => {
+  if (!currentUser) { alert("Please Login"); return; }
+  if (!postCaption && postFiles.length === 0) { alert("Write something or upload media"); return; }
+  setUploading(true);
+  try {
+    const mediaItems = [];
+    for (const file of postFiles) {
+      const sRef = ref(storage, `community/${Date.now()}_${file.name}`);
+      await uploadBytes(sRef, file);
+      const url = await getDownloadURL(sRef);
+      mediaItems.push({ url, type: file.type.startsWith("video") ? "video" : "image" });
+    }
+    await addDoc(collection(db, "posts"), {
+      uid: currentUser.uid, userName: traderName, profileImage: avatarURL,
+      caption: postCaption,
+      mediaURL: mediaItems[0]?.url || "",
+      mediaType: mediaItems[0]?.type || "",
+      mediaItems,
+      likes: [], followers: [], createdAt: Date.now()
+    });
+    setPostCaption(""); setPostFiles([]); setPostFilePreviews([]);
+  } catch (e) { alert(e.message); }
+  setUploading(false);
+};
+
   const traderName = profileData?.displayName || currentUser?.email?.split("@")[0] || "Trader";
   const avatarURL = profileData?.photoURL || `https://ui-avatars.com/api/?name=${traderName}&background=f5c518&color=000&bold=true`;
-  const handleFileSelect = type => { setPostType(type); if (type === "image") photoRef.current?.click(); else videoRef.current?.click(); };
   const onFileChange = e => { const f = e.target.files[0]; if (!f) return; setPostFile(f); setPostFilePreview(URL.createObjectURL(f)); };
   const createPost = async () => {
     if (!currentUser) { alert("Please Login"); return; } if (!postCaption && !postFile) { alert("Write something or upload media"); return; }
@@ -1749,12 +1772,24 @@ export default function JournalTrading() {
                   <div><p style={{ color: TEXT1, fontWeight: 700, margin: 0, fontSize: 12 }}>{traderName}</p><div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 1 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: GREEN }} /><span style={{ color: GREEN, fontSize: 10 }}>Active</span></div></div>
                 </div>
                 <textarea placeholder="Share your trade setup..." value={postCaption} onChange={e => { if (e.target.value.length <= 1000) setPostCaption(e.target.value); }} style={{ width: "100%", height: 90, background: CARD2, color: TEXT1, padding: "9px 11px", borderRadius: 10, outline: "none", border: BORDER, resize: "none", fontSize: 12, boxSizing: "border-box", marginBottom: 9 }} />
-                {postFilePreview && (
-                  <div style={{ marginBottom: 9, borderRadius: 9, overflow: "hidden", position: "relative" }}>
-                    {postType === "video" ? <video src={postFilePreview} style={{ width: "100%", maxHeight: 120, borderRadius: 9 }} controls /> : <img src={postFilePreview} alt="" style={{ width: "100%", maxHeight: 120, objectFit: "cover", borderRadius: 9 }} />}
-                    <button onClick={() => { setPostFile(null); setPostFilePreview(null); }} style={{ position: "absolute", top: 5, right: 5, background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FaTimes size={8} /></button>
-                  </div>
-                )}
+               {postFilePreviews.length > 0 && (
+  <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5, marginBottom: 9 }}>
+    {postFilePreviews.map((item, idx) => (
+      <div key={idx} style={{ position: "relative", borderRadius: 8, overflow: "hidden", aspectRatio: "1" }}>
+        {item.type === "video"
+          ? <video src={item.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <img src={item.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+        <button onClick={() => removePostFile(idx)} style={{ position: "absolute", top: 2, right: 2, background: "rgba(0,0,0,0.7)", color: "#fff", border: "none", borderRadius: "50%", width: 16, height: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <FaTimes size={6} />
+        </button>
+      </div>
+    ))}
+    {postFiles.length < 10 && (
+      <button onClick={() => handleFileSelect("image")} style={{ aspectRatio: "1", border: `1px dashed ${TEXT3}`, borderRadius: 8, background: "transparent", color: TEXT3, cursor: "pointer", fontSize: 18 }}>+</button>
+    )}
+  </div>
+)}
+{postFiles.length > 0 && <span style={{ color: TEXT3, fontSize: 10, display: "block", marginBottom: 6 }}>{postFiles.length}/10</span>}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     {[{ icon: <FaImage />, label: "Photo", action: () => handleFileSelect("image") }, { icon: <FaVideo />, label: "Video", action: () => handleFileSelect("video") }].map(b => (
@@ -1765,6 +1800,8 @@ export default function JournalTrading() {
                 </div>
                 <input ref={photoRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onFileChange} />
                 <input ref={videoRef} type="file" accept="video/*" style={{ display: "none" }} onChange={onFileChange} />
+             <input ref={photoRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={onFileChange} />
+<input ref={videoRef} type="file" accept="video/*" multiple style={{ display: "none" }} onChange={onFileChange} />
               </div>
               <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "14px 16px" }}>
                 <p style={{ color: TEXT2, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>Community</p>
