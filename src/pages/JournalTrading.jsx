@@ -16,6 +16,7 @@ import {
   FaExpandAlt, FaCalendarAlt, FaUser, FaEnvelope, FaIdCard, FaExternalLinkAlt,
   FaBoxOpen, FaPercentage,
 } from "react-icons/fa";
+import MediaComponents from "./mediacomponents.jsx";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged } from "firebase/auth";
 import {

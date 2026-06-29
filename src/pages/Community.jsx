@@ -10,6 +10,7 @@ import {
 } from "react-icons/fa";
 import { db, auth, storage } from "../firebase/config.js";
 import { onAuthStateChanged } from "firebase/auth";
+import MediaComponents from "./mediacomponents.jsx";
 
 // ── THEME ────────────────────────────────────────────────────────────
 const GOLD        = "#d4af37";
