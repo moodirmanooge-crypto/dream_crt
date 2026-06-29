@@ -119,6 +119,16 @@ export default function CoursePlayer() {
   const [courseCategory, setCourseCategory] = useState("");
   const [activeTab, setActiveTab] = useState("video");
 
+  // ── Copy alert toast state ──
+  const [copyAlert, setCopyAlert] = useState(false);
+  const alertTimerRef = useRef(null);
+
+  const showCopyAlert = () => {
+    if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
+    setCopyAlert(true);
+    alertTimerRef.current = setTimeout(() => setCopyAlert(false), 3000);
+  };
+
   // ── Protection setup — runs when access granted ──
   useEffect(() => {
     if (!hasAccess) return;
@@ -126,20 +136,38 @@ export default function CoursePlayer() {
     injectProtectionStyles();
 
     // Block clipboard copy
-    const blockCopy = (e) => { e.preventDefault(); e.clipboardData?.setData("text/plain", "⛔ Dream CRT — Copying not allowed"); };
+    const blockCopy = (e) => {
+      e.preventDefault();
+      e.clipboardData?.setData("text/plain", "");
+      showCopyAlert();
+    };
     document.addEventListener("copy", blockCopy);
     document.addEventListener("cut", blockCopy);
 
     // Block PrtScn / common screenshot shortcuts
     const blockKeys = (e) => {
       // PrtScn
-      if (e.key === "PrintScreen") { e.preventDefault(); navigator.clipboard?.writeText("⛔ Screenshot blocked — Dream CRT Academy"); }
-      // Ctrl+Shift+S (Windows Snipping), Ctrl+P (print)
-      if ((e.ctrlKey || e.metaKey) && (e.key === "p" || e.key === "P" || e.key === "s" || e.key === "S")) { e.preventDefault(); }
+      if (e.key === "PrintScreen") {
+        e.preventDefault();
+        navigator.clipboard?.writeText("");
+        showCopyAlert();
+      }
+      // Ctrl+A (select all)
+      if ((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A")) {
+        e.preventDefault();
+        showCopyAlert();
+      }
+      // Ctrl+P (print) / Ctrl+S (save)
+      if ((e.ctrlKey || e.metaKey) && (e.key === "p" || e.key === "P" || e.key === "s" || e.key === "S")) {
+        e.preventDefault();
+      }
       // F12 devtools
       if (e.key === "F12") { e.preventDefault(); }
-      // Ctrl+Shift+I / Ctrl+U (view source)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "i" || e.key === "I" || e.key === "j" || e.key === "J")) { e.preventDefault(); }
+      // Ctrl+Shift+I / Ctrl+Shift+J
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "i" || e.key === "I" || e.key === "j" || e.key === "J")) {
+        e.preventDefault();
+      }
+      // Ctrl+U (view source)
       if ((e.ctrlKey || e.metaKey) && (e.key === "u" || e.key === "U")) { e.preventDefault(); }
     };
     document.addEventListener("keydown", blockKeys);
@@ -160,6 +188,7 @@ export default function CoursePlayer() {
       document.removeEventListener("keydown", blockKeys);
       document.removeEventListener("visibilitychange", handleVisibility);
       contentRef.current?.removeEventListener("contextmenu", blockContext);
+      if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
     };
   }, [hasAccess]);
 
@@ -478,6 +507,30 @@ export default function CoursePlayer() {
         ) : (
           // ─── CONTENT PLAYER ────────────────────────────
           <div ref={contentRef} className="protected-content">
+
+            {/* ── Copy Alert Toast ── */}
+            {copyAlert && (
+              <div style={{
+                position: "fixed",
+                top: "50%", left: "50%",
+                transform: "translate(-50%, -50%)",
+                background: "#fff",
+                border: "2px solid #f5c518",
+                borderRadius: "12px",
+                padding: "14px 28px",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                zIndex: 99999,
+                boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+              }}>
+                <span style={{ fontSize: "20px" }}>⚠️</span>
+                <span style={{ color: "#b00020", fontWeight: 800, fontSize: "14px", fontFamily: "monospace", letterSpacing: "0.5px" }}>
+                  ALERT: Content is protected !!
+                </span>
+              </div>
+            )}
+
             {/* Header */}
             <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
               <div>
