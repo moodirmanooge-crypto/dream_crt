@@ -232,7 +232,7 @@ export default function Archives() {
               {shahaadoList.length === 0 && sawirList.length === 0 && (
                 <div className="text-center py-20" style={{ color: "#64748b" }}>
                   <div className="text-5xl mb-3">🗂️</div>
-                  <p>Weli waxba lama soo gelin. Adigu ku bilow!</p>
+                  
                 </div>
               )}
             </>
