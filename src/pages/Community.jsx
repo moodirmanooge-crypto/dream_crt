@@ -969,6 +969,7 @@ export default function Community() {
             ))}
           </div>
         )}
+        export default MediaComponents;
       </div>
     </div>
   );

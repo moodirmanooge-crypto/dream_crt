@@ -190,3 +190,7 @@ export function ImageLightbox({ items, startIndex, onClose }) {
     </div>
   );
 }
+
+// ── KAN AYAA MAQNAA: DEFAUT EXPORT OO LABADA COMPONENTS ISKU GEYNAYA ──
+const MediaComponents = { MediaGrid, ImageLightbox };
+export default MediaComponents;

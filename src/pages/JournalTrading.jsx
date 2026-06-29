@@ -2047,6 +2047,7 @@ const removePostFile = idx => {
             </div>
           </div>
         )}
+        export default MediaComponents;
 
       </div>
     </div>
