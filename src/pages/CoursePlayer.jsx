@@ -230,7 +230,9 @@ export default function CoursePlayer() {
         <p className="text-gray-400 text-base mb-4">Course-kan device kale ayaa lagu diwaan-geliyay. Kaliya device-kii aad ku iibsatay ayaad ku daawan kartaa.</p>
         <div className="rounded-2xl p-5 text-sm text-left mb-6" style={{ background: "rgba(255,71,87,0.06)", border: "1px solid rgba(255,71,87,0.2)" }}>
           <p className="font-bold mb-2" style={{ color: "#ff4757" }}>⚠️ Xasuusin:</p>
-          <p className="text-gray-400">Haddaad device-kaaga bedeshay ama browser kale isticmaaleysaa, fadlan admin-ka kala xiriir si loo cusboonaysiiyo.</p>
+          <p className="text-gray-400">Haddaad device-kaaga bedeshay ama browser kale isticmaaleysid, fadlan admin-ka kala xiriir si loo cusboonaysiiyo.
+            digniin adminku wuu arki doonaa hadii device kii hore uu weli jiro marka divice ka ha ahaado mid sisax ah ubaxay
+          </p>
         </div>
         <a href="https://wa.me/252613887399" target="_blank" rel="noreferrer"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm"
