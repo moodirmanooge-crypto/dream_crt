@@ -1444,30 +1444,7 @@ const [postFilePreviews, setPostFilePreviews] = useState([]);
   const pairStats = CURRENCY_PAIRS.map(p => { const pt = trades.filter(t => t.pair === p); return { pair: p, trades: pt.length, pnl: pt.reduce((a, b) => a + Number(b.profit_loss || 0), 0) }; }).filter(p => p.trades > 0).sort((a, b) => b.pnl - a.pnl);
   const maxDD = (() => { let peak = 10000, maxD = 0, r = 10000; for (const t of [...trades].filter(t => t.profit_loss !== "").sort((a, b) => a.createdAt - b.createdAt)) { r += Number(t.profit_loss || 0); if (r > peak) peak = r; const d = peak - r; if (d > maxD) maxD = d; } return maxD.toFixed(2); })();
 
-const createPost = async () => {
-  if (!currentUser) { alert("Please Login"); return; }
-  if (!postCaption && postFiles.length === 0) { alert("Write something or upload media"); return; }
-  setUploading(true);
-  try {
-    const mediaItems = [];
-    for (const file of postFiles) {
-      const sRef = ref(storage, `community/${Date.now()}_${file.name}`);
-      await uploadBytes(sRef, file);
-      const url = await getDownloadURL(sRef);
-      mediaItems.push({ url, type: file.type.startsWith("video") ? "video" : "image" });
-    }
-    await addDoc(collection(db, "posts"), {
-      uid: currentUser.uid, userName: traderName, profileImage: avatarURL,
-      caption: postCaption,
-      mediaURL: mediaItems[0]?.url || "",
-      mediaType: mediaItems[0]?.type || "",
-      mediaItems,
-      likes: [], followers: [], createdAt: Date.now()
-    });
-    setPostCaption(""); setPostFiles([]); setPostFilePreviews([]);
-  } catch (e) { alert(e.message); }
-  setUploading(false);
-};
+
 const traderName = profileData?.displayName || currentUser?.email?.split("@")[0] || "Trader";
 const avatarURL = profileData?.photoURL || `https://ui-avatars.com/api/?name=${traderName}&background=f5c518&color=000&bold=true`;
 
