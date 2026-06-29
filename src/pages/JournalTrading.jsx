@@ -1335,21 +1335,32 @@ const createPost = async () => {
   } catch (e) { alert(e.message); }
   setUploading(false);
 };
+const traderName = profileData?.displayName || currentUser?.email?.split("@")[0] || "Trader";
+const avatarURL = profileData?.photoURL || `https://ui-avatars.com/api/?name=${traderName}&background=f5c518&color=000&bold=true`;
 
-  const traderName = profileData?.displayName || currentUser?.email?.split("@")[0] || "Trader";
-  const avatarURL = profileData?.photoURL || `https://ui-avatars.com/api/?name=${traderName}&background=f5c518&color=000&bold=true`;
-  const onFileChange = e => { const f = e.target.files[0]; if (!f) return; setPostFile(f); setPostFilePreview(URL.createObjectURL(f)); };
-  const createPost = async () => {
-    if (!currentUser) { alert("Please Login"); return; } if (!postCaption && !postFile) { alert("Write something or upload media"); return; }
-    setUploading(true);
-    try {
-      let mediaURL = "", mediaType = "";
-      if (postFile) { const sRef = ref(storage, `community/${Date.now()}_${postFile.name}`); await uploadBytes(sRef, postFile); mediaURL = await getDownloadURL(sRef); mediaType = postFile.type.startsWith("video") ? "video" : "image"; }
-      await addDoc(collection(db, "posts"), { uid: currentUser.uid, userName: traderName, profileImage: avatarURL, caption: postCaption, mediaURL, mediaType, likes: [], followers: [], createdAt: Date.now() });
-      setPostCaption(""); setPostFile(null); setPostFilePreview(null);
-    } catch (e) { alert(e.message); }
-    setUploading(false);
-  };
+const handleFileSelect = type => {
+  if (type === "image") photoRef.current?.click();
+  else videoRef.current?.click();
+};
+
+const onFileChange = e => {
+  const newFiles = Array.from(e.target.files);
+  setPostFiles(prev => {
+    const combined = [...prev, ...newFiles].slice(0, 10);
+    setPostFilePreviews(combined.map(f => ({
+      url: URL.createObjectURL(f),
+      type: f.type.startsWith("video") ? "video" : "image"
+    })));
+    return combined;
+  });
+  e.target.value = "";
+};
+
+const removePostFile = idx => {
+  setPostFiles(prev => prev.filter((_, i) => i !== idx));
+  setPostFilePreviews(prev => prev.filter((_, i) => i !== idx));
+};
+
 
   const filteredJournal = trades
     .filter(t => {
@@ -1788,6 +1799,7 @@ const createPost = async () => {
       <button onClick={() => handleFileSelect("image")} style={{ aspectRatio: "1", border: `1px dashed ${TEXT3}`, borderRadius: 8, background: "transparent", color: TEXT3, cursor: "pointer", fontSize: 18 }}>+</button>
     )}
   </div>
+  
 )}
 {postFiles.length > 0 && <span style={{ color: TEXT3, fontSize: 10, display: "block", marginBottom: 6 }}>{postFiles.length}/10</span>}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1798,10 +1810,10 @@ const createPost = async () => {
                   </div>
                   <button onClick={createPost} disabled={uploading} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 13px", borderRadius: 8, fontWeight: 700, color: "#000", fontSize: 11, cursor: "pointer", border: "none", background: GOLD, opacity: uploading ? 0.6 : 1 }}><FaPaperPlane size={10} />{uploading ? "Posting..." : "Post"}</button>
                 </div>
-                <input ref={photoRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onFileChange} />
-                <input ref={videoRef} type="file" accept="video/*" style={{ display: "none" }} onChange={onFileChange} />
+
              <input ref={photoRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={onFileChange} />
-<input ref={videoRef} type="file" accept="video/*" multiple style={{ display: "none" }} onChange={onFileChange} />
+             <input ref={videoRef} type="file" accept="video/*" multiple style={{ display: "none" }} onChange={onFileChange} />
+             
               </div>
               <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: "14px 16px" }}>
                 <p style={{ color: TEXT2, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>Community</p>
