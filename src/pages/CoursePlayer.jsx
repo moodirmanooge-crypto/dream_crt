@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { auth, db } from "../firebase/config";
 import { doc, getDoc, setDoc, getDocs, collection, updateDoc } from "firebase/firestore";
@@ -27,8 +27,81 @@ const getDeviceFingerprint = () => {
   return Math.abs(hash).toString(36);
 };
 
+// ── Anti-screenshot CSS injection ──
+const injectProtectionStyles = () => {
+  const styleId = "dream-crt-protection";
+  if (document.getElementById(styleId)) return;
+  const style = document.createElement("style");
+  style.id = styleId;
+  style.textContent = `
+    .protected-content {
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+      -webkit-touch-callout: none !important;
+    }
+    .protected-content video {
+      pointer-events: auto;
+    }
+    .watermark-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+      overflow: hidden;
+    }
+    .watermark-text {
+      position: absolute;
+      color: rgba(245, 197, 24, 0.12);
+      font-size: 13px;
+      font-weight: 900;
+      font-family: monospace;
+      white-space: nowrap;
+      transform: rotate(-30deg);
+      letter-spacing: 2px;
+      user-select: none;
+      pointer-events: none;
+    }
+    @media print {
+      .protected-content { display: none !important; }
+      body::before {
+        content: "⛔ DREAM CRT — Printing Not Allowed";
+        display: block;
+        text-align: center;
+        font-size: 32px;
+        color: red;
+        padding: 100px;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+};
+
+// ── Watermark grid generator ──
+const WatermarkOverlay = ({ email }) => {
+  const marks = [];
+  const cols = 3, rows = 6;
+  const now = new Date().toLocaleString("en-GB", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      marks.push(
+        <span key={`${r}-${c}`} className="watermark-text" style={{
+          top: `${(r / rows) * 100 + 5}%`,
+          left: `${(c / cols) * 100 - 5}%`,
+        }}>
+          {email || "DREAM CRT"} • {now}
+        </span>
+      );
+    }
+  }
+  return <div className="watermark-overlay">{marks}</div>;
+};
+
 export default function CoursePlayer() {
   const { id } = useParams();
+  const videoRef = useRef(null);
+  const contentRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
@@ -44,7 +117,51 @@ export default function CoursePlayer() {
   const [coursePdf, setCoursePdf] = useState("");
   const [coursePrice, setCoursePrice] = useState("25");
   const [courseCategory, setCourseCategory] = useState("");
-  const [activeTab, setActiveTab] = useState("video"); // "video" | "pdf"
+  const [activeTab, setActiveTab] = useState("video");
+
+  // ── Protection setup — runs when access granted ──
+  useEffect(() => {
+    if (!hasAccess) return;
+
+    injectProtectionStyles();
+
+    // Block clipboard copy
+    const blockCopy = (e) => { e.preventDefault(); e.clipboardData?.setData("text/plain", "⛔ Dream CRT — Copying not allowed"); };
+    document.addEventListener("copy", blockCopy);
+    document.addEventListener("cut", blockCopy);
+
+    // Block PrtScn / common screenshot shortcuts
+    const blockKeys = (e) => {
+      // PrtScn
+      if (e.key === "PrintScreen") { e.preventDefault(); navigator.clipboard?.writeText("⛔ Screenshot blocked — Dream CRT Academy"); }
+      // Ctrl+Shift+S (Windows Snipping), Ctrl+P (print)
+      if ((e.ctrlKey || e.metaKey) && (e.key === "p" || e.key === "P" || e.key === "s" || e.key === "S")) { e.preventDefault(); }
+      // F12 devtools
+      if (e.key === "F12") { e.preventDefault(); }
+      // Ctrl+Shift+I / Ctrl+U (view source)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "i" || e.key === "I" || e.key === "j" || e.key === "J")) { e.preventDefault(); }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "u" || e.key === "U")) { e.preventDefault(); }
+    };
+    document.addEventListener("keydown", blockKeys);
+
+    // Pause video when tab is hidden (screen record detection mitigation)
+    const handleVisibility = () => {
+      if (document.hidden && videoRef.current) { videoRef.current.pause(); }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // Right-click block on content area
+    const blockContext = (e) => { e.preventDefault(); };
+    contentRef.current?.addEventListener("contextmenu", blockContext);
+
+    return () => {
+      document.removeEventListener("copy", blockCopy);
+      document.removeEventListener("cut", blockCopy);
+      document.removeEventListener("keydown", blockKeys);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      contentRef.current?.removeEventListener("contextmenu", blockContext);
+    };
+  }, [hasAccess]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -65,7 +182,6 @@ export default function CoursePlayer() {
     setCoursePrice(String(data.price || "25"));
     setCourseCategory(data.category || "");
     setCoursePdf(data.pdfURL || "");
-    // Video URL: playlist lessons[0] ama fileURL
     if (data.type === "Playlist" && data.lessons && data.lessons.length > 0) {
       const sorted = [...data.lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
       setCourseVideo(sorted[0].fileURL || "");
@@ -100,16 +216,13 @@ export default function CoursePlayer() {
         "copy_trading": "copy-trading-services",
       };
 
-      // Price 0 = bilaash
       if (courseData && Number(courseData.price) === 0) {
         setHasAccess(true);
         setLoading(false);
         return;
       }
 
-      // Key 1: email_FirestoreID
       const key1 = `${userEmail}_${id}`;
-      // Key 2: email_payId
       const payId = courseData ? categoryToPayId[courseData.category] : null;
       const key2 = payId ? `${userEmail}_${payId}` : null;
 
@@ -126,27 +239,16 @@ export default function CoursePlayer() {
         }
       }
 
-      // Key 3: scan dhammaan courseAccess docs-ka user-ka
-      // Si uu u helo access hadduu category-ga ku jiro approved doc
       if (!accessDocId && courseData) {
         const allAccessSnap = await getDocs(collection(db, "courseAccess"));
         const userApproved = allAccessSnap.docs.filter(
           d => d.data().email === userEmail && d.data().approved === true
         );
-        // Hubi hadduu category-ga course-kan ku jiro approved docs-ka
         for (const d of userApproved) {
           const dData = d.data();
-          // Hadduu courseId-ku yahay payId-ka
-          if (dData.courseId === payId) {
-            accessDocId = d.id; accessData = dData; break;
-          }
-          // Hadduu courseId-ku yahay Firestore ID-ka course-kan
-          if (dData.courseId === id) {
-            accessDocId = d.id; accessData = dData; break;
-          }
-          // Scan courses si uu u arko hadduu category-gu waafaqsan yahay
+          if (dData.courseId === payId) { accessDocId = d.id; accessData = dData; break; }
+          if (dData.courseId === id) { accessDocId = d.id; accessData = dData; break; }
           if (courseData.category) {
-            // Hel courses-ka approved doc-ku u tixraacayo
             const refCourseSnap = await getDoc(doc(db, "courses", dData.courseId));
             if (refCourseSnap.exists() && refCourseSnap.data().category === courseData.category) {
               accessDocId = d.id; accessData = dData; break;
@@ -375,7 +477,7 @@ export default function CoursePlayer() {
 
         ) : (
           // ─── CONTENT PLAYER ────────────────────────────
-          <div>
+          <div ref={contentRef} className="protected-content">
             {/* Header */}
             <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
               <div>
@@ -388,7 +490,7 @@ export default function CoursePlayer() {
               </div>
             </div>
 
-            {/* Tab switcher — only show if both video and pdf exist */}
+            {/* Tab switcher */}
             {courseVideo && coursePdf && (
               <div className="flex gap-3 mb-4">
                 {[
@@ -408,13 +510,23 @@ export default function CoursePlayer() {
               </div>
             )}
 
-            {/* Video Player */}
+            {/* Video Player with watermark */}
             {(activeTab === "video" || !coursePdf) && (
-              <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ position: "relative", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <WatermarkOverlay email={email} />
                 {courseVideo ? (
-                  <video key={courseVideo} src={courseVideo} controls autoPlay
-                    controlsList="nodownload" onContextMenu={e => e.preventDefault()}
-                    className="w-full bg-black" style={{ height: "65vh" }} />
+                  <video
+                    ref={videoRef}
+                    key={courseVideo}
+                    src={courseVideo}
+                    controls
+                    autoPlay
+                    controlsList="nodownload nofullscreen noremoteplayback"
+                    disablePictureInPicture
+                    onContextMenu={e => e.preventDefault()}
+                    className="w-full bg-black"
+                    style={{ height: "65vh" }}
+                  />
                 ) : (
                   <div className="w-full bg-black flex items-center justify-center" style={{ height: "65vh" }}>
                     <p className="text-gray-500 text-sm">⏳ Video loading...</p>
@@ -423,12 +535,13 @@ export default function CoursePlayer() {
               </div>
             )}
 
-            {/* PDF Viewer */}
+            {/* PDF Viewer with watermark */}
             {(activeTab === "pdf" || !courseVideo) && coursePdf && (
-              <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ position: "relative", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <WatermarkOverlay email={email} />
                 <iframe
                   key={coursePdf}
-                  src={`${coursePdf}#toolbar=0&navpanes=0`}
+                  src={`${coursePdf}#toolbar=0&navpanes=0&scrollbar=0`}
                   title="Course PDF"
                   className="w-full"
                   style={{ height: "80vh", border: "none", background: "#1a1a1a" }}
@@ -439,7 +552,7 @@ export default function CoursePlayer() {
 
             <div className="mt-4 flex items-center gap-2 text-gray-700 text-xs justify-center">
               <FaShieldAlt />
-              <span>Content-gan waa protected • downloading laguma ogola</span>
+              <span>Content-gan waa protected • downloading laguma ogola • © Dream CRT Academy</span>
             </div>
           </div>
         )}
