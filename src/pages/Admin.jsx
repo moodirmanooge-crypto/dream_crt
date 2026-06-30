@@ -622,6 +622,11 @@ function CoursesPage() {
                   <div style={{ position: "absolute", top: 10, left: 10, background: c.type === "PDF" ? C.errorDim : c.type === "Playlist" ? C.blueDim : C.amberDim, color: c.type === "PDF" ? C.errorRed : c.type === "Playlist" ? C.blue : C.amber, padding: "5px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700 }}>
                     {c.type || "—"} {c.lessonCount ? `• ${c.lessonCount} lessons` : ""}
                   </div>
+                  {c.vdoVideoId && (
+                    <div style={{ position: "absolute", bottom: 10, left: 10, background: "rgba(245,197,24,0.9)", color: "#000", padding: "4px 9px", borderRadius: 7, fontSize: 10, fontWeight: 800 }}>
+                      🔐 DRM
+                    </div>
+                  )}
                 </div>
                 <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
                   <div style={{ color: C.text, fontWeight: 700, fontSize: 15, lineHeight: 1.3 }}>{c.title || "Untitled course"}</div>
@@ -779,6 +784,7 @@ function UploadContentPage() {
   const [singleFile, setSingleFile] = useState(null);       // video ama single pdf
   const [pdfFile, setPdfFile] = useState(null);             // PDF (course categories)
   const [videoFile, setVideoFile] = useState(null);         // Video (course categories)
+  const [vdoVideoId, setVdoVideoId] = useState("");          // ── VdoCipher Video ID (DRM) ──
   const [lessons, setLessons] = useState([]);
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonFile, setLessonFile] = useState(null);
@@ -852,8 +858,8 @@ function UploadContentPage() {
     }
     if (category === "single_video" && !singleFile) { setMsg("⚠️ Video file-ka dooro"); return; }
     if (category === "single_pdf" && !singleFile) { setMsg("⚠️ PDF file-ka dooro"); return; }
-    if (COURSE_TYPES.includes(category) && !videoFile && !pdfFile) {
-      setMsg("⚠️ Ugu yaraan video ama PDF mid ku dar"); return;
+    if (COURSE_TYPES.includes(category) && !videoFile && !pdfFile && !vdoVideoId.trim()) {
+      setMsg("⚠️ Ugu yaraan video (Storage ama VdoCipher ID) ama PDF mid ku dar"); return;
     }
 
     setUploading(true); setProgress(0); setMsg("");
@@ -923,14 +929,16 @@ function UploadContentPage() {
         });
 
       // ── COURSE TYPES (basic_forex, crt_course, mentorship, copy_trading) ──
-      // Labadaba PDF + Video upload karaa
+      // Video-gu wuxuu noqon karaa: VdoCipher Video ID (DRM) AMA Firebase Storage upload
       } else if (COURSE_TYPES.includes(category)) {
         let fileURL = "";
         let pdfURL = "";
-        let totalSteps = (videoFile ? 1 : 0) + (pdfFile ? 1 : 0);
+        const hasVdoId = vdoVideoId.trim().length > 0;
+        let totalSteps = (videoFile && !hasVdoId ? 1 : 0) + (pdfFile ? 1 : 0);
         let uploadStep = 0;
 
-        if (videoFile) {
+        // ── VdoCipher Video ID waa la siiyay → skip Storage upload, ID kaliya kaydi ──
+        if (!hasVdoId && videoFile) {
           setProgressLabel("🎬 Video uploading…");
           const vRef = ref(storage, `videos/${Date.now()}_${videoFile.name}`);
           fileURL = await uploadWithProgress(vRef, videoFile, (p) => {
@@ -953,8 +961,9 @@ function UploadContentPage() {
           title: title.trim(), description: description.trim(),
           price: coursePrice, thumbnailURL,
           category,
-          type: fileURL ? (pdfURL ? "Video+PDF" : "Video") : "PDF",
+          type: (hasVdoId || fileURL) ? (pdfURL ? "Video+PDF" : "Video") : "PDF",
           fileURL: fileURL || "",
+          vdoVideoId: vdoVideoId.trim() || "",   // ── VdoCipher DRM video ID ──
           pdfURL: pdfURL || "",
           createdAt: Date.now(), status: "Published",
           locked: coursePrice > 0, isPaid: false
@@ -967,6 +976,7 @@ function UploadContentPage() {
         setTitle(""); setDescription(""); setPrice("");
         setThumbnail(null); setThumbnailPreview(null);
         setSingleFile(null); setPdfFile(null); setVideoFile(null);
+        setVdoVideoId("");
         setLessons([]);
         setStep(1); setCategory("");
         setProgress(0); setProgressLabel("");
@@ -984,38 +994,6 @@ function UploadContentPage() {
     color: C.text, fontSize: 13, outline: "none",
     boxSizing: "border-box", fontFamily: "inherit"
   };
-
-  // ── File zone reusable component ──
-  const FileZone = ({ file, onClear, onClickRef, accept, icon, label, sub, color }) => (
-    <div>
-      <div onClick={() => onClickRef.current?.click()}
-        style={{ border: `2px dashed ${file ? C.green : C.borderRed}`, borderRadius: 12, padding: "20px", cursor: "pointer", background: C.redFaint, textAlign: "center", transition: "all .2s" }}
-        onMouseEnter={e => (e.currentTarget.style.borderColor = color)}
-        onMouseLeave={e => (e.currentTarget.style.borderColor = file ? C.green : C.borderRed)}>
-        {file ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
-            <div style={{ fontSize: 28 }}>{icon}</div>
-            <div>
-              <p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {file.name}</p>
-              <p style={{ color: C.textMuted, fontSize: 11 }}>{(file.size / 1048576).toFixed(1)} MB</p>
-            </div>
-            <button onClick={e => { e.stopPropagation(); onClear(); }}
-              style={{ marginLeft: "auto", background: C.errorDim, color: C.errorRed, border: "none", borderRadius: 8, padding: "6px 8px", cursor: "pointer" }}>
-              <Icon.Trash />
-            </button>
-          </div>
-        ) : (
-          <>
-            <div style={{ fontSize: 32, marginBottom: 6 }}>{icon}</div>
-            <p style={{ color: C.textMuted, fontSize: 13, marginBottom: 3 }}>{label}</p>
-            <p style={{ color: C.textSub, fontSize: 11 }}>{sub}</p>
-          </>
-        )}
-      </div>
-      <input ref={onClickRef} type="file" accept={accept} style={{ display: "none" }}
-        onChange={e => { if (e.target.files[0]) { onClear(); setTimeout(() => {}, 0); } }} />
-    </div>
-  );
 
   // ── STEP 1: Choose category ──
   if (step === 1) {
@@ -1068,7 +1046,7 @@ function UploadContentPage() {
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-        <button onClick={() => { setStep(1); setMsg(""); setPdfFile(null); setVideoFile(null); setSingleFile(null); }}
+        <button onClick={() => { setStep(1); setMsg(""); setPdfFile(null); setVideoFile(null); setSingleFile(null); setVdoVideoId(""); }}
           style={{ background: "none", border: "none", color: C.textMuted, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
           ← Back
         </button>
@@ -1164,9 +1142,35 @@ function UploadContentPage() {
           {/* ── COURSE TYPES: Video + PDF labadaba ── */}
           {COURSE_TYPES.includes(category) && (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Video Upload */}
+
+              {/* ── VdoCipher Video ID (DRM-protected) — la doortaa AMA Storage upload ── */}
               <div>
-                <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>🎬 Video File (optional)</label>
+                <label style={{ display: "block", color: "#f5c518", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>
+                  🔐 VdoCipher Video ID (DRM — ka doorbida Storage upload)
+                </label>
+                <input
+                  value={vdoVideoId}
+                  onChange={e => setVdoVideoId(e.target.value)}
+                  placeholder="tusaale: 73b9b3da3c1e4a979c8e2b97ab64ca84"
+                  style={{
+                    width: "100%", padding: "11px 14px", borderRadius: 10,
+                    background: C.bgDeep, border: `1px solid ${vdoVideoId.trim() ? "#f5c518" : C.border}`,
+                    color: C.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "monospace"
+                  }}
+                  onFocus={e => (e.target.style.borderColor = "#f5c518")}
+                  onBlur={e => (e.target.style.borderColor = vdoVideoId.trim() ? "#f5c518" : C.border)}
+                />
+                <p style={{ color: C.textSub, fontSize: 11, marginTop: 6, lineHeight: 1.5 }}>
+                  Video-ga marka hore VdoCipher dashboard-ka ku upload gareey (vdocipher.com/dashboard → Videos → Upload),
+                  kadib ID-ga "Copy ID" ka soo qaado halkan ku dhig. Video-yada VdoCipher waa DRM-protected, duubista lama oggola.
+                </p>
+              </div>
+
+              {/* Video Upload — Firebase Storage (haddii aanad VdoCipher isticmaalin) */}
+              <div style={{ opacity: vdoVideoId.trim() ? 0.4 : 1, pointerEvents: vdoVideoId.trim() ? "none" : "auto" }}>
+                <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>
+                  🎬 Video File — Storage (haddii aanad VdoCipher ID gelin)
+                </label>
                 <div onClick={() => videoFileRef.current?.click()}
                   style={{ border: `2px dashed ${videoFile ? C.green : C.border}`, borderRadius: 12, padding: "18px 16px", cursor: "pointer", background: C.bgDeep, textAlign: "center", transition: "all .2s" }}
                   onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
@@ -1310,7 +1314,7 @@ function UploadContentPage() {
               : <><Icon.Upload /> {catInfo.icon} Upload {catInfo.label}</>}
           </button>
           {!uploading && (
-            <button onClick={() => { setStep(1); setCategory(""); setMsg(""); setPdfFile(null); setVideoFile(null); setSingleFile(null); }}
+            <button onClick={() => { setStep(1); setCategory(""); setMsg(""); setPdfFile(null); setVideoFile(null); setSingleFile(null); setVdoVideoId(""); }}
               style={{ padding: "14px 20px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               Cancel
             </button>

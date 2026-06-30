@@ -118,6 +118,7 @@ export default function CoursePlayer() {
   const [coursePrice, setCoursePrice] = useState("25");
   const [courseCategory, setCourseCategory] = useState("");
   const [activeTab, setActiveTab] = useState("video");
+  const [vdoVideoId, setVdoVideoId] = useState("");   // ── VdoCipher ID — course-ka gaarka ah ──
 
   // ── VdoCipher secure playback credentials ──
   // OTP iyo playbackInfo waa inay ka yimaadaan SERVER/Cloud Function (ma aha frontend-ka),
@@ -127,10 +128,8 @@ export default function CoursePlayer() {
   const [vdoPlaybackInfo, setVdoPlaybackInfo] = useState("");
   const [vdoLoading, setVdoLoading] = useState(false);
 
-  // Halkan ku qor Video ID-ga aad ka soo koobiyaysay VdoCipher Dashboard (sida: 85da560e8ba04179a8dd523db302e4fd)
-  // Ugu fiican: ku kaydi videoId-gan field-ka course doc-ga Firestore (tusaale: course.vdoVideoId)
-  // halkii uu hardcoded u ahaan lahaa dhammaan courses-ka.
-  const videoId = "85da560e8ba04179a8dd523db302e4fd";
+  // Video ID-ga course-kan gaarka ah waxaa la soo akhriyaa Firestore-ka
+  // (course.vdoVideoId field-ka), maaha hardcoded — ku eeg setCourseData()
 
   // ── Soo deji api.js ee VdoCipher hal mar (loo baahan yahay iframe-ka) ──
   useEffect(() => {
@@ -144,12 +143,12 @@ export default function CoursePlayer() {
 
   // ── Soo qaado OTP + playbackInfo marka access la siiyo ──
   useEffect(() => {
-    if (!hasAccess || !videoId) return;
+    if (!hasAccess || !vdoVideoId) return;
     const fetchVdoCredentials = async () => {
       setVdoLoading(true);
       try {
         // ── Cloud Function URL-ka dhabta ah ee dream-crt project-ka ──
-        const res = await fetch(`https://getvdootp-gpyfwiymaa-uc.a.run.app?videoId=${videoId}`);
+        const res = await fetch(`https://getvdootp-gpyfwiymaa-uc.a.run.app?videoId=${vdoVideoId}`);
         const data = await res.json();
         setVdoOtp(data.otp || "");
         setVdoPlaybackInfo(data.playbackInfo || "");
@@ -159,7 +158,7 @@ export default function CoursePlayer() {
       setVdoLoading(false);
     };
     fetchVdoCredentials();
-  }, [hasAccess, videoId]);
+  }, [hasAccess, vdoVideoId]);
 
   // ── Copy alert toast state ──
   const [copyAlert, setCopyAlert] = useState(false);
@@ -253,6 +252,7 @@ export default function CoursePlayer() {
     setCoursePrice(String(data.price || "25"));
     setCourseCategory(data.category || "");
     setCoursePdf(data.pdfURL || "");
+    setVdoVideoId(data.vdoVideoId || "");   // ── VdoCipher DRM ID, haddii la siiyay ──
     if (data.type === "Playlist" && data.lessons && data.lessons.length > 0) {
       const sorted = [...data.lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
       setCourseVideo(sorted[0].fileURL || "");
@@ -586,7 +586,7 @@ export default function CoursePlayer() {
             </div>
 
             {/* Tab switcher */}
-            {courseVideo && coursePdf && (
+            {(courseVideo || vdoVideoId) && coursePdf && (
               <div className="flex gap-3 mb-4">
                 {[
                   { id: "video", icon: <FaVideo />, label: "Video" },
@@ -606,32 +606,45 @@ export default function CoursePlayer() {
             )}
 
             {/* Video Player with watermark — VdoCipher DRM iframe player */}
-            {(activeTab === "video" || !coursePdf) && (
+            {(activeTab === "video" || !coursePdf) && (courseVideo || vdoVideoId) && (
               <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ position: "relative", border: "1px solid rgba(255,255,255,0.08)", background: "#000" }}>
                 <WatermarkOverlay email={email} />
-                {vdoLoading ? (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <p className="text-gray-500 text-sm">⏳ Video loading...</p>
-                  </div>
-                ) : vdoOtp && vdoPlaybackInfo ? (
-                  <iframe
-                    key={vdoOtp}
-                    src={`https://player.vdocipher.com/v2/?otp=${vdoOtp}&playbackInfo=${vdoPlaybackInfo}`}
-                    style={{ border: 0, width: "100%", height: "100%" }}
-                    allow="encrypted-media"
-                    allowFullScreen
-                    title={courseTitle}
+                {vdoVideoId ? (
+                  // ── DRM video (VdoCipher) — OTP/playbackInfo ka yimaada Cloud Function ──
+                  vdoLoading ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <p className="text-gray-500 text-sm">⏳ Video loading...</p>
+                    </div>
+                  ) : vdoOtp && vdoPlaybackInfo ? (
+                    <iframe
+                      key={vdoOtp}
+                      src={`https://player.vdocipher.com/v2/?otp=${vdoOtp}&playbackInfo=${vdoPlaybackInfo}`}
+                      style={{ border: 0, width: "100%", height: "100%" }}
+                      allow="encrypted-media"
+                      allowFullScreen
+                      title={courseTitle}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center px-4 text-center">
+                      <p className="text-gray-500 text-sm">⚠️ Video-ga lama soo bandhigi karo. Fadlan dib u eeg OTP/playbackInfo backend-ka.</p>
+                    </div>
+                  )
+                ) : courseVideo ? (
+                  // ── Storage video (haddii aan VdoCipher la isticmaalin) ──
+                  <video
+                    ref={videoRef}
+                    src={courseVideo}
+                    controls
+                    controlsList="nodownload"
+                    onContextMenu={e => e.preventDefault()}
+                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
                   />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center px-4 text-center">
-                    <p className="text-gray-500 text-sm">⚠️ Video-ga lama soo bandhigi karo. Fadlan dib u eeg OTP/playbackInfo backend-ka.</p>
-                  </div>
-                )}
+                ) : null}
               </div>
             )}
 
             {/* PDF Viewer with watermark */}
-            {(activeTab === "pdf" || !courseVideo) && coursePdf && (
+            {(activeTab === "pdf" || (!courseVideo && !vdoVideoId)) && coursePdf && (
               <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ position: "relative", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <WatermarkOverlay email={email} />
                 <iframe
