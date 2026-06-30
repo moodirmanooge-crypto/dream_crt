@@ -44,6 +44,13 @@ const injectProtectionStyles = () => {
     .protected-content video {
       pointer-events: auto;
     }
+    .protected-content canvas {
+      -webkit-user-drag: none !important;
+      -khtml-user-drag: none !important;
+      -moz-user-drag: none !important;
+      -o-user-drag: none !important;
+      user-drag: none !important;
+    }
     .watermark-overlay {
       position: absolute;
       inset: 0;
@@ -96,6 +103,115 @@ const WatermarkOverlay = ({ email }) => {
     }
   }
   return <div className="watermark-overlay">{marks}</div>;
+};
+
+// ── Secure PDF Viewer — PDF-ka waxaa loo rooraa CANVAS (sawir), maaha browser PDF ──
+// Sidan ayuu ka adkaadaa: ma jiraan toolbar/download/save buttons, text-ku ma copy-gareemo
+// (waa pixels, ma aha text), right-click waa la xanibay.
+const SecurePdfViewer = ({ pdfUrl, email }) => {
+  const containerRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [numPages, setNumPages] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPdfJs = () =>
+      new Promise((resolve, reject) => {
+        if (window.pdfjsLib) { resolve(window.pdfjsLib); return; }
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+        script.onload = () => resolve(window.pdfjsLib);
+        script.onerror = () => reject(new Error("PDF.js load failed"));
+        document.body.appendChild(script);
+      });
+
+    const renderPdf = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const pdfjsLib = await loadPdfJs();
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+        const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+        if (cancelled) return;
+        setNumPages(pdf.numPages);
+
+        const container = containerRef.current;
+        if (!container) return;
+        container.innerHTML = "";
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          if (cancelled) return;
+          const page = await pdf.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 1.6 });
+
+          const canvas = document.createElement("canvas");
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          canvas.style.width = "100%";
+          canvas.style.maxWidth = `${viewport.width}px`;
+          canvas.style.display = "block";
+          canvas.style.margin = "0 auto 12px";
+          canvas.style.borderRadius = "8px";
+          canvas.style.userSelect = "none";
+          canvas.style.pointerEvents = "none"; // ka ilaali click+drag/save image
+
+          const ctx = canvas.getContext("2d");
+          await page.render({ canvasContext: ctx, viewport }).promise;
+
+          if (cancelled) return;
+          container.appendChild(canvas);
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.log("PDF render error:", err);
+        if (!cancelled) { setError("PDF lama soo bandhigi karo."); setLoading(false); }
+      }
+    };
+
+    renderPdf();
+    return () => { cancelled = true; };
+  }, [pdfUrl]);
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden shadow-2xl shadow-black"
+      style={{ position: "relative", border: "1px solid rgba(255,255,255,0.08)", background: "#1a1a1a" }}
+      onContextMenu={e => e.preventDefault()}
+      onDragStart={e => e.preventDefault()}
+    >
+      <WatermarkOverlay email={email} />
+
+      <div
+        ref={containerRef}
+        style={{
+          maxHeight: "80vh",
+          overflowY: "auto",
+          padding: "16px",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+        }}
+      />
+
+      {loading && (
+        <div className="w-full flex items-center justify-center" style={{ minHeight: 300 }}>
+          <p className="text-gray-500 text-sm">⏳ PDF loading...</p>
+        </div>
+      )}
+      {error && (
+        <div className="w-full flex items-center justify-center px-4 text-center" style={{ minHeight: 300 }}>
+          <p className="text-gray-500 text-sm">⚠️ {error}</p>
+        </div>
+      )}
+      {!loading && !error && (
+        <div className="text-center pb-3 text-gray-600 text-xs">{numPages} bog</div>
+      )}
+    </div>
+  );
 };
 
 export default function CoursePlayer() {
@@ -643,19 +759,9 @@ export default function CoursePlayer() {
               </div>
             )}
 
-            {/* PDF Viewer with watermark */}
+            {/* PDF Viewer with watermark — sawir-based, ma aha browser PDF viewer toos ah */}
             {(activeTab === "pdf" || (!courseVideo && !vdoVideoId)) && coursePdf && (
-              <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ position: "relative", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <WatermarkOverlay email={email} />
-                <iframe
-                  key={coursePdf}
-                  src={`${coursePdf}#toolbar=0&navpanes=0&scrollbar=0`}
-                  title="Course PDF"
-                  className="w-full"
-                  style={{ height: "80vh", border: "none", background: "#1a1a1a" }}
-                  onContextMenu={e => e.preventDefault()}
-                />
-              </div>
+              <SecurePdfViewer pdfUrl={coursePdf} email={email} />
             )}
 
             <div className="mt-4 flex items-center gap-2 text-gray-700 text-xs justify-center">
