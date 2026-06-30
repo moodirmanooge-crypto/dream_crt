@@ -135,7 +135,11 @@ const SecurePdfViewer = ({ pdfUrl, email }) => {
         pdfjsLib.GlobalWorkerOptions.workerSrc =
           "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-        const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+        const pdf = await pdfjsLib.getDocument({
+          url: pdfUrl,
+          withCredentials: false,
+          // CORS — Firebase Storage URLs needs explicit cMapUrl off / no extra headers
+        }).promise;
         if (cancelled) return;
         setNumPages(pdf.numPages);
 
@@ -169,7 +173,10 @@ const SecurePdfViewer = ({ pdfUrl, email }) => {
         setLoading(false);
       } catch (err) {
         console.log("PDF render error:", err);
-        if (!cancelled) { setError("PDF lama soo bandhigi karo."); setLoading(false); }
+        if (!cancelled) {
+          setError(`PDF lama soo bandhigi karo. (${err?.message || err})`);
+          setLoading(false);
+        }
       }
     };
 
