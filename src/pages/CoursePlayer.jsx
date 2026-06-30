@@ -119,6 +119,48 @@ export default function CoursePlayer() {
   const [courseCategory, setCourseCategory] = useState("");
   const [activeTab, setActiveTab] = useState("video");
 
+  // ── VdoCipher secure playback credentials ──
+  // OTP iyo playbackInfo waa inay ka yimaadaan SERVER/Cloud Function (ma aha frontend-ka),
+  // sababtoo ah API secret key-ga VdoCipher waa lama-huraan in la qariyo.
+  // Halkan waxaan ku kaydineynaa natiijada backend-ka soo celiyo.
+  const [vdoOtp, setVdoOtp] = useState("");
+  const [vdoPlaybackInfo, setVdoPlaybackInfo] = useState("");
+  const [vdoLoading, setVdoLoading] = useState(false);
+
+  // Halkan ku qor Video ID-ga aad ka soo koobiyaysay VdoCipher Dashboard (sida: 85da560e8ba04179a8dd523db302e4fd)
+  // Ugu fiican: ku kaydi videoId-gan field-ka course doc-ga Firestore (tusaale: course.vdoVideoId)
+  // halkii uu hardcoded u ahaan lahaa dhammaan courses-ka.
+  const videoId = "85da560e8ba04179a8dd523db302e4fd";
+
+  // ── Soo deji api.js ee VdoCipher hal mar (loo baahan yahay iframe-ka) ──
+  useEffect(() => {
+    if (document.getElementById("vdocipher-api-script")) return;
+    const script = document.createElement("script");
+    script.id = "vdocipher-api-script";
+    script.src = "https://player.vdocipher.com/v2/api.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
+  // ── Soo qaado OTP + playbackInfo marka access la siiyo ──
+  useEffect(() => {
+    if (!hasAccess || !videoId) return;
+    const fetchVdoCredentials = async () => {
+      setVdoLoading(true);
+      try {
+        // ── Cloud Function URL-ka dhabta ah ee dream-crt project-ka ──
+        const res = await fetch(`https://getvdootp-gpyfwiymaa-uc.a.run.app?videoId=${videoId}`);
+        const data = await res.json();
+        setVdoOtp(data.otp || "");
+        setVdoPlaybackInfo(data.playbackInfo || "");
+      } catch (err) {
+        console.log("VdoCipher OTP fetch error:", err);
+      }
+      setVdoLoading(false);
+    };
+    fetchVdoCredentials();
+  }, [hasAccess, videoId]);
+
   // ── Copy alert toast state ──
   const [copyAlert, setCopyAlert] = useState(false);
   const alertTimerRef = useRef(null);
@@ -563,26 +605,26 @@ export default function CoursePlayer() {
               </div>
             )}
 
-            {/* Video Player with watermark */}
+            {/* Video Player with watermark — VdoCipher DRM iframe player */}
             {(activeTab === "video" || !coursePdf) && (
-              <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ position: "relative", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ position: "relative", border: "1px solid rgba(255,255,255,0.08)", background: "#000" }}>
                 <WatermarkOverlay email={email} />
-                {courseVideo ? (
-                  <video
-                    ref={videoRef}
-                    key={courseVideo}
-                    src={courseVideo}
-                    controls
-                    autoPlay
-                    controlsList="nodownload nofullscreen noremoteplayback"
-                    disablePictureInPicture
-                    onContextMenu={e => e.preventDefault()}
-                    className="w-full bg-black"
-                    style={{ height: "65vh" }}
+                {vdoLoading ? (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-gray-500 text-sm">⏳ Video loading...</p>
+                  </div>
+                ) : vdoOtp && vdoPlaybackInfo ? (
+                  <iframe
+                    key={vdoOtp}
+                    src={`https://player.vdocipher.com/v2/?otp=${vdoOtp}&playbackInfo=${vdoPlaybackInfo}`}
+                    style={{ border: 0, width: "100%", height: "100%" }}
+                    allow="encrypted-media"
+                    allowFullScreen
+                    title={courseTitle}
                   />
                 ) : (
-                  <div className="w-full bg-black flex items-center justify-center" style={{ height: "65vh" }}>
-                    <p className="text-gray-500 text-sm">⏳ Video loading...</p>
+                  <div className="w-full h-full flex items-center justify-center px-4 text-center">
+                    <p className="text-gray-500 text-sm">⚠️ Video-ga lama soo bandhigi karo. Fadlan dib u eeg OTP/playbackInfo backend-ka.</p>
                   </div>
                 )}
               </div>
