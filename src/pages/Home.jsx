@@ -37,17 +37,6 @@ export default function Home() {
   const [adminError, setAdminError] = useState("");
   const [adminShaking, setAdminShaking] = useState(false);
 
-  // ── Category → payId map (single source of truth, matches Admin.jsx categories) ──
-  const CATEGORY_TO_PAYID = {
-    "basic_forex":  "basic-forex-course",
-    "crt_course":   "crt-course-60",
-    "mentorship":   "premium-mentorship-100",
-    "copy_trading": "copy-trading-services",
-  };
-  const PAYID_TO_CATEGORY = Object.fromEntries(
-    Object.entries(CATEGORY_TO_PAYID).map(([cat, payId]) => [payId, cat])
-  );
-
   useEffect(() => {
     fetchCourses();
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -60,13 +49,19 @@ export default function Home() {
             d => d.data().email === currentUser.email && d.data().approved === true
           );
           const approvedIds = [];
+          const categoryToPayId = {
+            "basic_forex":  "basic-forex-course",
+            "crt_course":   "crt-course-60",
+            "mentorship":   "premium-mentorship-100",
+            "copy_trading": "copy-trading-services",
+          };
           approvedDocs.forEach(d => {
             const data = d.data();
             // Ku dar courseId field-ka (Firestore auto-ID ama payId)
             if (data.courseId) approvedIds.push(data.courseId);
             // Hadduu courseId payId-ka ah, ku dar sidoo kale
-            if (data.courseId && CATEGORY_TO_PAYID[data.courseId]) {
-              approvedIds.push(CATEGORY_TO_PAYID[data.courseId]);
+            if (data.courseId && categoryToPayId[data.courseId]) {
+              approvedIds.push(categoryToPayId[data.courseId]);
             }
           });
           // Query courses collection si aan u ogaano category → payId
@@ -75,7 +70,7 @@ export default function Home() {
             coursesSnap.docs.forEach(c => {
               if (approvedCourseIds.includes(c.id)) {
                 approvedIds.push(c.id);
-                const payId = CATEGORY_TO_PAYID[c.data().category];
+                const payId = categoryToPayId[c.data().category];
                 if (payId) approvedIds.push(payId);
               }
             });
@@ -227,24 +222,6 @@ export default function Home() {
 
   // Tus dhammaan courses-ka Firestore-ka ku jira, ugu dambeeyay marka hore
   const displayCourse = [...courses].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-  // ── Helper: hel course-ka ugu dambeeya ee category gaar ah leh ──
-  const findLatestByCategory = (cat) =>
-    courses.filter(c => c.category === cat).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
-
-  // ── Helper: ma leeyahay user-ku access course-kan (bundle-aware) ──
-  const hasCourseAccess = (course) => {
-    const payId = CATEGORY_TO_PAYID[course.category];
-    return (
-      Number(course.price) === 0 ||
-      userApprovedCourses.includes(course.id) ||
-      (payId && userApprovedCourses.includes(payId))
-    );
-  };
-
-  // ── Helper: tirinta lessons + astaan sax ah ee course-ka (Playlist ama bundle categories) ──
-  const courseLessonCount = (course) =>
-    Array.isArray(course.lessons) ? course.lessons.length : (course.lessonCount || 0);
 
   const desktopLinks = [
     { label: "Home", href: "#home", active: true },
@@ -473,8 +450,16 @@ export default function Home() {
                 onClick={() => {
                   if (userApprovedCourses.includes(svc.payId)) {
                     // Hel course-ka category-ga ku salaysan oo toos u fur
-                    const cat = PAYID_TO_CATEGORY[svc.payId];
-                    const matchedCourse = findLatestByCategory(cat);
+                    const payIdToCat = {
+                      "basic-forex-course":     "basic_forex",
+                      "crt-course-60":          "crt_course",
+                      "premium-mentorship-100": "mentorship",
+                      "copy-trading-services":  "copy_trading",
+                    };
+                    const cat = payIdToCat[svc.payId];
+                    const matchedCourse = courses
+                      .filter(c => c.category === cat)
+                      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
                     if (matchedCourse) {
                       window.location.href = `/course/${matchedCourse.id}`;
                     } else {
@@ -512,68 +497,55 @@ export default function Home() {
           <div className="text-center py-20"><div className="text-5xl mb-4">📚</div><p style={{ color: "#64748b" }}>Courses loading...</p></div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
-            {displayCourse.map((course) => {
-              const lessonCount = courseLessonCount(course);
-              const access = hasCourseAccess(course);
-              // Course kasta oo leh lessons array (Playlist ama afartaas bundle category) waa "Playlist" style
-              const isMultiLesson = Array.isArray(course.lessons) && course.lessons.length > 0;
-              const hasDrm = isMultiLesson && course.lessons.some(l => l.vdoVideoId);
-              return (
-                <div key={course.id} className="rounded-3xl overflow-hidden transition-all duration-300"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(245,197,24,0.2)" }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 20px 40px rgba(245,197,24,0.1)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
-                  <div style={{ position: "relative" }}>
-                    {course.thumbnailURL ? (
-                      <img src={course.thumbnailURL} alt={course.title} className="w-full object-cover" style={{ height: "clamp(180px, 40vw, 240px)" }} />
-                    ) : course.fileURL && course.type === "Video" ? (
-                      <video src={course.fileURL} className="w-full object-cover pointer-events-none" style={{ height: "clamp(180px, 40vw, 240px)" }} muted playsInline preload="metadata" />
-                    ) : (
-                      <div className="w-full flex items-center justify-center" style={{ height: "clamp(180px, 40vw, 240px)", background: "rgba(245,197,24,0.05)" }}>
-                        <span style={{ fontSize: 64 }}>{course.type === "PDF" ? "📄" : isMultiLesson ? "🎓" : "🎬"}</span>
-                      </div>
-                    )}
-                    {hasDrm && (
-                      <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(245,197,24,0.92)", color: "#000", padding: "4px 10px", borderRadius: 7, fontSize: 11, fontWeight: 800 }}>
-                        🔐 DRM
-                      </div>
-                    )}
+            {displayCourse.map((course) => (
+              <div key={course.id} className="rounded-3xl overflow-hidden transition-all duration-300"
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(245,197,24,0.2)" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 20px 40px rgba(245,197,24,0.1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
+                {course.thumbnailURL ? (
+                  <img src={course.thumbnailURL} alt={course.title} className="w-full object-cover" style={{ height: "clamp(180px, 40vw, 240px)" }} />
+                ) : course.fileURL && course.type === "Video" ? (
+                  <video src={course.fileURL} className="w-full object-cover pointer-events-none" style={{ height: "clamp(180px, 40vw, 240px)" }} muted playsInline preload="metadata" />
+                ) : (
+                  <div className="w-full flex items-center justify-center" style={{ height: "clamp(180px, 40vw, 240px)", background: "rgba(245,197,24,0.05)" }}>
+                    <span style={{ fontSize: 64 }}>{course.type === "PDF" ? "📄" : course.type === "Playlist" ? "🎓" : "🎬"}</span>
                   </div>
-                  <div className="p-5 md:p-8">
-                    {(course.type || isMultiLesson) && (
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
-                        style={{ background: course.type === "PDF" ? "rgba(255,71,87,0.15)" : isMultiLesson ? "rgba(59,130,246,0.15)" : "rgba(245,158,11,0.15)", color: course.type === "PDF" ? "#ff4757" : isMultiLesson ? "#3b82f6" : "#f59e0b" }}>
-                        {isMultiLesson ? "Playlist" : course.type} {lessonCount ? `• ${lessonCount} Lessons` : ""}
-                      </span>
-                    )}
-                    <h3 className="text-xl md:text-2xl font-black">{course.title}</h3>
-                    {course.description && (
-                      <p className="mt-3 md:mt-4 text-sm md:text-base leading-relaxed"
-                        style={{ color: "#64748b", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                        {course.description}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between mt-6 md:mt-8">
-                      <span className="text-2xl md:text-3xl font-black" style={{ color: "#f5c518" }}>
-                        {Number(course.price) === 0 ? "FREE" : `$${course.price}`}
-                      </span>
-                      <button
-                        onClick={() => {
-                          if (access) {
-                            window.location.href = `/course/${course.id}`;
-                          } else {
-                            openPayModal(course.id, course.title, course.price);
-                          }
-                        }}
-                        className="px-5 md:px-6 py-2.5 md:py-3 rounded-xl font-black text-sm transition-all"
-                        style={{ background: access ? "#22c55e" : "#f5c518", color: "#000000" }}>
-                        {access ? "✅ Access Course" : Number(course.price) === 0 ? "Access Free" : "Buy Course"}
-                      </button>
-                    </div>
+                )}
+                <div className="p-5 md:p-8">
+                  {course.type && (
+                    <span className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
+                      style={{ background: course.type === "PDF" ? "rgba(255,71,87,0.15)" : course.type === "Playlist" ? "rgba(59,130,246,0.15)" : "rgba(245,158,11,0.15)", color: course.type === "PDF" ? "#ff4757" : course.type === "Playlist" ? "#3b82f6" : "#f59e0b" }}>
+                      {course.type} {course.lessonCount ? `• ${course.lessonCount} Lessons` : ""}
+                    </span>
+                  )}
+                  <h3 className="text-xl md:text-2xl font-black">{course.title}</h3>
+                  {course.description && (
+                    <p className="mt-3 md:mt-4 text-sm md:text-base leading-relaxed"
+                      style={{ color: "#64748b", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                      {course.description}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between mt-6 md:mt-8">
+                    <span className="text-2xl md:text-3xl font-black" style={{ color: "#f5c518" }}>
+                      {Number(course.price) === 0 ? "FREE" : `$${course.price}`}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const catToPayId = { "basic_forex": "basic-forex-course", "crt_course": "crt-course-60", "mentorship": "premium-mentorship-100", "copy_trading": "copy-trading-services" };
+                        const coursePayId = catToPayId[course.category] || course.id;
+                        const hasAccess = Number(course.price) === 0 || userApprovedCourses.includes(course.id) || userApprovedCourses.includes(coursePayId);
+                        if (hasAccess) {
+                          window.location.href = `/course/${course.id}`;
+                        } else { openPayModal(course.id, course.title, course.price); }
+                      }}
+                      className="px-5 md:px-6 py-2.5 md:py-3 rounded-xl font-black text-sm transition-all"
+                      style={{ background: (() => { const catToPayId = { "basic_forex": "basic-forex-course", "crt_course": "crt-course-60", "mentorship": "premium-mentorship-100", "copy_trading": "copy-trading-services" }; const coursePayId = catToPayId[course.category] || course.id; return (userApprovedCourses.includes(course.id) || userApprovedCourses.includes(coursePayId)) ? "#22c55e" : "#f5c518"; })(), color: "#000000" }}>
+                      {(() => { const catToPayId = { "basic_forex": "basic-forex-course", "crt_course": "crt-course-60", "mentorship": "premium-mentorship-100", "copy_trading": "copy-trading-services" }; const coursePayId = catToPayId[course.category] || course.id; const hasAccess = userApprovedCourses.includes(course.id) || userApprovedCourses.includes(coursePayId); return hasAccess ? "✅ Access Course" : Number(course.price) === 0 ? "Access Free" : "Buy Course"; })()}
+                    </button>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
       </section>
