@@ -240,7 +240,7 @@ export default function Home() {
 
   // ── Helper: hel course-ka ugu dambeeya ee category gaar ah leh ──
   const findLatestByCategory = (cat) =>
-    courses.filter(c => c.category === cat).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
+    courses.filter(c => c.category === cat).sort((a, b) => getCreatedAtMs(b) - getCreatedAtMs(a))[0];
 
   // ── Helper: ma leeyahay user-ku access course-kan (bundle-aware) ──
   const hasCourseAccess = (course) => {

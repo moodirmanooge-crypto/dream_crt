@@ -297,6 +297,9 @@ const NAV = [
   { id: "settings",    label: "Settings",        Icon: Icon.Settings },
 ];
 
+// ── VdoCipher accounts (account1–account6) — waa in ay la mid yihiin kuwa Cloud Function-ka ──
+const VDO_ACCOUNTS = ["account1", "account2", "account3", "account4", "account5", "account6"];
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // LOGIN GATE
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -798,6 +801,7 @@ function UploadContentPage() {
   const [lessonFile, setLessonFile] = useState(null);
   const [lessonFileType, setLessonFileType] = useState("video");
   const [lessonVdoId, setLessonVdoId] = useState("");   // ── per-lesson VdoCipher DRM ID ──
+  const [lessonVdoAccount, setLessonVdoAccount] = useState("account1"); // ── per-lesson VdoCipher account (account1–account6) ──
   const [addingLesson, setAddingLesson] = useState(false);
 
   const [uploading, setUploading] = useState(false);
@@ -833,9 +837,10 @@ function UploadContentPage() {
       file: lessonFile,
       fileType: lessonFileType,
       vdoVideoId: lessonVdoId.trim(),   // ── per-lesson DRM id, optional ──
+      vdoAccount: hasVdo ? lessonVdoAccount : "",   // ── per-lesson VdoCipher account (kaliya haddii VdoCipher ID jiro) ──
       order: prev.length + 1
     }]);
-    setLessonTitle(""); setLessonFile(null); setLessonVdoId(""); setAddingLesson(false);
+    setLessonTitle(""); setLessonFile(null); setLessonVdoId(""); setLessonVdoAccount("account1"); setAddingLesson(false);
   };
 
   const removeLesson = (id) =>
@@ -908,6 +913,7 @@ function UploadContentPage() {
             title: lesson.title,
             fileURL,
             vdoVideoId: hasVdo ? lesson.vdoVideoId.trim() : "",
+            vdoAccount: hasVdo ? (lesson.vdoAccount || "account1") : "",   // ── keydi account-ka VdoCipher ──
             fileType: lesson.fileType === "pdf" ? "PDF" : "Video",
             order: lesson.order
           });
@@ -1188,6 +1194,35 @@ function UploadContentPage() {
                   </div>
                 )}
 
+                {/* ── Per-lesson VdoCipher ACCOUNT selector (account1–account6) — kaliya marka VdoCipher ID jiro ── */}
+                {lessonFileType === "video" && lessonVdoId.trim() && (
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ display: "block", color: "#f5c518", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>
+                      🗂️ VdoCipher Account (video-gu halkee lagu upload-gareeyay)
+                    </label>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                      {VDO_ACCOUNTS.map(acc => {
+                        const selected = lessonVdoAccount === acc;
+                        return (
+                          <button key={acc} type="button" onClick={() => setLessonVdoAccount(acc)}
+                            style={{
+                              padding: "9px 0", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 12,
+                              background: selected ? "#f5c518" : C.surfaceCard,
+                              color: selected ? "#000" : C.textMuted,
+                              border: `1px solid ${selected ? "#f5c518" : C.border}`,
+                              transition: "all .15s",
+                            }}>
+                            {acc.replace("account", "Account ")}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p style={{ color: C.textSub, fontSize: 11, marginTop: 5 }}>
+                      Dooro account-ka VdoCipher-ka video-gaas lagu keydiyay — Cloud Function-ku wuxuu isticmaali doonaa secret-ka saxda ah.
+                    </p>
+                  </div>
+                )}
+
                 <div onClick={() => { if (!(lessonFileType === "video" && lessonVdoId.trim())) lessonFileRef.current?.click(); }}
                   style={{
                     border: `2px dashed ${lessonFile ? C.green : C.border}`, borderRadius: 10, padding: 14, cursor: (lessonFileType === "video" && lessonVdoId.trim()) ? "not-allowed" : "pointer",
@@ -1208,7 +1243,7 @@ function UploadContentPage() {
                   onChange={e => { if (e.target.files[0]) setLessonFile(e.target.files[0]); }} />
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={addLesson} style={{ flex: 1, padding: "10px 0", background: catInfo.color, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>✓ Add Lesson</button>
-                  <button onClick={() => { setAddingLesson(false); setLessonTitle(""); setLessonFile(null); setLessonVdoId(""); }} style={{ padding: "10px 16px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                  <button onClick={() => { setAddingLesson(false); setLessonTitle(""); setLessonFile(null); setLessonVdoId(""); setLessonVdoAccount("account1"); }} style={{ padding: "10px 16px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancel</button>
                 </div>
               </div>
             )}
@@ -1228,7 +1263,7 @@ function UploadContentPage() {
                       <p style={{ color: C.text, fontWeight: 700, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{lesson.title}</p>
                       <p style={{ color: C.textSub, fontSize: 11, marginTop: 2 }}>
                         {lesson.vdoVideoId
-                          ? `🔐 VdoCipher: ${lesson.vdoVideoId.slice(0, 14)}…`
+                          ? `🔐 VdoCipher: ${lesson.vdoVideoId.slice(0, 14)}… • ${(lesson.vdoAccount || "account1").replace("account", "Acc ")}`
                           : lesson.file ? `${lesson.file.name} • ${(lesson.file.size / 1048576).toFixed(1)} MB` : "—"}
                       </p>
                     </div>

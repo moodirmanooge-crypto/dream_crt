@@ -212,11 +212,12 @@ export default function CoursePlayer() {
   const [activeTab, setActiveTab] = useState("video");
 
   // ── Playlist lessons + active lesson index ──
-  const [lessons, setLessons] = useState([]);          // [{ title, vdoVideoId, fileURL, order }]
+  const [lessons, setLessons] = useState([]);          // [{ title, vdoVideoId, vdoAccount, fileURL, order }]
   const [activeLesson, setActiveLesson] = useState(0);
 
   // ── VdoCipher ID-ga lesson-ka hadda socda ──
   const [vdoVideoId, setVdoVideoId] = useState("");
+  const [vdoAccount, setVdoAccount] = useState("account1"); // ← CUSUB
 
   const [vdoOtp, setVdoOtp] = useState("");
   const [vdoPlaybackInfo, setVdoPlaybackInfo] = useState("");
@@ -235,11 +236,12 @@ export default function CoursePlayer() {
     document.body.appendChild(script);
   }, []);
 
-  // ── Marka lesson-ka la beddelo → cusboonaysii vdoVideoId + video URL ──
+  // ── Marka lesson-ka la beddelo → cusboonaysii vdoVideoId + vdoAccount + video URL ──
   useEffect(() => {
     if (lessons.length === 0) return;
     const les = lessons[activeLesson] || lessons[0];
     setVdoVideoId(les?.vdoVideoId || "");
+    setVdoAccount(les?.vdoAccount || "account1"); // ← CUSUB
     setCourseVideo(les?.fileURL || "");
     // Reset OTP marka lesson la beddelo
     setVdoOtp("");
@@ -254,8 +256,10 @@ export default function CoursePlayer() {
     const fetchVdoCredentials = async () => {
       setVdoLoading(true);
       try {
-        // ── Cloud Function URL-ka dream-crt project-ka ──
-        const res = await fetch(`https://getvdootp-gpyfwiymaa-uc.a.run.app?videoId=${vdoVideoId}`);
+        // ── Cloud Function URL-ka dream-crt project-ka (leh account param) ──
+        const res = await fetch(
+          `https://getvdootp-gpyfwiymaa-uc.a.run.app?videoId=${vdoVideoId}&account=${vdoAccount}`
+        );
         const data = await res.json();
         if (cancelled) return;
         setVdoOtp(data.otp || "");
@@ -267,7 +271,7 @@ export default function CoursePlayer() {
     };
     fetchVdoCredentials();
     return () => { cancelled = true; };
-  }, [hasAccess, vdoVideoId]);
+  }, [hasAccess, vdoVideoId, vdoAccount]); // ← ku dar vdoAccount dependency-ga
 
   const [copyAlert, setCopyAlert] = useState(false);
   const alertTimerRef = useRef(null);
@@ -361,10 +365,11 @@ export default function CoursePlayer() {
   }, [id]);
 
   // ════════════════════════════════════════════════════════════════
-  //  MUHIIM: vdoVideoId-ga wuxuu ku jiraa lessons[] gudaha (Playlist),
-  //  maaha top-level. Sidaas darteed halkan waxaan ka soo qaadeynaa
-  //  lesson kasta vdoVideoId + fileURL. Haddii course-ku uu Playlist
-  //  yahay → lessons[0] ka bilow. Haddii kale → top-level fields.
+  //  MUHIIM: vdoVideoId + vdoAccount waxay ku jiraan lessons[] gudaha
+  //  (Playlist), maaha top-level. Sidaas darteed halkan waxaan ka soo
+  //  qaadeynaa lesson kasta vdoVideoId + vdoAccount + fileURL. Haddii
+  //  course-ku uu Playlist yahay → lessons[0] ka bilow. Haddii kale →
+  //  top-level fields.
   // ════════════════════════════════════════════════════════════════
   const setCourseData = (data) => {
     setCourseTitle(data.title || "Dream Crt Master Class");
@@ -373,11 +378,12 @@ export default function CoursePlayer() {
     setCoursePdf(data.pdfURL || "");
 
     if (data.type === "Playlist" && Array.isArray(data.lessons) && data.lessons.length > 0) {
-      // ── Playlist: ka soo qaado dhammaan lessons-ka (leh vdoVideoId gaar ah) ──
+      // ── Playlist: ka soo qaado dhammaan lessons-ka (leh vdoVideoId + vdoAccount gaar ah) ──
       const sorted = [...data.lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
       const mapped = sorted.map((l, i) => ({
         title: l.title || `Lesson ${i + 1}`,
         vdoVideoId: l.vdoVideoId || "",
+        vdoAccount: l.vdoAccount || "account1", // ← CUSUB
         fileURL: l.fileURL || "",
         order: l.order || i,
       }));
@@ -386,10 +392,11 @@ export default function CoursePlayer() {
       // Haddii lesson-ka koowaad uusan video lahayn laakiin PDF jiro → PDF tab
       if (!mapped[0].vdoVideoId && !mapped[0].fileURL && data.pdfURL) setActiveTab("pdf");
     } else {
-      // ── Course keliya (maaha playlist): top-level vdoVideoId / fileURL ──
+      // ── Course keliya (maaha playlist): top-level vdoVideoId / vdoAccount / fileURL ──
       const single = [{
         title: data.title || "Lesson",
         vdoVideoId: data.vdoVideoId || "",
+        vdoAccount: data.vdoAccount || "account1", // ← CUSUB
         fileURL: data.fileURL || "",
         order: 0,
       }];
