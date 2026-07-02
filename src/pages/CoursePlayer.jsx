@@ -321,12 +321,16 @@ export default function CoursePlayer() {
       }
     } catch (e) { /* ignore */ }
 
-    const handleVisibility = () => { if (document.hidden) triggerShield("Content-ku waa qarsoon yahay markaad ka baxdo bogga"); else clearShield(); };
-    const handleBlur = () => triggerShield("Content-ku waa qarsoon yahay markaad ka baxdo bogga");
-    const handleFocus = () => { if (!document.hidden) clearShield(); };
+    // ── MUHIIM: Kaliya 'visibilitychange' ayaa shield-ka triggers-gareeya.
+    //    'window.blur' waa la SAARAY sababtoo ah marka video-ga (iframe VdoCipher)
+    //    la shido, focus-ku wuxuu u gudbaa iframe-ka gudihiisa → blur false alarm ah
+    //    ayuu keeni jiray. visibilitychange kaliya ayaa run ah (marka tab la beddelo /
+    //    la qariyo / la minimize gareeyo). ──
+    const handleVisibility = () => {
+      if (document.hidden) triggerShield("Content-ku waa qarsoon yahay markaad ka baxdo bogga");
+      else clearShield();
+    };
     document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("blur", handleBlur);
-    window.addEventListener("focus", handleFocus);
 
     const blockContext = (e) => { e.preventDefault(); };
     contentRef.current?.addEventListener("contextmenu", blockContext);
@@ -336,8 +340,6 @@ export default function CoursePlayer() {
       document.removeEventListener("cut", blockCopy);
       document.removeEventListener("keydown", blockKeys);
       document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("blur", handleBlur);
-      window.removeEventListener("focus", handleFocus);
       contentRef.current?.removeEventListener("contextmenu", blockContext);
       try { if (originalGDM && navigator.mediaDevices) navigator.mediaDevices.getDisplayMedia = originalGDM; } catch (e) {}
       if (alertTimerRef.current) clearTimeout(alertTimerRef.current);

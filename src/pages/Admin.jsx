@@ -773,6 +773,15 @@ function PlaceholderPage({ label }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // UPLOAD CONTENT PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Default prices for the 4 bundle categories (admin can still override) ──
+const CATEGORY_DEFAULT_PRICE = {
+  basic_forex: 35,
+  crt_course: 75,
+  mentorship: 125,
+  copy_trading: 0, // custom / manual pricing
+};
+
 function UploadContentPage() {
   const [category, setCategory] = useState("");
   const [step, setStep] = useState(1);
@@ -782,28 +791,27 @@ function UploadContentPage() {
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [singleFile, setSingleFile] = useState(null);       // video ama single pdf
-  const [pdfFile, setPdfFile] = useState(null);             // PDF (course categories)
-  const [videoFile, setVideoFile] = useState(null);         // Video (course categories)
-  const [vdoVideoId, setVdoVideoId] = useState("");          // ── VdoCipher Video ID (DRM) ──
+
+  // ── Lessons (shared by Playlist AND the 4 bundle categories) ──
   const [lessons, setLessons] = useState([]);
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonFile, setLessonFile] = useState(null);
   const [lessonFileType, setLessonFileType] = useState("video");
+  const [lessonVdoId, setLessonVdoId] = useState("");   // ── per-lesson VdoCipher DRM ID ──
   const [addingLesson, setAddingLesson] = useState(false);
+
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
   const [msg, setMsg] = useState("");
   const thumbRef = useRef(null);
   const singleFileRef = useRef(null);
-  const pdfFileRef = useRef(null);
-  const videoFileRef = useRef(null);
   const lessonFileRef = useRef(null);
 
-  // Playlist kaliya
+  // ── Multi-lesson categories: Playlist + the 4 bundle categories ──
   const PLAYLIST_TYPES = ["playlist"];
-  // Course categories (labadaba PDF + Video)
   const COURSE_TYPES = ["basic_forex", "crt_course", "mentorship", "copy_trading"];
+  const MULTI_LESSON_TYPES = [...PLAYLIST_TYPES, ...COURSE_TYPES];
 
   const uploadWithProgress = (storageRef, file, onProg) =>
     new Promise((resolve, reject) => {
@@ -817,15 +825,17 @@ function UploadContentPage() {
 
   const addLesson = () => {
     if (!lessonTitle.trim()) { alert("Lesson-ka cinwaankiisa gali"); return; }
-    if (!lessonFile) { alert("Lesson-ka file-kiisa dooro"); return; }
+    const hasVdo = lessonVdoId.trim().length > 0;
+    if (!hasVdo && !lessonFile) { alert("Lesson-ka VdoCipher ID gali AMA file-kiisa dooro"); return; }
     setLessons(prev => [...prev, {
       id: Date.now().toString(),
       title: lessonTitle.trim(),
       file: lessonFile,
       fileType: lessonFileType,
+      vdoVideoId: lessonVdoId.trim(),   // ── per-lesson DRM id, optional ──
       order: prev.length + 1
     }]);
-    setLessonTitle(""); setLessonFile(null); setAddingLesson(false);
+    setLessonTitle(""); setLessonFile(null); setLessonVdoId(""); setAddingLesson(false);
   };
 
   const removeLesson = (id) =>
@@ -853,14 +863,11 @@ function UploadContentPage() {
     if (!title.trim()) { setMsg("⚠️ Course title buuxi"); return; }
 
     // Validation
-    if (PLAYLIST_TYPES.includes(category) && lessons.length === 0) {
+    if (MULTI_LESSON_TYPES.includes(category) && lessons.length === 0) {
       setMsg("⚠️ Ugu yaraan 1 lesson ku dar"); return;
     }
     if (category === "single_video" && !singleFile) { setMsg("⚠️ Video file-ka dooro"); return; }
     if (category === "single_pdf" && !singleFile) { setMsg("⚠️ PDF file-ka dooro"); return; }
-    if (COURSE_TYPES.includes(category) && !videoFile && !pdfFile && !vdoVideoId.trim()) {
-      setMsg("⚠️ Ugu yaraan video (Storage ama VdoCipher ID) ama PDF mid ku dar"); return;
-    }
 
     setUploading(true); setProgress(0); setMsg("");
     const coursePrice = Number(price) || 0;
@@ -874,18 +881,33 @@ function UploadContentPage() {
         thumbnailURL = await uploadWithProgress(tRef, thumbnail, () => {});
       }
 
-      // ── PLAYLIST ──
-      if (PLAYLIST_TYPES.includes(category)) {
+      // ── PLAYLIST + BUNDLE CATEGORIES (basic_forex, crt_course, mentorship, copy_trading) ──
+      // Hal logic oo la wadaago: lesson kasta wuxuu yeelan karaa VdoCipher ID GAAR AH
+      // (DRM, ma baahna Storage upload) AMA file la keydiyo Storage (video/PDF).
+      if (MULTI_LESSON_TYPES.includes(category)) {
         const uploadedLessons = [];
         for (let i = 0; i < lessons.length; i++) {
           const lesson = lessons[i];
-          setProgressLabel(`📁 Lesson ${i+1}/${lessons.length}: ${lesson.title}`);
-          setProgress(Math.round((i / lessons.length) * 80));
-          const folder = lesson.fileType === "pdf" ? "pdfs" : "videos";
-          const lRef = ref(storage, `${folder}/lessons/${Date.now()}_${lesson.file.name}`);
-          const fileURL = await uploadWithProgress(lRef, lesson.file, () => {});
+          const hasVdo = lesson.vdoVideoId && lesson.vdoVideoId.trim().length > 0;
+          let fileURL = "";
+
+          if (hasVdo) {
+            // VdoCipher DRM — ma baahna in file-ka Storage la geliyo
+            setProgressLabel(`🔐 Lesson ${i + 1}/${lessons.length}: ${lesson.title} (VdoCipher)`);
+            setProgress(Math.round((i / lessons.length) * 80));
+          } else if (lesson.file) {
+            setProgressLabel(`📁 Lesson ${i + 1}/${lessons.length}: ${lesson.title}`);
+            const folder = lesson.fileType === "pdf" ? "pdfs" : "videos";
+            const lRef = ref(storage, `${folder}/lessons/${Date.now()}_${lesson.file.name}`);
+            fileURL = await uploadWithProgress(lRef, lesson.file, (p) => {
+              setProgress(Math.round((i / lessons.length) * 80 + (p / lessons.length) * 0.8));
+            });
+          }
+
           uploadedLessons.push({
-            title: lesson.title, fileURL,
+            title: lesson.title,
+            fileURL,
+            vdoVideoId: hasVdo ? lesson.vdoVideoId.trim() : "",
             fileType: lesson.fileType === "pdf" ? "PDF" : "Video",
             order: lesson.order
           });
@@ -927,47 +949,6 @@ function UploadContentPage() {
           createdAt: Date.now(), status: "Published",
           locked: coursePrice > 0, isPaid: false
         });
-
-      // ── COURSE TYPES (basic_forex, crt_course, mentorship, copy_trading) ──
-      // Video-gu wuxuu noqon karaa: VdoCipher Video ID (DRM) AMA Firebase Storage upload
-      } else if (COURSE_TYPES.includes(category)) {
-        let fileURL = "";
-        let pdfURL = "";
-        const hasVdoId = vdoVideoId.trim().length > 0;
-        let totalSteps = (videoFile && !hasVdoId ? 1 : 0) + (pdfFile ? 1 : 0);
-        let uploadStep = 0;
-
-        // ── VdoCipher Video ID waa la siiyay → skip Storage upload, ID kaliya kaydi ──
-        if (!hasVdoId && videoFile) {
-          setProgressLabel("🎬 Video uploading…");
-          const vRef = ref(storage, `videos/${Date.now()}_${videoFile.name}`);
-          fileURL = await uploadWithProgress(vRef, videoFile, (p) => {
-            setProgress(Math.round((uploadStep / totalSteps) * 80 + (p / totalSteps) * 0.8));
-          });
-          uploadStep++;
-        }
-
-        if (pdfFile) {
-          setProgressLabel("📄 PDF uploading…");
-          const pRef = ref(storage, `pdfs/${Date.now()}_${pdfFile.name}`);
-          pdfURL = await uploadWithProgress(pRef, pdfFile, (p) => {
-            setProgress(Math.round((uploadStep / totalSteps) * 80 + (p / totalSteps) * 0.8));
-          });
-          uploadStep++;
-        }
-
-        setProgressLabel("💾 Saving…"); setProgress(90);
-        await addDoc(collection(db, "courses"), {
-          title: title.trim(), description: description.trim(),
-          price: coursePrice, thumbnailURL,
-          category,
-          type: (hasVdoId || fileURL) ? (pdfURL ? "Video+PDF" : "Video") : "PDF",
-          fileURL: fileURL || "",
-          vdoVideoId: vdoVideoId.trim() || "",   // ── VdoCipher DRM video ID ──
-          pdfURL: pdfURL || "",
-          createdAt: Date.now(), status: "Published",
-          locked: coursePrice > 0, isPaid: false
-        });
       }
 
       setProgress(100); setProgressLabel("✅ Done!");
@@ -975,8 +956,7 @@ function UploadContentPage() {
       setTimeout(() => {
         setTitle(""); setDescription(""); setPrice("");
         setThumbnail(null); setThumbnailPreview(null);
-        setSingleFile(null); setPdfFile(null); setVideoFile(null);
-        setVdoVideoId("");
+        setSingleFile(null);
         setLessons([]);
         setStep(1); setCategory("");
         setProgress(0); setProgressLabel("");
@@ -1008,12 +988,16 @@ function UploadContentPage() {
             { id: "single_video", icon: "🎬", label: "Single Video Lesson",   sub: "Cashar keliya oo muuqaal ah",       color: C.amber,    colorDim: C.amberDim },
             { id: "single_pdf",   icon: "📄", label: "Single PDF Lesson",      sub: "Cashar keliya oo PDF ah",           color: C.errorRed, colorDim: C.errorDim },
             { id: "playlist",     icon: "🎓", label: "Full Course (Playlist)", sub: "Cashar badan oo is-xiga",           color: C.blue,     colorDim: C.blueDim },
-            { id: "basic_forex",  icon: "📈", label: "Basic Forex Course 35$", sub: "Video + PDF • Bilowga Ganacsiga",   color: "#f5c518",  colorDim: "rgba(245,197,24,0.15)" },
-            { id: "crt_course",   icon: "⭐", label: "CRT Course 75$",         sub: "Video + PDF • Barashada CRT",       color: "#a78bfa",  colorDim: "rgba(167,139,250,0.15)" },
-            { id: "mentorship",   icon: "🤝", label: "Premium Mentorship 125$",sub: "Video + PDF • Hagidda Shakhsiga",   color: "#22c55e",  colorDim: "rgba(34,197,94,0.15)" },
-            { id: "copy_trading", icon: "💹", label: "Copy Trading Services",  sub: "Video + PDF • Maalgashi Toos Ah",   color: "#f97316",  colorDim: "rgba(249,115,22,0.15)" },
+            { id: "basic_forex",  icon: "📈", label: "Basic Forex Course 35$", sub: "Lessons badan • Bilowga Ganacsiga", color: "#f5c518",  colorDim: "rgba(245,197,24,0.15)" },
+            { id: "crt_course",   icon: "⭐", label: "CRT Course 75$",         sub: "Lessons badan • Barashada CRT",     color: "#a78bfa",  colorDim: "rgba(167,139,250,0.15)" },
+            { id: "mentorship",   icon: "🤝", label: "Premium Mentorship 125$",sub: "Lessons badan • Hagidda Shakhsiga", color: "#22c55e",  colorDim: "rgba(34,197,94,0.15)" },
+            { id: "copy_trading", icon: "💹", label: "Copy Trading Services",  sub: "Lessons badan • Maalgashi Toos Ah", color: "#f97316",  colorDim: "rgba(249,115,22,0.15)" },
           ].map(opt => (
-            <button key={opt.id} onClick={() => { setCategory(opt.id); setStep(2); }}
+            <button key={opt.id} onClick={() => {
+                setCategory(opt.id);
+                setPrice(String(CATEGORY_DEFAULT_PRICE[opt.id] ?? "")); // ── auto-fill price, admin can still edit ──
+                setStep(2);
+              }}
               style={{ textAlign: "left", cursor: "pointer", background: C.surfaceCard, border: `2px solid ${C.border}`, borderRadius: 18, padding: 24, transition: "all .2s", display: "flex", flexDirection: "column", gap: 14 }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = opt.color; e.currentTarget.style.boxShadow = `0 8px 24px ${opt.colorDim}`; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = "none"; }}>
@@ -1042,11 +1026,13 @@ function UploadContentPage() {
     copy_trading: { icon: "💹", label: "Copy Trading Services",  color: "#f97316"  },
   }[category];
 
+  const isMultiLesson = MULTI_LESSON_TYPES.includes(category);
+
   // ── STEP 2: Upload form ──
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-        <button onClick={() => { setStep(1); setMsg(""); setPdfFile(null); setVideoFile(null); setSingleFile(null); setVdoVideoId(""); }}
+        <button onClick={() => { setStep(1); setMsg(""); setSingleFile(null); setLessons([]); }}
           style={{ background: "none", border: "none", color: C.textMuted, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
           ← Back
         </button>
@@ -1055,7 +1041,7 @@ function UploadContentPage() {
         <span style={{ color: catInfo.color, fontWeight: 700, fontSize: 15 }}>{catInfo.label}</span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: PLAYLIST_TYPES.includes(category) ? "1fr" : "1fr 1fr", gap: 22 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMultiLesson ? "1fr" : "1fr 1fr", gap: 22 }}>
 
         {/* ── LEFT: Course Details ── */}
         <div style={{ ...CARD }}>
@@ -1078,13 +1064,21 @@ function UploadContentPage() {
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Price (USD) — 0 = bilaash</label>
+            <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>
+              Price (USD) — 0 = bilaash
+              {CATEGORY_DEFAULT_PRICE[category] !== undefined && (
+                <span style={{ color: catInfo.color, textTransform: "none", fontWeight: 600, marginLeft: 8 }}>
+                  (default: ${CATEGORY_DEFAULT_PRICE[category]})
+                </span>
+              )}
+            </label>
             <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" style={iS}
               onFocus={e => (e.target.style.borderColor = catInfo.color)} onBlur={e => (e.target.style.borderColor = C.border)} />
+            <p style={{ color: C.textSub, fontSize: 11, marginTop: 6 }}>Price-ku si toos ah ayuu u soo buuxsamay, waana la bedeli karaa haddii aad rabto.</p>
           </div>
 
           {/* Thumbnail */}
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: isMultiLesson ? 0 : 16 }}>
             <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Thumbnail (optional)</label>
             <div onClick={() => thumbRef.current?.click()}
               style={{ border: `2px dashed ${thumbnail ? C.green : C.border}`, borderRadius: 12, padding: 16, cursor: "pointer", background: C.bgDeep, display: "flex", alignItems: "center", gap: 12, transition: "all .2s" }}
@@ -1101,7 +1095,7 @@ function UploadContentPage() {
 
           {/* ── SINGLE VIDEO ── */}
           {category === "single_video" && (
-            <div>
+            <div style={{ marginTop: 16 }}>
               <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Video File *</label>
               <div onClick={() => singleFileRef.current?.click()}
                 style={{ border: `2px dashed ${singleFile ? C.green : C.borderRed}`, borderRadius: 12, padding: "24px 20px", cursor: "pointer", background: C.redFaint, textAlign: "center", transition: "all .2s" }}
@@ -1121,7 +1115,7 @@ function UploadContentPage() {
 
           {/* ── SINGLE PDF ── */}
           {category === "single_pdf" && (
-            <div>
+            <div style={{ marginTop: 16 }}>
               <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>PDF File *</label>
               <div onClick={() => singleFileRef.current?.click()}
                 style={{ border: `2px dashed ${singleFile ? C.green : C.borderRed}`, borderRadius: 12, padding: "24px 20px", cursor: "pointer", background: C.redFaint, textAlign: "center", transition: "all .2s" }}
@@ -1138,77 +1132,10 @@ function UploadContentPage() {
               <input ref={singleFileRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={e => { if (e.target.files[0]) setSingleFile(e.target.files[0]); }} />
             </div>
           )}
-
-          {/* ── COURSE TYPES: Video + PDF labadaba ── */}
-          {COURSE_TYPES.includes(category) && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-              {/* ── VdoCipher Video ID (DRM-protected) — la doortaa AMA Storage upload ── */}
-              <div>
-                <label style={{ display: "block", color: "#f5c518", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>
-                  🔐 VdoCipher Video ID (DRM — ka doorbida Storage upload)
-                </label>
-                <input
-                  value={vdoVideoId}
-                  onChange={e => setVdoVideoId(e.target.value)}
-                  placeholder="tusaale: 73b9b3da3c1e4a979c8e2b97ab64ca84"
-                  style={{
-                    width: "100%", padding: "11px 14px", borderRadius: 10,
-                    background: C.bgDeep, border: `1px solid ${vdoVideoId.trim() ? "#f5c518" : C.border}`,
-                    color: C.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "monospace"
-                  }}
-                  onFocus={e => (e.target.style.borderColor = "#f5c518")}
-                  onBlur={e => (e.target.style.borderColor = vdoVideoId.trim() ? "#f5c518" : C.border)}
-                />
-                <p style={{ color: C.textSub, fontSize: 11, marginTop: 6, lineHeight: 1.5 }}>
-                  Video-ga marka hore VdoCipher dashboard-ka ku upload gareey (vdocipher.com/dashboard → Videos → Upload),
-                  kadib ID-ga "Copy ID" ka soo qaado halkan ku dhig. Video-yada VdoCipher waa DRM-protected, duubista lama oggola.
-                </p>
-              </div>
-
-              {/* Video Upload — Firebase Storage (haddii aanad VdoCipher isticmaalin) */}
-              <div style={{ opacity: vdoVideoId.trim() ? 0.4 : 1, pointerEvents: vdoVideoId.trim() ? "none" : "auto" }}>
-                <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>
-                  🎬 Video File — Storage (haddii aanad VdoCipher ID gelin)
-                </label>
-                <div onClick={() => videoFileRef.current?.click()}
-                  style={{ border: `2px dashed ${videoFile ? C.green : C.border}`, borderRadius: 12, padding: "18px 16px", cursor: "pointer", background: C.bgDeep, textAlign: "center", transition: "all .2s" }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = videoFile ? C.green : C.border)}>
-                  {videoFile ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
-                      <div style={{ fontSize: 24 }}>🎬</div>
-                      <div><p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {videoFile.name}</p><p style={{ color: C.textMuted, fontSize: 11 }}>{(videoFile.size / 1048576).toFixed(1)} MB</p></div>
-                      <button onClick={e => { e.stopPropagation(); setVideoFile(null); }} style={{ marginLeft: "auto", background: C.errorDim, color: C.errorRed, border: "none", borderRadius: 8, padding: "5px 7px", cursor: "pointer" }}><Icon.Trash /></button>
-                    </div>
-                  ) : (<><div style={{ fontSize: 28, marginBottom: 4 }}>🎬</div><p style={{ color: C.textMuted, fontSize: 12 }}>Click to select Video • MP4, MOV, AVI • Max 2GB</p></>)}
-                </div>
-                <input ref={videoFileRef} type="file" accept="video/*" style={{ display: "none" }} onChange={e => { if (e.target.files[0]) setVideoFile(e.target.files[0]); }} />
-              </div>
-
-              {/* PDF Upload */}
-              <div>
-                <label style={{ display: "block", color: C.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>📄 PDF File (optional)</label>
-                <div onClick={() => pdfFileRef.current?.click()}
-                  style={{ border: `2px dashed ${pdfFile ? C.green : C.border}`, borderRadius: 12, padding: "18px 16px", cursor: "pointer", background: C.bgDeep, textAlign: "center", transition: "all .2s" }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = pdfFile ? C.green : C.border)}>
-                  {pdfFile ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
-                      <div style={{ fontSize: 24 }}>📄</div>
-                      <div><p style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>✓ {pdfFile.name}</p><p style={{ color: C.textMuted, fontSize: 11 }}>{(pdfFile.size / 1048576).toFixed(1)} MB</p></div>
-                      <button onClick={e => { e.stopPropagation(); setPdfFile(null); }} style={{ marginLeft: "auto", background: C.errorDim, color: C.errorRed, border: "none", borderRadius: 8, padding: "5px 7px", cursor: "pointer" }}><Icon.Trash /></button>
-                    </div>
-                  ) : (<><div style={{ fontSize: 28, marginBottom: 4 }}>📄</div><p style={{ color: C.textMuted, fontSize: 12 }}>Click to select PDF • Max 50MB</p></>)}
-                </div>
-                <input ref={pdfFileRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={e => { if (e.target.files[0]) setPdfFile(e.target.files[0]); }} />
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* ── RIGHT: Lessons (playlist only) ── */}
-        {PLAYLIST_TYPES.includes(category) && (
+        {/* ── RIGHT: Lessons (Playlist + the 4 bundle categories) ── */}
+        {isMultiLesson && (
           <div style={{ ...CARD }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1240,19 +1167,48 @@ function UploadContentPage() {
                     </button>
                   ))}
                 </div>
-                <div onClick={() => lessonFileRef.current?.click()}
-                  style={{ border: `2px dashed ${lessonFile ? C.green : C.border}`, borderRadius: 10, padding: 14, cursor: "pointer", textAlign: "center", background: C.surface, marginBottom: 14, transition: "all .2s" }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = catInfo.color)}
+
+                {/* ── Per-lesson VdoCipher ID (DRM) — la doortaa AMA Storage upload ── */}
+                {lessonFileType === "video" && (
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ display: "block", color: "#f5c518", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>
+                      🔐 VdoCipher Video ID (DRM — ikhtiyaari)
+                    </label>
+                    <input
+                      value={lessonVdoId}
+                      onChange={e => { setLessonVdoId(e.target.value); if (e.target.value.trim()) setLessonFile(null); }}
+                      placeholder="tusaale: 73b9b3da3c1e4a979c8e2b97ab64ca84"
+                      style={{ ...iS, fontFamily: "monospace", borderColor: lessonVdoId.trim() ? "#f5c518" : C.border }}
+                      onFocus={e => (e.target.style.borderColor = "#f5c518")}
+                      onBlur={e => (e.target.style.borderColor = lessonVdoId.trim() ? "#f5c518" : C.border)}
+                    />
+                    <p style={{ color: C.textSub, fontSize: 11, marginTop: 5 }}>
+                      Haddii lesson-kan uu VdoCipher ID leeyahay, kama baahnid inaad file kale ku darto — DRM ayaa daboolaya.
+                    </p>
+                  </div>
+                )}
+
+                <div onClick={() => { if (!(lessonFileType === "video" && lessonVdoId.trim())) lessonFileRef.current?.click(); }}
+                  style={{
+                    border: `2px dashed ${lessonFile ? C.green : C.border}`, borderRadius: 10, padding: 14, cursor: (lessonFileType === "video" && lessonVdoId.trim()) ? "not-allowed" : "pointer",
+                    textAlign: "center", background: C.surface, marginBottom: 14, transition: "all .2s",
+                    opacity: (lessonFileType === "video" && lessonVdoId.trim()) ? 0.4 : 1,
+                  }}
+                  onMouseEnter={e => { if (!(lessonFileType === "video" && lessonVdoId.trim())) e.currentTarget.style.borderColor = catInfo.color; }}
                   onMouseLeave={e => (e.currentTarget.style.borderColor = lessonFile ? C.green : C.border)}>
                   {lessonFile
                     ? <p style={{ color: C.green, fontWeight: 600, fontSize: 13 }}>✓ {lessonFile.name} ({(lessonFile.size / 1048576).toFixed(1)} MB)</p>
-                    : <p style={{ color: C.textMuted, fontSize: 13 }}>{lessonFileType === "video" ? "Click to select video file" : "Click to select PDF file"}</p>}
+                    : <p style={{ color: C.textMuted, fontSize: 13 }}>
+                        {lessonFileType === "video" && lessonVdoId.trim()
+                          ? "VdoCipher ID la geliyay — file kama baahnid"
+                          : lessonFileType === "video" ? "Click to select video file (Storage)" : "Click to select PDF file"}
+                      </p>}
                 </div>
                 <input ref={lessonFileRef} type="file" accept={lessonFileType === "pdf" ? ".pdf" : "video/*"} style={{ display: "none" }}
                   onChange={e => { if (e.target.files[0]) setLessonFile(e.target.files[0]); }} />
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={addLesson} style={{ flex: 1, padding: "10px 0", background: catInfo.color, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>✓ Add Lesson</button>
-                  <button onClick={() => { setAddingLesson(false); setLessonTitle(""); setLessonFile(null); }} style={{ padding: "10px 16px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                  <button onClick={() => { setAddingLesson(false); setLessonTitle(""); setLessonFile(null); setLessonVdoId(""); }} style={{ padding: "10px 16px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancel</button>
                 </div>
               </div>
             )}
@@ -1270,7 +1226,11 @@ function UploadContentPage() {
                     <div style={{ fontSize: 18, flexShrink: 0 }}>{lesson.fileType === "pdf" ? "📄" : "🎬"}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ color: C.text, fontWeight: 700, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{lesson.title}</p>
-                      <p style={{ color: C.textSub, fontSize: 11, marginTop: 2 }}>{lesson.file.name} • {(lesson.file.size / 1048576).toFixed(1)} MB</p>
+                      <p style={{ color: C.textSub, fontSize: 11, marginTop: 2 }}>
+                        {lesson.vdoVideoId
+                          ? `🔐 VdoCipher: ${lesson.vdoVideoId.slice(0, 14)}…`
+                          : lesson.file ? `${lesson.file.name} • ${(lesson.file.size / 1048576).toFixed(1)} MB` : "—"}
+                      </p>
                     </div>
                     <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
                       <button onClick={() => moveLessonUp(idx)} disabled={idx === 0} style={{ background: "none", border: `1px solid ${C.border}`, color: C.textMuted, borderRadius: 7, padding: "5px 7px", cursor: idx === 0 ? "not-allowed" : "pointer", opacity: idx === 0 ? 0.4 : 1 }}><Icon.ChevronUp /></button>
@@ -1314,7 +1274,7 @@ function UploadContentPage() {
               : <><Icon.Upload /> {catInfo.icon} Upload {catInfo.label}</>}
           </button>
           {!uploading && (
-            <button onClick={() => { setStep(1); setCategory(""); setMsg(""); setPdfFile(null); setVideoFile(null); setSingleFile(null); setVdoVideoId(""); }}
+            <button onClick={() => { setStep(1); setCategory(""); setMsg(""); setSingleFile(null); setLessons([]); }}
               style={{ padding: "14px 20px", background: "none", color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               Cancel
             </button>
