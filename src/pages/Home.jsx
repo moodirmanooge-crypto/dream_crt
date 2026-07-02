@@ -226,7 +226,17 @@ export default function Home() {
   ];
 
   // Tus dhammaan courses-ka Firestore-ka ku jira, ugu dambeeyay marka hore
-  const displayCourse = [...courses].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  // (createdAt waxa laga dhigayaa Number si loo hubiyo in isbarbardhigga uu sax yahay)
+  const getCreatedAtMs = (c) => {
+    if (!c.createdAt) return 0;
+    if (typeof c.createdAt === "number") return c.createdAt;
+    if (c.createdAt.toMillis) return c.createdAt.toMillis(); // Firestore Timestamp
+    if (c.createdAt.seconds) return c.createdAt.seconds * 1000; // Firestore Timestamp (raw)
+    const parsed = new Date(c.createdAt).getTime();
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const displayCourse = [...courses].sort((a, b) => getCreatedAtMs(b) - getCreatedAtMs(a));
 
   // ── Helper: hel course-ka ugu dambeeya ee category gaar ah leh ──
   const findLatestByCategory = (cat) =>
