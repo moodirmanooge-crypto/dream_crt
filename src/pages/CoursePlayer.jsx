@@ -70,6 +70,33 @@ const injectProtectionStyles = () => {
       user-select: none;
       pointer-events: none;
     }
+    /* ── Screen-record / focus-loss blackout shield ── */
+    .record-shield {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      text-align: center;
+      padding: 24px;
+    }
+    .record-shield h2 {
+      color: #f5c518;
+      font-size: 22px;
+      font-weight: 900;
+      font-family: monospace;
+      letter-spacing: 1px;
+    }
+    .record-shield p {
+      color: #bbb;
+      font-size: 14px;
+      max-width: 340px;
+      line-height: 1.6;
+    }
     @media print {
       .protected-content { display: none !important; }
       body::before {
@@ -251,6 +278,10 @@ export default function CoursePlayer() {
   const [vdoPlaybackInfo, setVdoPlaybackInfo] = useState("");
   const [vdoLoading, setVdoLoading] = useState(false);
 
+  // ── Screen-record / focus-loss blackout shield state ──
+  const [recordShield, setRecordShield] = useState(false);
+  const [shieldReason, setShieldReason] = useState("");
+
   // Video ID-ga course-kan gaarka ah waxaa la soo akhriyaa Firestore-ka
   // (course.vdoVideoId field-ka), maaha hardcoded — ku eeg setCourseData()
 
@@ -293,6 +324,17 @@ export default function CoursePlayer() {
     alertTimerRef.current = setTimeout(() => setCopyAlert(false), 3000);
   };
 
+  // ── Blackout shield helper — mugdiyeey shaashadda + jooji video ──
+  const triggerShield = (reason) => {
+    setShieldReason(reason || "");
+    setRecordShield(true);
+    if (videoRef.current) { try { videoRef.current.pause(); } catch (e) {} }
+  };
+  const clearShield = () => {
+    setRecordShield(false);
+    setShieldReason("");
+  };
+
   // ── Protection setup — runs when access granted ──
   useEffect(() => {
     if (!hasAccess) return;
@@ -308,39 +350,85 @@ export default function CoursePlayer() {
     document.addEventListener("copy", blockCopy);
     document.addEventListener("cut", blockCopy);
 
-    // Block PrtScn / common screenshot shortcuts
+    // Block PrtScn / screenshot / SCREEN-RECORD shortcuts
     const blockKeys = (e) => {
+      const k = (e.key || "").toLowerCase();
+
       // PrtScn
       if (e.key === "PrintScreen") {
         e.preventDefault();
         navigator.clipboard?.writeText("");
+        triggerShield("Screenshot-ka waa la xanibay");
+        showCopyAlert();
+      }
+      // Windows snip / screen-record: Win+Shift+S  |  Win+G (Game Bar / Xbox record)
+      if (e.shiftKey && (e.metaKey || e.getModifierState?.("Meta")) && k === "s") {
+        e.preventDefault();
+        triggerShield("Screen capture-ka waa la xanibay");
+      }
+      if ((e.metaKey || e.getModifierState?.("Meta")) && k === "g") {
+        e.preventDefault();
+        triggerShield("Screen record-ka waa la xanibay");
+      }
+      // Ctrl+Shift+S  (custom screen-record / save)  &  Ctrl+Shift+R (record)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === "s" || k === "r")) {
+        e.preventDefault();
+        triggerShield("Screen record-ka waa la xanibay");
         showCopyAlert();
       }
       // Ctrl+A (select all)
-      if ((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A")) {
+      if ((e.ctrlKey || e.metaKey) && k === "a") {
         e.preventDefault();
         showCopyAlert();
       }
       // Ctrl+P (print) / Ctrl+S (save)
-      if ((e.ctrlKey || e.metaKey) && (e.key === "p" || e.key === "P" || e.key === "s" || e.key === "S")) {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (k === "p" || k === "s")) {
         e.preventDefault();
       }
       // F12 devtools
       if (e.key === "F12") { e.preventDefault(); }
       // Ctrl+Shift+I / Ctrl+Shift+J
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "i" || e.key === "I" || e.key === "j" || e.key === "J")) {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === "i" || k === "j")) {
         e.preventDefault();
       }
       // Ctrl+U (view source)
-      if ((e.ctrlKey || e.metaKey) && (e.key === "u" || e.key === "U")) { e.preventDefault(); }
+      if ((e.ctrlKey || e.metaKey) && k === "u") { e.preventDefault(); }
     };
     document.addEventListener("keydown", blockKeys);
 
-    // Pause video when tab is hidden (screen record detection mitigation)
+    // ── Screen-capture API monitor (getDisplayMedia) ──
+    // Haddii user isku dayo screen-record uu browser ka bilaabo (share screen),
+    // waan garan karnaa oo waan mugdiyeyn karnaa content-ka.
+    let originalGDM = null;
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+        originalGDM = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
+        navigator.mediaDevices.getDisplayMedia = async (...args) => {
+          triggerShield("Screen sharing-ka waa la xanibay");
+          // Diid codsiga screen-capture-ka
+          return Promise.reject(new DOMException("Screen capture blocked", "NotAllowedError"));
+        };
+      }
+    } catch (e) { /* ignore */ }
+
+    // ── Focus loss / tab hidden / blur → mugdiyeey + jooji video ──
     const handleVisibility = () => {
-      if (document.hidden && videoRef.current) { videoRef.current.pause(); }
+      if (document.hidden) {
+        triggerShield("Content-ku waa qarsoon yahay markaad ka baxdo bogga");
+      } else {
+        clearShield();
+      }
+    };
+    const handleBlur = () => {
+      triggerShield("Content-ku waa qarsoon yahay markaad ka baxdo bogga");
+    };
+    const handleFocus = () => {
+      // Kaliya nadiifi haddii tab-ku muuqdo
+      if (!document.hidden) clearShield();
     };
     document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
 
     // Right-click block on content area
     const blockContext = (e) => { e.preventDefault(); };
@@ -351,7 +439,15 @@ export default function CoursePlayer() {
       document.removeEventListener("cut", blockCopy);
       document.removeEventListener("keydown", blockKeys);
       document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
       contentRef.current?.removeEventListener("contextmenu", blockContext);
+      // Soo celi getDisplayMedia asalkeeda
+      try {
+        if (originalGDM && navigator.mediaDevices) {
+          navigator.mediaDevices.getDisplayMedia = originalGDM;
+        }
+      } catch (e) { /* ignore */ }
       if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
     };
   }, [hasAccess]);
@@ -579,6 +675,22 @@ export default function CoursePlayer() {
   // ─── MAIN UI ──────────────────────────────────────────────
   return (
     <div style={{ background: "#0d0d0d" }} className="min-h-screen text-white">
+
+      {/* ── Screen-record / focus-loss BLACKOUT SHIELD ── */}
+      {recordShield && (
+        <div className="record-shield">
+          <div className="w-24 h-24 rounded-full flex items-center justify-center mb-2"
+            style={{ background: "rgba(245,197,24,0.08)", border: "2px solid #f5c518" }}>
+            <FaShieldAlt className="text-4xl" style={{ color: "#f5c518" }} />
+          </div>
+          <h2>⛔ CONTENT PROTECTED</h2>
+          <p>{shieldReason || "Screen recording / capture-ka waa la xanibay."}</p>
+          <p style={{ color: "#777", fontSize: "12px" }}>
+            Ku noqo bogga oo iska daa duubista si aad u sii daawato — © Dream CRT Academy
+          </p>
+        </div>
+      )}
+
       {/* HEADER */}
       <div className="px-6 py-5 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "#080808" }}>
         <div className="flex items-center gap-3">
