@@ -9,6 +9,16 @@ import {
   FaFilePdf, FaVideo,
 } from "react-icons/fa";
 
+// ══════════════════════════════════════════════════════════════
+//  ⚠️  DEBUG VERSION  ⚠️
+//  - F12 / DevTools blocking waa la DAMIYAY (si aad console u furto)
+//  - Blur/focus shield-ku video-ga MA damiyo — kaliya log
+//  - Console-ka + screen-ka waxaa lagu qorayaa VDO DEBUG info
+//  Marka aad mushkiladda ogaato, DEBUG_MODE = false u beddel.
+// ══════════════════════════════════════════════════════════════
+
+const DEBUG_MODE = true;   // ← marka debug la dhammeeyo, u beddel false
+
 // ── Bundle map ──
 const BUNDLE_CATEGORIES = {
   "basic-forex-course":      ["basic_forex"],
@@ -41,71 +51,31 @@ const injectProtectionStyles = () => {
       user-select: none !important;
       -webkit-touch-callout: none !important;
     }
-    .protected-content video {
-      pointer-events: auto;
-    }
+    .protected-content video { pointer-events: auto; }
     .protected-content canvas {
       -webkit-user-drag: none !important;
-      -khtml-user-drag: none !important;
       -moz-user-drag: none !important;
-      -o-user-drag: none !important;
       user-drag: none !important;
     }
-    .watermark-overlay {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 10;
-      overflow: hidden;
-    }
+    .watermark-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 10; overflow: hidden; }
     .watermark-text {
-      position: absolute;
-      color: rgba(245, 197, 24, 0.12);
-      font-size: 13px;
-      font-weight: 900;
-      font-family: monospace;
-      white-space: nowrap;
-      transform: rotate(-30deg);
-      letter-spacing: 2px;
-      user-select: none;
-      pointer-events: none;
+      position: absolute; color: rgba(245, 197, 24, 0.12);
+      font-size: 13px; font-weight: 900; font-family: monospace;
+      white-space: nowrap; transform: rotate(-30deg);
+      letter-spacing: 2px; user-select: none; pointer-events: none;
     }
-    /* ── Screen-record / focus-loss blackout shield ── */
     .record-shield {
-      position: fixed;
-      inset: 0;
-      background: #000;
-      z-index: 999999;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      text-align: center;
-      padding: 24px;
+      position: fixed; inset: 0; background: #000; z-index: 999999;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 14px; text-align: center; padding: 24px;
     }
-    .record-shield h2 {
-      color: #f5c518;
-      font-size: 22px;
-      font-weight: 900;
-      font-family: monospace;
-      letter-spacing: 1px;
-    }
-    .record-shield p {
-      color: #bbb;
-      font-size: 14px;
-      max-width: 340px;
-      line-height: 1.6;
-    }
+    .record-shield h2 { color: #f5c518; font-size: 22px; font-weight: 900; font-family: monospace; letter-spacing: 1px; }
+    .record-shield p { color: #bbb; font-size: 14px; max-width: 340px; line-height: 1.6; }
     @media print {
       .protected-content { display: none !important; }
       body::before {
         content: "⛔ DREAM CRT — Printing Not Allowed";
-        display: block;
-        text-align: center;
-        font-size: 32px;
-        color: red;
-        padding: 100px;
+        display: block; text-align: center; font-size: 32px; color: red; padding: 100px;
       }
     }
   `;
@@ -132,9 +102,7 @@ const WatermarkOverlay = ({ email }) => {
   return <div className="watermark-overlay">{marks}</div>;
 };
 
-// ── Secure PDF Viewer — PDF-ka waxaa loo rooraa CANVAS (sawir), maaha browser PDF ──
-// Sidan ayuu ka adkaadaa: ma jiraan toolbar/download/save buttons, text-ku ma copy-gareemo
-// (waa pixels, ma aha text), right-click waa la xanibay.
+// ── Secure PDF Viewer ──
 const SecurePdfViewer = ({ pdfUrl, email }) => {
   const containerRef = useRef(null);
   const [loading, setLoading] = useState(true);
@@ -162,11 +130,7 @@ const SecurePdfViewer = ({ pdfUrl, email }) => {
         pdfjsLib.GlobalWorkerOptions.workerSrc =
           "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-        const pdf = await pdfjsLib.getDocument({
-          url: pdfUrl,
-          withCredentials: false,
-          // CORS — Firebase Storage URLs needs explicit cMapUrl off / no extra headers
-        }).promise;
+        const pdf = await pdfjsLib.getDocument({ url: pdfUrl, withCredentials: false }).promise;
         if (cancelled) return;
         setNumPages(pdf.numPages);
 
@@ -188,7 +152,7 @@ const SecurePdfViewer = ({ pdfUrl, email }) => {
           canvas.style.margin = "0 auto 12px";
           canvas.style.borderRadius = "8px";
           canvas.style.userSelect = "none";
-          canvas.style.pointerEvents = "none"; // ka ilaali click+drag/save image
+          canvas.style.pointerEvents = "none";
 
           const ctx = canvas.getContext("2d");
           await page.render({ canvasContext: ctx, viewport }).promise;
@@ -196,7 +160,6 @@ const SecurePdfViewer = ({ pdfUrl, email }) => {
           if (cancelled) return;
           container.appendChild(canvas);
         }
-
         setLoading(false);
       } catch (err) {
         console.log("PDF render error:", err);
@@ -219,18 +182,7 @@ const SecurePdfViewer = ({ pdfUrl, email }) => {
       onDragStart={e => e.preventDefault()}
     >
       <WatermarkOverlay email={email} />
-
-      <div
-        ref={containerRef}
-        style={{
-          maxHeight: "80vh",
-          overflowY: "auto",
-          padding: "16px",
-          userSelect: "none",
-          WebkitUserSelect: "none",
-        }}
-      />
-
+      <div ref={containerRef} style={{ maxHeight: "80vh", overflowY: "auto", padding: "16px", userSelect: "none", WebkitUserSelect: "none" }} />
       {loading && (
         <div className="w-full flex items-center justify-center" style={{ minHeight: 300 }}>
           <p className="text-gray-500 text-sm">⏳ PDF loading...</p>
@@ -268,24 +220,17 @@ export default function CoursePlayer() {
   const [coursePrice, setCoursePrice] = useState("25");
   const [courseCategory, setCourseCategory] = useState("");
   const [activeTab, setActiveTab] = useState("video");
-  const [vdoVideoId, setVdoVideoId] = useState("");   // ── VdoCipher ID — course-ka gaarka ah ──
+  const [vdoVideoId, setVdoVideoId] = useState("");
 
-  // ── VdoCipher secure playback credentials ──
-  // OTP iyo playbackInfo waa inay ka yimaadaan SERVER/Cloud Function (ma aha frontend-ka),
-  // sababtoo ah API secret key-ga VdoCipher waa lama-huraan in la qariyo.
-  // Halkan waxaan ku kaydineynaa natiijada backend-ka soo celiyo.
   const [vdoOtp, setVdoOtp] = useState("");
   const [vdoPlaybackInfo, setVdoPlaybackInfo] = useState("");
   const [vdoLoading, setVdoLoading] = useState(false);
+  const [vdoError, setVdoError] = useState("");
 
-  // ── Screen-record / focus-loss blackout shield state ──
   const [recordShield, setRecordShield] = useState(false);
   const [shieldReason, setShieldReason] = useState("");
 
-  // Video ID-ga course-kan gaarka ah waxaa la soo akhriyaa Firestore-ka
-  // (course.vdoVideoId field-ka), maaha hardcoded — ku eeg setCourseData()
-
-  // ── Soo deji api.js ee VdoCipher hal mar (loo baahan yahay iframe-ka) ──
+  // ── Soo deji api.js ee VdoCipher hal mar ──
   useEffect(() => {
     if (document.getElementById("vdocipher-api-script")) return;
     const script = document.createElement("script");
@@ -297,24 +242,53 @@ export default function CoursePlayer() {
 
   // ── Soo qaado OTP + playbackInfo marka access la siiyo ──
   useEffect(() => {
-    if (!hasAccess || !vdoVideoId) return;
+    if (!hasAccess) { console.log("🔒 VDO DEBUG: hasAccess = false"); return; }
+    if (!vdoVideoId) {
+      console.log("⚠️ VDO DEBUG: vdoVideoId MADHAN — course Firestore-ka kuma jiro 'vdoVideoId'!");
+      return;
+    }
+
     const fetchVdoCredentials = async () => {
       setVdoLoading(true);
+      setVdoError("");
+      const url = `https://getvdootp-gpyfwiymaa-uc.a.run.app?videoId=${vdoVideoId}`;
+      console.log("═══════════════ VDO DEBUG ═══════════════");
+      console.log("📼 videoId:", vdoVideoId);
+      console.log("🌐 fetch URL:", url);
       try {
-        // ── Cloud Function URL-ka dhabta ah ee dream-crt project-ka ──
-        const res = await fetch(`https://getvdootp-gpyfwiymaa-uc.a.run.app?videoId=${vdoVideoId}`);
-        const data = await res.json();
+        const res = await fetch(url);
+        console.log("📡 HTTP status:", res.status, res.statusText);
+
+        let data;
+        try {
+          data = await res.json();
+        } catch (parseErr) {
+          const rawText = await res.text().catch(() => "(text lama akhriyi karo)");
+          console.log("❌ JSON parse failed. Raw:", rawText);
+          setVdoError(`Backend maaha JSON: ${String(rawText).slice(0, 200)}`);
+          setVdoLoading(false);
+          return;
+        }
+
+        console.log("📦 full data:", data);
+        console.log("🔑 otp:", data.otp);
+        console.log("🎬 playbackInfo:", data.playbackInfo);
+        console.log("═════════════════════════════════════════");
+
+        if (!res.ok || data.error || (!data.otp && !data.playbackInfo)) {
+          setVdoError(`Backend qalad: ${data.error || data.message || `HTTP ${res.status}`}`);
+        }
         setVdoOtp(data.otp || "");
         setVdoPlaybackInfo(data.playbackInfo || "");
       } catch (err) {
-        console.log("VdoCipher OTP fetch error:", err);
+        console.log("❌ VdoCipher fetch error (network/CORS):", err);
+        setVdoError(`Network/CORS error: ${err?.message || err}`);
       }
       setVdoLoading(false);
     };
     fetchVdoCredentials();
   }, [hasAccess, vdoVideoId]);
 
-  // ── Copy alert toast state ──
   const [copyAlert, setCopyAlert] = useState(false);
   const alertTimerRef = useRef(null);
 
@@ -324,113 +298,62 @@ export default function CoursePlayer() {
     alertTimerRef.current = setTimeout(() => setCopyAlert(false), 3000);
   };
 
-  // ── Blackout shield helper — mugdiyeey shaashadda + jooji video ──
   const triggerShield = (reason) => {
+    if (DEBUG_MODE) { console.log("🛡️ SHIELD (debug, video lama damin):", reason); return; }
     setShieldReason(reason || "");
     setRecordShield(true);
     if (videoRef.current) { try { videoRef.current.pause(); } catch (e) {} }
   };
-  const clearShield = () => {
-    setRecordShield(false);
-    setShieldReason("");
-  };
+  const clearShield = () => { setRecordShield(false); setShieldReason(""); };
 
-  // ── Protection setup — runs when access granted ──
+  // ── Protection setup ──
   useEffect(() => {
     if (!hasAccess) return;
 
     injectProtectionStyles();
 
-    // Block clipboard copy
-    const blockCopy = (e) => {
-      e.preventDefault();
-      e.clipboardData?.setData("text/plain", "");
-      showCopyAlert();
-    };
+    const blockCopy = (e) => { e.preventDefault(); e.clipboardData?.setData("text/plain", ""); showCopyAlert(); };
     document.addEventListener("copy", blockCopy);
     document.addEventListener("cut", blockCopy);
 
-    // Block PrtScn / screenshot / SCREEN-RECORD shortcuts
     const blockKeys = (e) => {
       const k = (e.key || "").toLowerCase();
-
-      // PrtScn
-      if (e.key === "PrintScreen") {
-        e.preventDefault();
-        navigator.clipboard?.writeText("");
-        triggerShield("Screenshot-ka waa la xanibay");
-        showCopyAlert();
+      if (e.key === "PrintScreen") { e.preventDefault(); navigator.clipboard?.writeText(""); triggerShield("Screenshot-ka waa la xanibay"); showCopyAlert(); }
+      if (e.shiftKey && (e.metaKey || e.getModifierState?.("Meta")) && k === "s") { e.preventDefault(); triggerShield("Screen capture-ka waa la xanibay"); }
+      if ((e.metaKey || e.getModifierState?.("Meta")) && k === "g") { e.preventDefault(); triggerShield("Screen record-ka waa la xanibay"); }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === "s" || k === "r")) { e.preventDefault(); triggerShield("Screen record-ka waa la xanibay"); showCopyAlert(); }
+      if ((e.ctrlKey || e.metaKey) && k === "a") { e.preventDefault(); showCopyAlert(); }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (k === "p" || k === "s")) { e.preventDefault(); }
+      // ── DEBUG: F12 / DevTools waa la OGGOLAADAY ──
+      if (!DEBUG_MODE) {
+        if (e.key === "F12") { e.preventDefault(); }
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === "i" || k === "j")) { e.preventDefault(); }
+        if ((e.ctrlKey || e.metaKey) && k === "u") { e.preventDefault(); }
       }
-      // Windows snip / screen-record: Win+Shift+S  |  Win+G (Game Bar / Xbox record)
-      if (e.shiftKey && (e.metaKey || e.getModifierState?.("Meta")) && k === "s") {
-        e.preventDefault();
-        triggerShield("Screen capture-ka waa la xanibay");
-      }
-      if ((e.metaKey || e.getModifierState?.("Meta")) && k === "g") {
-        e.preventDefault();
-        triggerShield("Screen record-ka waa la xanibay");
-      }
-      // Ctrl+Shift+S  (custom screen-record / save)  &  Ctrl+Shift+R (record)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === "s" || k === "r")) {
-        e.preventDefault();
-        triggerShield("Screen record-ka waa la xanibay");
-        showCopyAlert();
-      }
-      // Ctrl+A (select all)
-      if ((e.ctrlKey || e.metaKey) && k === "a") {
-        e.preventDefault();
-        showCopyAlert();
-      }
-      // Ctrl+P (print) / Ctrl+S (save)
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (k === "p" || k === "s")) {
-        e.preventDefault();
-      }
-      // F12 devtools
-      if (e.key === "F12") { e.preventDefault(); }
-      // Ctrl+Shift+I / Ctrl+Shift+J
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === "i" || k === "j")) {
-        e.preventDefault();
-      }
-      // Ctrl+U (view source)
-      if ((e.ctrlKey || e.metaKey) && k === "u") { e.preventDefault(); }
     };
     document.addEventListener("keydown", blockKeys);
 
-    // ── Screen-capture API monitor (getDisplayMedia) ──
-    // Haddii user isku dayo screen-record uu browser ka bilaabo (share screen),
-    // waan garan karnaa oo waan mugdiyeyn karnaa content-ka.
+    // ── getDisplayMedia monitor — DEBUG: waa la damiyay ──
     let originalGDM = null;
-    try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-        originalGDM = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
-        navigator.mediaDevices.getDisplayMedia = async (...args) => {
-          triggerShield("Screen sharing-ka waa la xanibay");
-          // Diid codsiga screen-capture-ka
-          return Promise.reject(new DOMException("Screen capture blocked", "NotAllowedError"));
-        };
-      }
-    } catch (e) { /* ignore */ }
+    if (!DEBUG_MODE) {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+          originalGDM = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
+          navigator.mediaDevices.getDisplayMedia = async () => {
+            triggerShield("Screen sharing-ka waa la xanibay");
+            return Promise.reject(new DOMException("Screen capture blocked", "NotAllowedError"));
+          };
+        }
+      } catch (e) { /* ignore */ }
+    }
 
-    // ── Focus loss / tab hidden / blur → mugdiyeey + jooji video ──
-    const handleVisibility = () => {
-      if (document.hidden) {
-        triggerShield("Content-ku waa qarsoon yahay markaad ka baxdo bogga");
-      } else {
-        clearShield();
-      }
-    };
-    const handleBlur = () => {
-      triggerShield("Content-ku waa qarsoon yahay markaad ka baxdo bogga");
-    };
-    const handleFocus = () => {
-      // Kaliya nadiifi haddii tab-ku muuqdo
-      if (!document.hidden) clearShield();
-    };
+    const handleVisibility = () => { if (document.hidden) triggerShield("Content-ku waa qarsoon yahay"); else clearShield(); };
+    const handleBlur = () => triggerShield("Content-ku waa qarsoon yahay markaad ka baxdo bogga");
+    const handleFocus = () => { if (!document.hidden) clearShield(); };
     document.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("blur", handleBlur);
     window.addEventListener("focus", handleFocus);
 
-    // Right-click block on content area
     const blockContext = (e) => { e.preventDefault(); };
     contentRef.current?.addEventListener("contextmenu", blockContext);
 
@@ -442,12 +365,7 @@ export default function CoursePlayer() {
       window.removeEventListener("blur", handleBlur);
       window.removeEventListener("focus", handleFocus);
       contentRef.current?.removeEventListener("contextmenu", blockContext);
-      // Soo celi getDisplayMedia asalkeeda
-      try {
-        if (originalGDM && navigator.mediaDevices) {
-          navigator.mediaDevices.getDisplayMedia = originalGDM;
-        }
-      } catch (e) { /* ignore */ }
+      try { if (originalGDM && navigator.mediaDevices) navigator.mediaDevices.getDisplayMedia = originalGDM; } catch (e) {}
       if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
     };
   }, [hasAccess]);
@@ -467,11 +385,15 @@ export default function CoursePlayer() {
   }, [id]);
 
   const setCourseData = (data) => {
+    console.log("📚 COURSE DEBUG — full data:", data);
+    console.log("📼 course.vdoVideoId:", data.vdoVideoId || "(MADHAN!)");
+    console.log("🎥 course.fileURL:", data.fileURL || "(madhan)");
+    console.log("📄 course.pdfURL:", data.pdfURL || "(madhan)");
     setCourseTitle(data.title || "Dream Crt Master Class");
     setCoursePrice(String(data.price || "25"));
     setCourseCategory(data.category || "");
     setCoursePdf(data.pdfURL || "");
-    setVdoVideoId(data.vdoVideoId || "");   // ── VdoCipher DRM ID, haddii la siiyay ──
+    setVdoVideoId(data.vdoVideoId || "");
     if (data.type === "Playlist" && data.lessons && data.lessons.length > 0) {
       const sorted = [...data.lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
       setCourseVideo(sorted[0].fileURL || "");
@@ -676,7 +598,13 @@ export default function CoursePlayer() {
   return (
     <div style={{ background: "#0d0d0d" }} className="min-h-screen text-white">
 
-      {/* ── Screen-record / focus-loss BLACKOUT SHIELD ── */}
+      {/* ── DEBUG BANNER ── */}
+      {DEBUG_MODE && (
+        <div style={{ background: "#7a1010", color: "#fff", textAlign: "center", padding: "6px", fontSize: "12px", fontFamily: "monospace", fontWeight: 700 }}>
+          ⚠️ DEBUG MODE — protection la deggay, F12 wuu shaqeeyaa. Eeg VDO DEBUG PANEL-ka hoose + Console.
+        </div>
+      )}
+
       {recordShield && (
         <div className="record-shield">
           <div className="w-24 h-24 rounded-full flex items-center justify-center mb-2"
@@ -685,9 +613,7 @@ export default function CoursePlayer() {
           </div>
           <h2>⛔ CONTENT PROTECTED</h2>
           <p>{shieldReason || "Screen recording / capture-ka waa la xanibay."}</p>
-          <p style={{ color: "#777", fontSize: "12px" }}>
-            Ku noqo bogga oo iska daa duubista si aad u sii daawato — © Dream CRT Academy
-          </p>
+          <p style={{ color: "#777", fontSize: "12px" }}>Ku noqo bogga oo iska daa duubista — © Dream CRT Academy</p>
         </div>
       )}
 
@@ -785,20 +711,12 @@ export default function CoursePlayer() {
           // ─── CONTENT PLAYER ────────────────────────────
           <div ref={contentRef} className="protected-content">
 
-            {/* ── Copy Alert Toast ── */}
             {copyAlert && (
               <div style={{
-                position: "fixed",
-                top: "50%", left: "50%",
-                transform: "translate(-50%, -50%)",
-                background: "#fff",
-                border: "2px solid #f5c518",
-                borderRadius: "12px",
-                padding: "14px 28px",
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                zIndex: 99999,
+                position: "fixed", top: "50%", left: "50%",
+                transform: "translate(-50%, -50%)", background: "#fff",
+                border: "2px solid #f5c518", borderRadius: "12px", padding: "14px 28px",
+                display: "flex", alignItems: "center", gap: "10px", zIndex: 99999,
                 boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
               }}>
                 <span style={{ fontSize: "20px" }}>⚠️</span>
@@ -808,7 +726,6 @@ export default function CoursePlayer() {
               </div>
             )}
 
-            {/* Header */}
             <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#f5c518" }}>Premium Course</p>
@@ -820,7 +737,19 @@ export default function CoursePlayer() {
               </div>
             </div>
 
-            {/* Tab switcher */}
+            {/* ── DEBUG INFO PANEL ── */}
+            {DEBUG_MODE && (
+              <div style={{ background: "#111", border: "1px solid #f5c518", borderRadius: "12px", padding: "14px", marginBottom: "16px", fontFamily: "monospace", fontSize: "12px", color: "#ccc" }}>
+                <p style={{ color: "#f5c518", fontWeight: 800, marginBottom: "6px" }}>🔍 VDO DEBUG PANEL</p>
+                <p>vdoVideoId: <span style={{ color: vdoVideoId ? "#4ade80" : "#ff4757" }}>{vdoVideoId || "❌ MADHAN — course Firestore-ka kuma jiro vdoVideoId"}</span></p>
+                <p>courseVideo (storage): <span style={{ color: courseVideo ? "#4ade80" : "#888" }}>{courseVideo ? "✅ jira" : "— madhan"}</span></p>
+                <p>vdoLoading: <span>{String(vdoLoading)}</span></p>
+                <p>otp: <span style={{ color: vdoOtp ? "#4ade80" : "#ff4757" }}>{vdoOtp ? "✅ la helay (" + vdoOtp.slice(0, 12) + "...)" : "❌ madhan"}</span></p>
+                <p>playbackInfo: <span style={{ color: vdoPlaybackInfo ? "#4ade80" : "#ff4757" }}>{vdoPlaybackInfo ? "✅ la helay" : "❌ madhan"}</span></p>
+                {vdoError && <p style={{ color: "#ff4757", marginTop: "6px" }}>⚠️ ERROR: {vdoError}</p>}
+              </div>
+            )}
+
             {(courseVideo || vdoVideoId) && coursePdf && (
               <div className="flex gap-3 mb-4">
                 {[
@@ -840,12 +769,10 @@ export default function CoursePlayer() {
               </div>
             )}
 
-            {/* Video Player with watermark — VdoCipher DRM iframe player */}
             {(activeTab === "video" || !coursePdf) && (courseVideo || vdoVideoId) && (
               <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ position: "relative", border: "1px solid rgba(255,255,255,0.08)", background: "#000" }}>
                 <WatermarkOverlay email={email} />
                 {vdoVideoId ? (
-                  // ── DRM video (VdoCipher) — OTP/playbackInfo ka yimaada Cloud Function ──
                   vdoLoading ? (
                     <div className="w-full h-full flex items-center justify-center">
                       <p className="text-gray-500 text-sm">⏳ Video loading...</p>
@@ -861,11 +788,13 @@ export default function CoursePlayer() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center px-4 text-center">
-                      <p className="text-gray-500 text-sm">⚠️ Video-ga lama soo bandhigi karo. Fadlan dib u eeg OTP/playbackInfo backend-ka.</p>
+                      <p className="text-gray-500 text-sm">
+                        ⚠️ Video-ga lama soo bandhigi karo.
+                        {vdoError ? ` — ${vdoError}` : " Fadlan dib u eeg OTP/playbackInfo backend-ka."}
+                      </p>
                     </div>
                   )
                 ) : courseVideo ? (
-                  // ── Storage video (haddii aan VdoCipher la isticmaalin) ──
                   <video
                     ref={videoRef}
                     src={courseVideo}
@@ -878,7 +807,6 @@ export default function CoursePlayer() {
               </div>
             )}
 
-            {/* PDF Viewer with watermark — sawir-based, ma aha browser PDF viewer toos ah */}
             {(activeTab === "pdf" || (!courseVideo && !vdoVideoId)) && coursePdf && (
               <SecurePdfViewer pdfUrl={coursePdf} email={email} />
             )}
