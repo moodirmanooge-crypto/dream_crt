@@ -6,18 +6,8 @@ import { onAuthStateChanged } from "firebase/auth";
 import {
   FaLock, FaPlay, FaCheckCircle, FaMoneyBillWave,
   FaUser, FaEnvelope, FaShieldAlt, FaStar, FaArrowRight, FaClock,
-  FaFilePdf, FaVideo,
+  FaFilePdf, FaVideo, FaListUl,
 } from "react-icons/fa";
-
-// ══════════════════════════════════════════════════════════════
-//  ⚠️  DEBUG VERSION  ⚠️
-//  - F12 / DevTools blocking waa la DAMIYAY (si aad console u furto)
-//  - Blur/focus shield-ku video-ga MA damiyo — kaliya log
-//  - Console-ka + screen-ka waxaa lagu qorayaa VDO DEBUG info
-//  Marka aad mushkiladda ogaato, DEBUG_MODE = false u beddel.
-// ══════════════════════════════════════════════════════════════
-
-const DEBUG_MODE = true;   // ← marka debug la dhammeeyo, u beddel false
 
 // ── Bundle map ──
 const BUNDLE_CATEGORIES = {
@@ -220,12 +210,17 @@ export default function CoursePlayer() {
   const [coursePrice, setCoursePrice] = useState("25");
   const [courseCategory, setCourseCategory] = useState("");
   const [activeTab, setActiveTab] = useState("video");
+
+  // ── Playlist lessons + active lesson index ──
+  const [lessons, setLessons] = useState([]);          // [{ title, vdoVideoId, fileURL, order }]
+  const [activeLesson, setActiveLesson] = useState(0);
+
+  // ── VdoCipher ID-ga lesson-ka hadda socda ──
   const [vdoVideoId, setVdoVideoId] = useState("");
 
   const [vdoOtp, setVdoOtp] = useState("");
   const [vdoPlaybackInfo, setVdoPlaybackInfo] = useState("");
   const [vdoLoading, setVdoLoading] = useState(false);
-  const [vdoError, setVdoError] = useState("");
 
   const [recordShield, setRecordShield] = useState(false);
   const [shieldReason, setShieldReason] = useState("");
@@ -240,53 +235,38 @@ export default function CoursePlayer() {
     document.body.appendChild(script);
   }, []);
 
-  // ── Soo qaado OTP + playbackInfo marka access la siiyo ──
+  // ── Marka lesson-ka la beddelo → cusboonaysii vdoVideoId + video URL ──
   useEffect(() => {
-    if (!hasAccess) { console.log("🔒 VDO DEBUG: hasAccess = false"); return; }
-    if (!vdoVideoId) {
-      console.log("⚠️ VDO DEBUG: vdoVideoId MADHAN — course Firestore-ka kuma jiro 'vdoVideoId'!");
-      return;
-    }
+    if (lessons.length === 0) return;
+    const les = lessons[activeLesson] || lessons[0];
+    setVdoVideoId(les?.vdoVideoId || "");
+    setCourseVideo(les?.fileURL || "");
+    // Reset OTP marka lesson la beddelo
+    setVdoOtp("");
+    setVdoPlaybackInfo("");
+  }, [activeLesson, lessons]);
+
+  // ── Soo qaado OTP + playbackInfo marka access la siiyo AMA lesson la beddelo ──
+  useEffect(() => {
+    if (!hasAccess || !vdoVideoId) return;
+    let cancelled = false;
 
     const fetchVdoCredentials = async () => {
       setVdoLoading(true);
-      setVdoError("");
-      const url = `https://getvdootp-gpyfwiymaa-uc.a.run.app?videoId=${vdoVideoId}`;
-      console.log("═══════════════ VDO DEBUG ═══════════════");
-      console.log("📼 videoId:", vdoVideoId);
-      console.log("🌐 fetch URL:", url);
       try {
-        const res = await fetch(url);
-        console.log("📡 HTTP status:", res.status, res.statusText);
-
-        let data;
-        try {
-          data = await res.json();
-        } catch (parseErr) {
-          const rawText = await res.text().catch(() => "(text lama akhriyi karo)");
-          console.log("❌ JSON parse failed. Raw:", rawText);
-          setVdoError(`Backend maaha JSON: ${String(rawText).slice(0, 200)}`);
-          setVdoLoading(false);
-          return;
-        }
-
-        console.log("📦 full data:", data);
-        console.log("🔑 otp:", data.otp);
-        console.log("🎬 playbackInfo:", data.playbackInfo);
-        console.log("═════════════════════════════════════════");
-
-        if (!res.ok || data.error || (!data.otp && !data.playbackInfo)) {
-          setVdoError(`Backend qalad: ${data.error || data.message || `HTTP ${res.status}`}`);
-        }
+        // ── Cloud Function URL-ka dream-crt project-ka ──
+        const res = await fetch(`https://getvdootp-gpyfwiymaa-uc.a.run.app?videoId=${vdoVideoId}`);
+        const data = await res.json();
+        if (cancelled) return;
         setVdoOtp(data.otp || "");
         setVdoPlaybackInfo(data.playbackInfo || "");
       } catch (err) {
-        console.log("❌ VdoCipher fetch error (network/CORS):", err);
-        setVdoError(`Network/CORS error: ${err?.message || err}`);
+        console.log("VdoCipher OTP fetch error:", err);
       }
-      setVdoLoading(false);
+      if (!cancelled) setVdoLoading(false);
     };
     fetchVdoCredentials();
+    return () => { cancelled = true; };
   }, [hasAccess, vdoVideoId]);
 
   const [copyAlert, setCopyAlert] = useState(false);
@@ -299,7 +279,6 @@ export default function CoursePlayer() {
   };
 
   const triggerShield = (reason) => {
-    if (DEBUG_MODE) { console.log("🛡️ SHIELD (debug, video lama damin):", reason); return; }
     setShieldReason(reason || "");
     setRecordShield(true);
     if (videoRef.current) { try { videoRef.current.pause(); } catch (e) {} }
@@ -324,30 +303,25 @@ export default function CoursePlayer() {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === "s" || k === "r")) { e.preventDefault(); triggerShield("Screen record-ka waa la xanibay"); showCopyAlert(); }
       if ((e.ctrlKey || e.metaKey) && k === "a") { e.preventDefault(); showCopyAlert(); }
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (k === "p" || k === "s")) { e.preventDefault(); }
-      // ── DEBUG: F12 / DevTools waa la OGGOLAADAY ──
-      if (!DEBUG_MODE) {
-        if (e.key === "F12") { e.preventDefault(); }
-        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === "i" || k === "j")) { e.preventDefault(); }
-        if ((e.ctrlKey || e.metaKey) && k === "u") { e.preventDefault(); }
-      }
+      if (e.key === "F12") { e.preventDefault(); }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === "i" || k === "j")) { e.preventDefault(); }
+      if ((e.ctrlKey || e.metaKey) && k === "u") { e.preventDefault(); }
     };
     document.addEventListener("keydown", blockKeys);
 
-    // ── getDisplayMedia monitor — DEBUG: waa la damiyay ──
+    // ── getDisplayMedia monitor (screen share block) ──
     let originalGDM = null;
-    if (!DEBUG_MODE) {
-      try {
-        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-          originalGDM = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
-          navigator.mediaDevices.getDisplayMedia = async () => {
-            triggerShield("Screen sharing-ka waa la xanibay");
-            return Promise.reject(new DOMException("Screen capture blocked", "NotAllowedError"));
-          };
-        }
-      } catch (e) { /* ignore */ }
-    }
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+        originalGDM = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
+        navigator.mediaDevices.getDisplayMedia = async () => {
+          triggerShield("Screen sharing-ka waa la xanibay");
+          return Promise.reject(new DOMException("Screen capture blocked", "NotAllowedError"));
+        };
+      }
+    } catch (e) { /* ignore */ }
 
-    const handleVisibility = () => { if (document.hidden) triggerShield("Content-ku waa qarsoon yahay"); else clearShield(); };
+    const handleVisibility = () => { if (document.hidden) triggerShield("Content-ku waa qarsoon yahay markaad ka baxdo bogga"); else clearShield(); };
     const handleBlur = () => triggerShield("Content-ku waa qarsoon yahay markaad ka baxdo bogga");
     const handleFocus = () => { if (!document.hidden) clearShield(); };
     document.addEventListener("visibilitychange", handleVisibility);
@@ -384,23 +358,42 @@ export default function CoursePlayer() {
     return () => unsubscribe();
   }, [id]);
 
+  // ════════════════════════════════════════════════════════════════
+  //  MUHIIM: vdoVideoId-ga wuxuu ku jiraa lessons[] gudaha (Playlist),
+  //  maaha top-level. Sidaas darteed halkan waxaan ka soo qaadeynaa
+  //  lesson kasta vdoVideoId + fileURL. Haddii course-ku uu Playlist
+  //  yahay → lessons[0] ka bilow. Haddii kale → top-level fields.
+  // ════════════════════════════════════════════════════════════════
   const setCourseData = (data) => {
-    console.log("📚 COURSE DEBUG — full data:", data);
-    console.log("📼 course.vdoVideoId:", data.vdoVideoId || "(MADHAN!)");
-    console.log("🎥 course.fileURL:", data.fileURL || "(madhan)");
-    console.log("📄 course.pdfURL:", data.pdfURL || "(madhan)");
     setCourseTitle(data.title || "Dream Crt Master Class");
     setCoursePrice(String(data.price || "25"));
     setCourseCategory(data.category || "");
     setCoursePdf(data.pdfURL || "");
-    setVdoVideoId(data.vdoVideoId || "");
-    if (data.type === "Playlist" && data.lessons && data.lessons.length > 0) {
+
+    if (data.type === "Playlist" && Array.isArray(data.lessons) && data.lessons.length > 0) {
+      // ── Playlist: ka soo qaado dhammaan lessons-ka (leh vdoVideoId gaar ah) ──
       const sorted = [...data.lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
-      setCourseVideo(sorted[0].fileURL || "");
-      if (!sorted[0].fileURL && data.pdfURL) setActiveTab("pdf");
+      const mapped = sorted.map((l, i) => ({
+        title: l.title || `Lesson ${i + 1}`,
+        vdoVideoId: l.vdoVideoId || "",
+        fileURL: l.fileURL || "",
+        order: l.order || i,
+      }));
+      setLessons(mapped);
+      setActiveLesson(0);
+      // Haddii lesson-ka koowaad uusan video lahayn laakiin PDF jiro → PDF tab
+      if (!mapped[0].vdoVideoId && !mapped[0].fileURL && data.pdfURL) setActiveTab("pdf");
     } else {
-      setCourseVideo(data.fileURL || "");
-      if (!data.fileURL && data.pdfURL) setActiveTab("pdf");
+      // ── Course keliya (maaha playlist): top-level vdoVideoId / fileURL ──
+      const single = [{
+        title: data.title || "Lesson",
+        vdoVideoId: data.vdoVideoId || "",
+        fileURL: data.fileURL || "",
+        order: 0,
+      }];
+      setLessons(single);
+      setActiveLesson(0);
+      if (!single[0].vdoVideoId && !single[0].fileURL && data.pdfURL) setActiveTab("pdf");
     }
   };
 
@@ -522,6 +515,11 @@ export default function CoursePlayer() {
     setSending(false);
   };
 
+  // ── Ma jiraa muuqaal la daawan karo (video ama vdo) ──
+  const hasAnyVideo = lessons.some(l => l.vdoVideoId || l.fileURL);
+  const currentLesson = lessons[activeLesson] || lessons[0] || {};
+  const isPlaylist = lessons.length > 1;
+
   // ─── LOADING ──────────────────────────────────────────────
   if (loading) return (
     <div style={{ background: "#0d0d0d" }} className="min-h-screen flex items-center justify-center">
@@ -598,13 +596,7 @@ export default function CoursePlayer() {
   return (
     <div style={{ background: "#0d0d0d" }} className="min-h-screen text-white">
 
-      {/* ── DEBUG BANNER ── */}
-      {DEBUG_MODE && (
-        <div style={{ background: "#7a1010", color: "#fff", textAlign: "center", padding: "6px", fontSize: "12px", fontFamily: "monospace", fontWeight: 700 }}>
-          ⚠️ DEBUG MODE — protection la deggay, F12 wuu shaqeeyaa. Eeg VDO DEBUG PANEL-ka hoose + Console.
-        </div>
-      )}
-
+      {/* ── Screen-record / focus-loss BLACKOUT SHIELD ── */}
       {recordShield && (
         <div className="record-shield">
           <div className="w-24 h-24 rounded-full flex items-center justify-center mb-2"
@@ -730,27 +722,17 @@ export default function CoursePlayer() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#f5c518" }}>Premium Course</p>
                 <h1 className="text-4xl font-black tracking-tight">{courseTitle}</h1>
-                <p className="text-gray-600 mt-1 text-sm">Access granted • Wax barashada ku bilow</p>
+                <p className="text-gray-600 mt-1 text-sm">
+                  {isPlaylist ? currentLesson.title : "Access granted • Wax barashada ku bilow"}
+                </p>
               </div>
               <div className="px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2" style={{ background: "rgba(245,197,24,0.08)", border: "1px solid rgba(245,197,24,0.3)", color: "#f5c518" }}>
                 <FaCheckCircle /> Access Granted
               </div>
             </div>
 
-            {/* ── DEBUG INFO PANEL ── */}
-            {DEBUG_MODE && (
-              <div style={{ background: "#111", border: "1px solid #f5c518", borderRadius: "12px", padding: "14px", marginBottom: "16px", fontFamily: "monospace", fontSize: "12px", color: "#ccc" }}>
-                <p style={{ color: "#f5c518", fontWeight: 800, marginBottom: "6px" }}>🔍 VDO DEBUG PANEL</p>
-                <p>vdoVideoId: <span style={{ color: vdoVideoId ? "#4ade80" : "#ff4757" }}>{vdoVideoId || "❌ MADHAN — course Firestore-ka kuma jiro vdoVideoId"}</span></p>
-                <p>courseVideo (storage): <span style={{ color: courseVideo ? "#4ade80" : "#888" }}>{courseVideo ? "✅ jira" : "— madhan"}</span></p>
-                <p>vdoLoading: <span>{String(vdoLoading)}</span></p>
-                <p>otp: <span style={{ color: vdoOtp ? "#4ade80" : "#ff4757" }}>{vdoOtp ? "✅ la helay (" + vdoOtp.slice(0, 12) + "...)" : "❌ madhan"}</span></p>
-                <p>playbackInfo: <span style={{ color: vdoPlaybackInfo ? "#4ade80" : "#ff4757" }}>{vdoPlaybackInfo ? "✅ la helay" : "❌ madhan"}</span></p>
-                {vdoError && <p style={{ color: "#ff4757", marginTop: "6px" }}>⚠️ ERROR: {vdoError}</p>}
-              </div>
-            )}
-
-            {(courseVideo || vdoVideoId) && coursePdf && (
+            {/* Tab switcher (Video / PDF) */}
+            {hasAnyVideo && coursePdf && (
               <div className="flex gap-3 mb-4">
                 {[
                   { id: "video", icon: <FaVideo />, label: "Video" },
@@ -769,47 +751,87 @@ export default function CoursePlayer() {
               </div>
             )}
 
-            {(activeTab === "video" || !coursePdf) && (courseVideo || vdoVideoId) && (
-              <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ position: "relative", border: "1px solid rgba(255,255,255,0.08)", background: "#000" }}>
-                <WatermarkOverlay email={email} />
-                {vdoVideoId ? (
-                  vdoLoading ? (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <p className="text-gray-500 text-sm">⏳ Video loading...</p>
-                    </div>
-                  ) : vdoOtp && vdoPlaybackInfo ? (
-                    <iframe
-                      key={vdoOtp}
-                      src={`https://player.vdocipher.com/v2/?otp=${vdoOtp}&playbackInfo=${vdoPlaybackInfo}`}
-                      style={{ border: 0, width: "100%", height: "100%" }}
-                      allow="encrypted-media"
-                      allowFullScreen
-                      title={courseTitle}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center px-4 text-center">
-                      <p className="text-gray-500 text-sm">
-                        ⚠️ Video-ga lama soo bandhigi karo.
-                        {vdoError ? ` — ${vdoError}` : " Fadlan dib u eeg OTP/playbackInfo backend-ka."}
-                      </p>
-                    </div>
-                  )
-                ) : courseVideo ? (
-                  <video
-                    ref={videoRef}
-                    src={courseVideo}
-                    controls
-                    controlsList="nodownload"
-                    onContextMenu={e => e.preventDefault()}
-                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                  />
-                ) : null}
-              </div>
-            )}
+            {/* ── Layout: video + playlist sidebar ── */}
+            <div className={isPlaylist ? "grid lg:grid-cols-[1fr_320px] gap-5" : ""}>
 
-            {(activeTab === "pdf" || (!courseVideo && !vdoVideoId)) && coursePdf && (
-              <SecurePdfViewer pdfUrl={coursePdf} email={email} />
-            )}
+              {/* Video / PDF area */}
+              <div>
+                {(activeTab === "video" || !coursePdf) && hasAnyVideo && (
+                  <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-2xl shadow-black" style={{ position: "relative", border: "1px solid rgba(255,255,255,0.08)", background: "#000" }}>
+                    <WatermarkOverlay email={email} />
+                    {currentLesson.vdoVideoId ? (
+                      vdoLoading ? (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <p className="text-gray-500 text-sm">⏳ Video loading...</p>
+                        </div>
+                      ) : vdoOtp && vdoPlaybackInfo ? (
+                        <iframe
+                          key={vdoOtp}
+                          src={`https://player.vdocipher.com/v2/?otp=${vdoOtp}&playbackInfo=${vdoPlaybackInfo}`}
+                          style={{ border: 0, width: "100%", height: "100%" }}
+                          allow="encrypted-media"
+                          allowFullScreen
+                          title={currentLesson.title || courseTitle}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center px-4 text-center">
+                          <p className="text-gray-500 text-sm">⚠️ Video-ga lama soo bandhigi karo. Fadlan dib u eeg backend-ka OTP/playbackInfo.</p>
+                        </div>
+                      )
+                    ) : currentLesson.fileURL ? (
+                      <video
+                        ref={videoRef}
+                        key={currentLesson.fileURL}
+                        src={currentLesson.fileURL}
+                        controls
+                        controlsList="nodownload"
+                        onContextMenu={e => e.preventDefault()}
+                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center px-4 text-center">
+                        <p className="text-gray-500 text-sm">⚠️ Lesson-kan muuqaal ma laha.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {(activeTab === "pdf" || !hasAnyVideo) && coursePdf && (
+                  <SecurePdfViewer pdfUrl={coursePdf} email={email} />
+                )}
+              </div>
+
+              {/* Playlist sidebar (kaliya haddii lessons badan yihiin) */}
+              {isPlaylist && (activeTab === "video" || !coursePdf) && (
+                <div className="rounded-2xl p-3" style={{ background: "#080808", border: "1px solid rgba(255,255,255,0.06)", maxHeight: "70vh", overflowY: "auto" }}>
+                  <div className="flex items-center gap-2 px-2 py-3 mb-1">
+                    <FaListUl style={{ color: "#f5c518" }} />
+                    <span className="text-white font-bold text-sm uppercase tracking-wide">Lessons ({lessons.length})</span>
+                  </div>
+                  {lessons.map((les, i) => (
+                    <button key={i} onClick={() => setActiveLesson(i)}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl mb-1 text-left transition-all"
+                      style={{
+                        background: activeLesson === i ? "rgba(245,197,24,0.1)" : "transparent",
+                        border: activeLesson === i ? "1px solid rgba(245,197,24,0.4)" : "1px solid transparent",
+                      }}>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: activeLesson === i ? "#f5c518" : "rgba(255,255,255,0.06)" }}>
+                        {activeLesson === i
+                          ? <FaPlay className="text-black text-xs" />
+                          : <span className="text-gray-400 text-xs font-bold">{i + 1}</span>}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold truncate" style={{ color: activeLesson === i ? "#f5c518" : "#ddd" }}>
+                          {les.title}
+                        </p>
+                        <p className="text-xs text-gray-600">{les.vdoVideoId ? "🔒 DRM Video" : les.fileURL ? "Video" : "—"}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div className="mt-4 flex items-center gap-2 text-gray-700 text-xs justify-center">
               <FaShieldAlt />
