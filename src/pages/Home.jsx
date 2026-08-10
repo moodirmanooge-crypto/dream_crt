@@ -48,6 +48,49 @@ export default function Home() {
     Object.entries(CATEGORY_TO_PAYID).map(([cat, payId]) => [payId, cat])
   );
 
+  // ── Front-end deterrent: xannib right-click, F12, Ctrl+Shift+I/J/C, Ctrl+U ──
+  // Ogow: Tani waa xannibaad UI ah oo keliya, umana dhaqmayso sida sirdoon xaqiiqa ah.
+  // Qof aqoon leh wuxuu si fudud uga gudbi karaa (disable JS, browser menu, iwm).
+  useEffect(() => {
+    const blockContextMenu = (e) => e.preventDefault();
+
+    const blockDevtoolsKeys = (e) => {
+      // F12
+      if (e.key === "F12" || e.keyCode === 123) {
+        e.preventDefault();
+        return;
+      }
+      // Ctrl+Shift+I / J / C (DevTools panels)
+      if (e.ctrlKey && e.shiftKey && ["I", "i", "J", "j", "C", "c"].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+      // Cmd+Opt+I / J / C (Mac DevTools)
+      if (e.metaKey && e.altKey && ["I", "i", "J", "j", "C", "c"].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+      // Ctrl+U / Cmd+U (View Source)
+      if ((e.ctrlKey || e.metaKey) && ["U", "u"].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+      // Ctrl+S / Cmd+S (Save Page)
+      if ((e.ctrlKey || e.metaKey) && ["S", "s"].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+    };
+
+    document.addEventListener("contextmenu", blockContextMenu);
+    document.addEventListener("keydown", blockDevtoolsKeys);
+
+    return () => {
+      document.removeEventListener("contextmenu", blockContextMenu);
+      document.removeEventListener("keydown", blockDevtoolsKeys);
+    };
+  }, []);
+
   useEffect(() => {
     fetchCourses();
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
